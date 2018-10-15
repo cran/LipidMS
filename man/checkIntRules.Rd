@@ -4,8 +4,7 @@
 \alias{checkIntRules}
 \title{Check intensity rules}
 \usage{
-checkIntRules(intrules, rates, intrequired, nchains, combinations, sn1,
-  sn2 = data.frame(), sn3 = data.frame(), sn4 = data.frame())
+checkIntRules(intrules, rates, intrequired, nchains, combinations, sn)
 }
 \arguments{
 \item{intrules}{character vector specifying the fragments to compare. See
@@ -21,17 +20,8 @@ If not, at least one must be verified to confirm the structure.}
 
 \item{combinations}{output of \link{combineChains}}
 
-\item{sn1}{list of chain fragments identified for sn1 position. Output of
-\link{chainFrags}.}
-
-\item{sn2}{list of chain fragments identified for sn2 position. Output of
-\link{chainFrags}. If required.}
-
-\item{sn3}{list of chain fragments identified for sn3 position. Output of
-\link{chainFrags}. If required.}
-
-\item{sn4}{list of chain fragments identified for sn4 position. Output of
-\link{chainFrags}. If required.}
+\item{sn}{list of chain fragments identified. Object fragments of the
+\link{combineChains} output.}
 }
 \description{
 Check intensity rules to confirm chains structure.

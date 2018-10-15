@@ -4,8 +4,7 @@
 \alias{chainFrags}
 \title{Search of chain specific fragments}
 \usage{
-chainFrags(coelfrags, chainfrags, ppm = 10, candidates = NULL, f = NULL,
-  dbs)
+chainFrags(coelfrags, chainfrags, ppm = 10, candidates, f = NULL, dbs)
 }
 \arguments{
 \item{coelfrags}{coeluting fragments for each candidate. Output of
@@ -53,38 +52,39 @@ using the same names as the LipidMS databases without the "db" at the end
 (i.e. pa, dg, lysopa, mg, CE, etc.), and the adduct has to be indicated as
 it appears in the adductsTable, both parts separated by "_". In case some
 chain needs to be searched based on a neutral loss, this can be defined using
-"NL-" prefix, followed by the database and the adduct. If this neutral loss
+"NL-" prefix, followed by the database and adduct. If this neutral loss
 is employed to find the remaining chain, "cbdiff-" prefix allows to calculate
 the difference in carbons and doubles bounds between the precursor and the
 building block found. For example, "cbdiff-dg_M+H-H2O" will look for DG as
 M+H-H2O and then, it will return the difference between their number of
-carbons and double bounds and the ones from the precursor. On the
-other hand, "NL-mg_M+H-H2O" will look for fragments coming from the loss of
-MGs.
+carbons and double bounds and the ones from the precursor. Otherwise,
+"NL-mg_M+H-H2O" will look for fragments coming from the loss of MGs.
 
 In case these fragments identified as losses from the precursors are going to
 be employed for the intensity rules, this same prefix has to be added.
 
 If a chain is calculated based on the difference of total number of
 carbons and double bounds between the precursor and a previously searched chain,
-\code{chainfrags} argument must be an empty vector and candidates data frame
-and chain fragments list must be provided.
+\code{chainfrags} argument must be a character vector c("") and candidates
+data frame and chain fragments list must be provided.
 }
 \examples{
 \donttest{
-dbs <- list(pgdb = LipidMS::pgdb, lysopgdb = LipidMS::lysopgdb,
-fadb = LipidMS::fadb, adductsTable = LipidMS::adductsTable)
+dbs <- assignDB()
 
-candidates <- findCandidates(MS1 = LipidMS::mix_neg_fullMS, dbs[["pgdb"]],
-ppm = 10, rt = c(min(MS1$RT), max(MS1$RT)), adducts = c("M-H"),
-rttol = 3, dbs)
+candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
+rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 
-MSMS <- rbind(LipidMS::mix_neg_Ce20, LipidMS::mix_neg_Ce40)
-coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol)
+MSMS <- rbind(LipidMS::MSMS1_neg$peaklist, LipidMS::MSMS2_neg$peaklist)
+rawData <- rbind(LipidMS::MS1_neg$rawScans, LipidMS::MSMS1_neg$rawScans,
+LipidMS::MSMS2_neg$rawScans)
+coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
+coelCutoff = 0.8)
 
 sn1 <- chainFrags(coelfrags, chainfrags = c("lysopg_M-H"), ppm = 10,
 dbs = dbs)
-sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10, dbs)
+sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10, dbs = dbs)
 }
 
 }

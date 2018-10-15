@@ -106,12 +106,9 @@ cbs <- function(mz, ppm, db, charge=0){
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
 filtermsms <- function(fragments, frag, ppm){
-  if (sum(abs((fragments - frag)/frag)*1000000 < ppm) > 0){
-    res <- TRUE
-  } else {
-    res <- FALSE
-  }
-  return(res)
+  sel <- fragments[which(abs((fragments$m.z - frag)/frag)*1000000 < ppm),]
+  sel <- sel[which.max(sel$coelScore),]
+  return(sel)
 }
 
 # frags
@@ -131,18 +128,18 @@ filtermsms <- function(fragments, frag, ppm){
 #' @keywords internal
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
-frags <- function(df, ppm, db, charge){
+frags <- function(df, ppm, db,  mdiff, charge, n){
   if (nrow(df) > 0){
-    cb <- data.frame(0,0,0,0)
-    colnames(cb) <- c("cb", "m.z", "RT", "int")
+    cb <- data.frame(0, 0, 0, 0, 0, 0)
+    colnames(cb) <- c("cb", "m.z", "RT", "int", "peakID", "coelScore")
     found <- FALSE
     if (nrow(df) > 0){
       for (x in 1:nrow(df)){
-        y <- abs((db[,"Mass"]+charge-df[x,"m.z"])*1000000/
-                   (db[,"Mass"]+charge)) < ppm
+        y <- abs((abs((n*db$Mass+mdiff)/charge)-df[x,"m.z"])*1000000/
+                   abs((n*db$Mass+mdiff)/charge)) < ppm
         if (sum(y) > 0){
-          cb <- rbind(cb, c(db[which(y == TRUE), "total"],
-                            df[x,"m.z"], df[x,"RT"], df[x,"int"]))
+          cb <- rbind(cb, data.frame(c(cb = db[which(y == TRUE), "total"],
+                                       df[x,]), stringsAsFactors = F))
           found <- TRUE
         }
       }
@@ -177,10 +174,9 @@ frags <- function(df, ppm, db, charge){
 joinfrags <- function(df){
   new <- vector()
   for (f in unique(df$cb)){
-    new <- rbind(new, data.frame(cb=f, m.z=mean(as.numeric(df$m.z[df$cb == f])),
-                                 RT = mean(as.numeric(df$RT[df$cb == f])),
-                                 int = sum(as.numeric(df$int[df$cb == f])),
-                                 stringsAsFactors = F))
+    subset <- df[df$cb == f,]
+    subset$int <- rep(sum(subset$int), nrow(subset))
+    new <- rbind(new, subset[which.max(subset$coelScore),])
   }
   return(new)
 }
@@ -273,7 +269,7 @@ select <- function (chains, parent, n){
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
 findPrecursor <- function(MS1, db, ppm, massdif, rt, n=1, charge=1){
-  precursors <- unlist(lapply((n*db$Mass+massdif)/abs(charge), mzMatch,
+  precursors <- unlist(lapply(abs(n*db$Mass+massdif)/abs(charge), mzMatch,
                               MS1$m.z, ppm))
   if (length(precursors) > 0){
     matches <- precursors[seq(1, length(precursors), 2)]
@@ -286,11 +282,11 @@ findPrecursor <- function(MS1, db, ppm, massdif, rt, n=1, charge=1){
     prec <- prec[prec$RT >= rt[1] & prec$RT <= rt[2],]
     if (nrow(prec) > 0){
       if (n == 1){
-        cb <- sapply(prec$m.z*abs(charge), cbs, ppm+2, db, massdif)
+        cb <- sapply(prec$m.z*abs(charge), cbs, ppm, db, massdif)
       } else if (n == 2){
         cb <- vector()
         for (i in 1:nrow(prec)){
-          cb <- append(cb, cbs((prec$m.z[i]*abs(charge)-massdif)/2, ppm+2, db))
+          cb <- append(cb, cbs((prec$m.z[i]*abs(charge)-massdif)/2, ppm, db))
         }
       }
       # joining info
@@ -305,96 +301,133 @@ findPrecursor <- function(MS1, db, ppm, massdif, rt, n=1, charge=1){
 }
 
 
-# joinAdducts
-#' Join information about precursor candidates found using different adducts
+# crossAdducts
+#' Cross different candidates tables to remove false positives.
 #'
-#' This function joins tables of precursor candidates found using different
+#' This function crosses tables of precursor candidates identified using different
 #' adducts.
 #'
 #' @param df1 data frame containing identification results using the main adduct
-#' @param df data frame containing identification results using a secondary
+#' @param df2 data frame containing identification results using a secondary
 #' adduct
 #' @param rttol retention time tolerance in seconds
-#' @param main character value indicating the preferred adduct
-#' @param other character value indicating the ceecondary adduct
+#' @param rawData raw scans data. Output of \link{dataProcessing} function
+#' (MS1$rawData).
+#' @param coelCutoff coelution score threshold between parent and fragment ions.
+#' Only applied if rawData info is supplied.
 #'
 #' @return Subset of the original data frame without adducts
 #'
 #' @keywords internal
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
-joinAdducts <- function(df1, df2, rttol, main, other){
+crossAdducts <- function(df1, df2, rttol, rawData, coelCutoff){
   if (nrow(df2) > 0 & nrow(df1) == 0){
-    df1 <- df2
+    df <- df2
     df2 <- data.frame()
-    main <- other
   }
   if (nrow(df1) > 0 & nrow(df2) > 0){
-    mzmatchesdf1 <- vector()
-    mzmatchesdf2 <- vector()
-    for (i in 1:nrow(df2)){
-      m <- which(abs(df1$m.z - df2$m.z[i]) < 0.001 & abs(df1$RT - df2$RT[i]) <
-                   rttol/2)
-      mzmatchesdf1 <- append(mzmatchesdf1, m)
-      if (length(m) > 0){
-        mzmatchesdf2 <- append(mzmatchesdf2, i)
+    toremove <- vector()
+    tokeep2 <- rep(TRUE, nrow(df2))
+    for (m in 1:nrow(df1)){
+      if (df1$peakID[m] %in% df2$peakID){
+        sel <- df2[df2$peakID == df1$peakID[m],]
+        matched <- which(abs(sel$RT - df1$RT) < rttol & sel$cb == df1$cb)
+        if (length(matched) > 0){
+          scores <- vector()
+          for (s in 1:length(matched)){
+            score <- coelutionScore(df1$peakID[matched[s]],
+                                    peak2 = sel$peakID, rawData = rawData)
+            scores <- append(scores, score)
+          }
+          if (any(scores >= coelCutoff)){
+            toremove <- append(toremove, TRUE)
+          } else {
+            toremove <- append(toremove, FALSE)
+          }
+        } else {
+          tokeep2[which(df2$peakID == df1$peakID[m])] <- FALSE
+          toremove <- append(toremove, FALSE)
+        }
+      } else {
+        toremove <- append(toremove, FALSE)
       }
     }
-    df3 <- df2[mzmatchesdf2,]
-    if (length(mzmatchesdf1) > 0){
-      df4 <- df2[-mzmatchesdf2,]
-    } else {
-      df4 <- df2
-    }
-    if (nrow(df4) > 0){
-      cbmatchesdf1 <- vector()
-      cbmatchesdf4 <- vector()
-      for (i in 1:nrow(df4)){
-        m <- which(df1$cb == df4$cb[i] & abs(df1$RT - df4$RT[i]) < rttol)
-        cbmatchesdf1 <- append(cbmatchesdf1, m)
-        if (length(m) > 0){
-          cbmatchesdf4 <- append(cbmatchesdf4, i)
+    df1 <- df1[!toremove,]
+    df2 <- df2[tokeep2,]
+    if (nrow(df1) > 0 & nrow(df2) > 0){
+      df1$adducts <- as.vector(df1$adducts)
+      ad1 <- df1$adducts
+      df2$adducts <- as.vector(df2$adducts)
+      ad2 <- df2$adducts[1]
+      for (c in 1:nrow(df1)){
+        common  <- which(df2$cb == df1$cb[c] & abs(df2$RT - df1$RT[c]) < rttol)
+        if (length(common) > 0){
+          df1$adducts[c] <- paste(c(ad1[c], ad2), collapse = ";")
+          for (i in 1:length(common)){
+            df2$adducts[common[i]] <- paste(c(ad2, ad1[c]), collapse = ";")
+          }
+
         }
       }
-      if ("adducts" %in% colnames(df1)){
-        adducts <- as.vector(df1$adducts)
-        adducts[cbmatchesdf1] <- paste(adducts[cbmatchesdf1], other, sep = ";")
-      } else {
-        adducts <- rep(main, nrow(df1))
-        adducts[cbmatchesdf1] <- paste(main, other, sep = ";")
-      }
-      df1$adducts <- adducts
-      dif <- setdiff(c(1:nrow(df4)), cbmatchesdf4)
-      if (length(dif) > 0){
-        df1 <- rbind(df1, cbind(df4[dif,], adducts=rep(other, length(dif))))
-      }
     }
-    if (nrow(df3) > 0){
-      cbmatchesdf1 <- vector()
-      cbmatchesdf3 <- vector()
-      for (i in 1:nrow(df3)){
-        m <- which(df1$cb == df3$cb[i] & abs(df1$RT - df3$RT[i]) < rttol)
-        cbmatchesdf1 <- append(cbmatchesdf1, m)
-        if (length(m) > 0){
-          cbmatchesdf3 <- append(cbmatchesdf3, i)
-        }
-      }
-      if ("adducts" %in% colnames(df1)){
-        adducts <- as.vector(df1$adducts)
-        adducts[cbmatchesdf1] <- paste(adducts[cbmatchesdf1], other, sep = ";")
-      } else {
-        adducts <- rep(main, nrow(df1))
-        adducts[cbmatchesdf1] <- paste(main, other, sep = ";")
-      }
-      df1$adducts <- adducts
-    }
-  } else {
-    if (!"adducts" %in% colnames(df1)){
-      df1$adducts <- rep(main, nrow(df1))
-    }
+    df <- rbind(df1, df2)
   }
-  return(df1)
+  return(df)
 }
+
+# coelutionScore
+#' calculate coelution score between two peaks
+#'
+#' Calculate coelution score between two peaks.
+#'
+#' @param peak1 character vector specifying the peakID of the first peak.
+#' @param peak2 character vector specifying the peakID of the second peak.
+#' @param rawData data frame with raw data for each scan. it need to have at
+#' least 5 columns: m.z, RT, int, Scan (ordinal number for a given MS function)
+#' and peakID (peakID to which it has been assigned).
+#'
+#' #' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+coelutionScore <- function(peak1, peak2, rawData){
+  if (nrow(rawData) > 0){
+    chrom1 <- rawData[rawData$peakID == peak1, c("int", "Scan")]
+    chrom1 <- chrom1[order(chrom1$Scan),]
+    pred1 <- tryCatch({predict(smooth.spline(chrom1$Scan, chrom1$int), x = chrom1$Scan)},
+                      error = function(e) {return(list(x = chrom1$int, y = chrom1$Scan))})
+    if(length(pred1) > 0){
+      chrom1 <- data.frame(int = pred1$y, Scan = chrom1$Scan)
+    }
+    scores <- sapply(peak2, function(x) {
+      chrom2 <- rawData[rawData$peakID == x, c("int", "Scan")]
+      chrom2 <- chrom2[order(chrom2$Scan),]
+      pred2 <- tryCatch({predict(smooth.spline(chrom2$Scan, chrom2$int),
+                                 x = chrom2$Scan)},
+                        error = function(e) {return(list(x = chrom2$int,
+                                                         y = chrom2$Scan))})
+      if (length(pred2) > 0 & length(pred1) > 0){
+        chrom2 <- data.frame(int = pred2$y, Scan = chrom2$Scan)
+        merged <- merge(chrom1, chrom2, by="Scan")
+      } else {
+        merged <- data.frame()
+      }
+      if(nrow(merged) > 0){
+        score <- cor(merged[,"int.x"], merged[,"int.y"])
+        if (is.na(score)){
+          score <- 0
+        }
+      } else {
+        score <- 0
+      }
+      return(score)
+    })
+  } else {
+    scores <- rep(0, length(peak2))
+  }
+  return(scores)
+}
+
 # checkIntRules
 #' Check intensity rules
 #'
@@ -408,14 +441,8 @@ joinAdducts <- function(df1, df2, rttol, main, other){
 #' If not, at least one must be verified to confirm the structure.
 #' @param nchains number of chains of the targeted lipid class.
 #' @param combinations output of \link{combineChains}
-#' @param sn1 list of chain fragments identified for sn1 position. Output of
-#' \link{chainFrags}.
-#' @param sn2 list of chain fragments identified for sn2 position. Output of
-#' \link{chainFrags}. If required.
-#' @param sn3 list of chain fragments identified for sn3 position. Output of
-#' \link{chainFrags}. If required.
-#' @param sn4 list of chain fragments identified for sn4 position. Output of
-#' \link{chainFrags}. If required.
+#' @param sn list of chain fragments identified. Object fragments of the
+#' \link{combineChains} output.
 #'
 #' @details This function will be employed when the targeted lipid class has
 #' more than one chain.
@@ -436,10 +463,9 @@ joinAdducts <- function(df1, df2, rttol, main, other){
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
 checkIntRules <- function(intrules, rates, intrequired, nchains, combinations,
-                          sn1, sn2 = data.frame(), sn3 = data.frame(),
-                          sn4 = data.frame()){
+                          sn){
   if (nchains == 1){
-    passed <- rep(FALSE, length(sn1))
+    passed <- FALSE
   } else if (length(intrules) == 0 | "Unknown" %in% intrules){
     if (nrow(combinations) > 0){
       passed <- rep(FALSE, nrow(combinations))
@@ -475,19 +501,32 @@ checkIntRules <- function(intrules, rates, intrequired, nchains, combinations,
         } else {
           for (i in 1:length(intrules)){
             comp <- unlist(strsplit(intrules[i], "[_/]"))
-            list1 <- get(comp[2])
-            list2 <- get(comp[4])
-            int1 <- as.numeric(list1$int[list1$cb == combinations[c,1] &
-                                           list1$db == comp[1]])
-            if (length(int1) == 0){int1 <- 0}
-            int2 <- as.numeric(list2$int[list2$cb == combinations[c,2] &
-                                           list2$db == comp[3]])
-            if (length(int2) == 0){int2 <- 0}
+            list <- sn[[c]]
+            if (comp[2] == "sn1"){
+              f1 <- 1
+            } else {
+              f1 <- 2
+            }
+            if (comp[4] == "sn1"){
+              f2 <- 1
+            } else {
+              f2 <- 2
+            }
+            int1 <- sum(as.numeric(list$int[list$cb == combinations[c,f1] &
+                                           list$db == comp[1]]))
+            if (length(int1) == 0){int1 <- 0} else {
+              int1 <- int1/sum(combinations[c,] == combinations[c,f1])
+            }
+            int2 <- sum(as.numeric(list$int[list$cb == combinations[c,f2] &
+                                          list$db == comp[3]]))
+            if (length(int2) == 0){int2 <- 0} else {
+              int2 <- int2/sum(combinations[c,] == combinations[c,f2])
+            }
             if (length(int1) == 1 & length(int2) == 1){
               if (int1 == 0 & int2 == 0){
                 verified[c,i] <- F
               } else {
-                if (eval(parse(text=rates[i])) > 1){
+                if (eval(parse(text=rates[i])) >= 1){
                   check <- int1/int2 >= eval(parse(text=rates[i]))
                 } else {
                   check <- int1/int2 <= eval(parse(text=rates[i]))
@@ -495,10 +534,10 @@ checkIntRules <- function(intrules, rates, intrequired, nchains, combinations,
                 verified[c,i] <- check
               }
             } else {
-              if (eval(parse(text=rates[i])) > 1){
+              if (eval(parse(text=rates[i])) >= 1){
                 check <- any(int1[1]/int2 >= eval(parse(text=rates[i])))
               } else {
-                check <- any(int1[1]/int2 <= eval(parse(text=rates[i])))
+                check <- any(int1[1]/int2 < eval(parse(text=rates[i])))
               }
               verified[c,i] <- check
             }
@@ -520,41 +559,54 @@ checkIntRules <- function(intrules, rates, intrequired, nchains, combinations,
       verified <- matrix(NA,  ncol=length(intrules), nrow=nrow(combinations))
       for (c in 1:nrow(combinations)){
         if (combinations[c,1] == combinations[c,2] &
-            combinations[c,2] == combinations[c,3]){
-          verified[c,] <-T
+            combinations[c,1] == combinations[c,3]){
+          verified[c,] <- T
         } else {
           for (i in 1:length(intrules)){
             comp <- unlist(strsplit(intrules[i], "[_/]"))
-            r <- unlist(strsplit(rates[i], "[/]"))
-            list1 <- get(comp[2])
-            list2 <- get(comp[4])
-            list3 <- get(comp[6])
-            int1 <- as.numeric(list1$int[list1$cb == combinations[c,1] &
-                                           list1$db == comp[1]])
-            if (length(int1) == 0){int1 <- 0.1}
-            int2 <- as.numeric(list2$int[list2$cb == combinations[c,2] &
-                                           list2$db == comp[3]])
-            if (length(int2) == 0){int2 <- 0.1}
-            int3 <- as.numeric(list3$int[list3$cb == combinations[c,3] &
-                                           list3$db == comp[5]])
-            if (length(int3) == 0){int3 <- 0.1}
-            if (length(int1) == 1 & length(int2) == 1 & length(int3) == 1){
-              if (int1 == 0.1 & int2 == 0.1 & int3 == 0.1){
+            list <- sn[[c]]
+            if (comp[2] == "sn1"){
+              f1 <- 1
+            } else if (comp[2] == "sn2"){
+              f1 <- 2
+            } else {
+              f1 <- 3
+            }
+            if (comp[4] == "sn1"){
+              f2 <- 1
+            } else if (comp[4] == "sn2"){
+              f2 <- 2
+            } else {
+              f2 <- 3
+            }
+            int1 <- sum(as.numeric(list$int[list$cb == combinations[c,f1] &
+                                              list$db == comp[1]]))
+            if (length(int1) == 0){int1 <- 0} else {
+              int1 <- int1/sum(combinations[c,] == combinations[c, f1])
+            }
+            int2 <- sum(as.numeric(list$int[list$cb == combinations[c,f2] &
+                                              list$db == comp[3]]))
+            if (length(int2) == 0){int2 <- 0} else {
+              int2 <- int2/sum(combinations[c,] == combinations[c, f2])
+            }
+            if (length(int1) == 1 & length(int2) == 1){
+              if (int1 == 0 & int2 == 0){
                 verified[c,i] <- F
               } else {
-                if (as.numeric(r[1])/ as.numeric(r[2]) > 1){
-                  check1 <- int1/int2 >= as.numeric(r[1])/ as.numeric(r[2])
+                if (eval(parse(text=rates[i])) >= 1){
+                  check <- int1/int2 >= eval(parse(text=rates[i]))
                 } else {
-                  check1 <- int1/int2 <= as.numeric(r[1])/ as.numeric(r[2])
+                  check <- int1/int2 <= eval(parse(text=rates[i]))
                 }
-                if (as.numeric(r[2])/ as.numeric(r[3]) > 1){
-                  check2 <- int1/int2 >= as.numeric(r[2])/ as.numeric(r[3])
-                } else {
-                  check2 <- int1/int2 <= as.numeric(r[2])/ as.numeric(r[3])
-                }
-                check <- (check1 + check2) == 2
                 verified[c,i] <- check
               }
+            } else {
+              if (eval(parse(text=rates[i])) >= 1){
+                check <- any(int1[1]/int2 >= eval(parse(text=rates[i])))
+              } else {
+                check <- any(int1[1]/int2 < eval(parse(text=rates[i])))
+              }
+              verified[c,i] <- check
             }
           }
         }
@@ -570,64 +622,3 @@ checkIntRules <- function(intrules, rates, intrequired, nchains, combinations,
   }
   return(passed)
 }
-
-# removeAdducts
-#' remove wrong assigned adducts
-#'
-#' remove wrong assigned adducts.
-#'
-#' @param df data frame with the input results
-#' @param mdiff mass difference expected between adducts
-#' @param ppm mass tolerance
-#' @param rttol rt tolerance
-#'
-#'
-#' @return Data frame
-#'
-#' @keywords internal
-#'
-#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
-removeAdducts <- function(df, mdiff, ppm, rttol){
-  adducts <- rep(TRUE, nrow(df))
-  for (i in 1:nrow(df)){
-    adduct <- which(abs((df$m.z - df$m.z[i]) - mdiff)*1000000/df$m.z[i] < ppm)
-    if (length(adduct) > 0){
-      for (u in 1:length(adduct)){
-        if (abs(df[i, "RT"] - df[adduct[u], "RT"]) < rttol &&
-            df[adduct[u], "int"] < df[i, "int"]){
-          adducts[adduct[u]] <- FALSE
-        }
-      }
-    }
-  }
-  res <- df[adducts,]
-  return(res)
-}
-
-# removeDGs
-#' remove fragments whose relative intensity to the precursor is less than 10
-#' times smaller
-#'
-#' remove fragments whose relative intensity to the precursor is less than 10
-#' times smaller. It is used by idTGpos to reduce false positive annotations.
-#'
-#' @param sn fragments
-#' @param candidates precursors
-#'
-#'
-#' @return Subsetted data frame
-#'
-#' @keywords internal
-#'
-#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
-removeDGs = function(sn, candidates){
-  for (c in 1:nrow(candidates)){
-    if (nrow(sn[[c]]) > 0){
-      sn[[c]] = sn[[c]][as.numeric(sn[[c]]$int)/candidates$int[c] > 0.1,]
-    } else {
-      sn[[c]] = data.frame()
-    }
-  }
-  return(sn)
-}
-

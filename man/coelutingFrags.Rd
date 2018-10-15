@@ -4,15 +4,21 @@
 \alias{coelutingFrags}
 \title{Coeluting fragments extraction}
 \usage{
-coelutingFrags(rt, df, rttol)
+coelutingFrags(precursors, products, rttol, rawData = data.frame(),
+  coelCutoff = 0)
 }
 \arguments{
-\item{rt}{numeric vector indicating candidates RT. This information comes
-from the output of \link{findCandidates} (candidates$RT).}
+\item{precursors}{candidates data frame. Output of \link{findCandidates}.}
 
-\item{df}{data frame containing the peaks to subset (MSMS).}
+\item{products}{peaklist for MS2 function (MSMS).}
 
 \item{rttol}{rt window in seconds.}
+
+\item{rawData}{raw scans data. Output of \link{dataProcessing} function
+(MSMS$rawData).}
+
+\item{coelCutoff}{coelution score threshold between parent and fragment ions.
+Only applied if rawData info is supplied.}
 }
 \value{
 List of data frames with the coeluting fragments for each candidate.
@@ -24,15 +30,17 @@ coeluting fragments from high energy functions for candidate precursor ions.
 }
 \examples{
 \donttest{
-dbs <- list(pgdb = LipidMS::pgdb, lysopgdb = LipidMS::lysopgdb,
-fadb = LipidMS::fadb, adductsTable = LipidMS::adductsTable)
+dbs <- assignDB()
 
-candidates <- findCandidates(MS1 = LipidMS::mix_neg_fullMS, dbs[["pgdb"]],
-ppm = 10, rt = c(min(MS1$RT), max(MS1$RT)), adducts = c("M-H"),
-rttol = 3, dbs)
+candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
+rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 
-MSMS <- rbind(LipidMS::mix_neg_Ce20, LipidMS::mix_neg_Ce40)
-coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol)
+MSMS <- rbind(LipidMS::MSMS1_neg$peaklist, LipidMS::MSMS2_neg$peaklist)
+rawData <- rbind(LipidMS::MS1_neg$rawScans, LipidMS::MSMS1_neg$rawScans,
+LipidMS::MSMS2_neg$rawScans)
+coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
+coelCutoff = 0.8)
 }
 
 }

@@ -4,25 +4,38 @@
 \alias{idPSneg}
 \title{Phosphoserines (PS) annotation for ESI-}
 \usage{
-idPSneg(MS1, MSMS1, MSMS2 = data.frame(), ppm_precursor = 5,
-  ppm_products = 10, rttol = 3, rt = c(min(MS1$RT), max(MS1$RT)),
-  adducts = c("M-H", "M+Na-2H"), clfrags = c(87.032), clrequired = c(F),
-  ftype = c("NL"), chainfrags_sn1 = c("lysopa_M-H-H2O", "lysopa_M-H"),
-  chainfrags_sn2 = c("fa_M-H"), intrules = c("lysopa_sn1/lysopa_sn1"),
-  rates = c("3/1"), intrequired = c(T), dbs = list(psdb = LipidMS::psdb,
-  lysopadb = LipidMS::lysopadb, fadb = LipidMS::fadb, adductsTable =
-  LipidMS::adductsTable))
+idPSneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
+  rttol = 3, rt, adducts = c("M-H", "M+Na-2H"), clfrags = c(87.032,
+  152.9958), clrequired = c(F, F), ftype = c("NL", "F"),
+  chainfrags_sn1 = c("lysopa_M-H", "lysopa_M-H-H2O"),
+  chainfrags_sn2 = c("lysopa_M-H", "lysopa_M-H-H2O", "fa_M-H"),
+  intrules = c("lysopa_sn1/lysopa_sn2"), rates = c("3/1"),
+  intrequired = c(T), coelCutoff = 0.8, dbs)
 }
 \arguments{
-\item{MS1}{data frame cointaining all peaks from the full MS function. It
-must have three columns: m.z, RT (in seconds) and int (intensity).}
+\item{MS1}{list with two data frames cointaining all peaks from the full MS
+function ("peaklist" data frame) and the raw MS scans data ("rawScans" data
+frame). They must have four columns: m.z, RT (in seconds), int (intensity)
+and peakID (link between both data frames). "rawScans" data frame also needs
+a extra column named "Scan", which indicates the scan order number. Output
+of \link{dataProcessing} function. In case no coelution score needs to be
+applied, this argument can be just the peaklist data frame.}
 
-\item{MSMS1}{data frame cointaining all peaks from the low energy function.
-It must have three columns: m.z, RT and int.}
+\item{MSMS1}{list with two data frames cointaining all peaks from the high
+energy function ("peaklist" data frame) and the raw MS scans data ("rawScans"
+data frame). They must have four columns: m.z, RT (in seconds), int (intensity)
+and peakID (link between both data frames). "rawScans" data frame also needs
+a extra column named "Scan", which indicates the scan order number. Output
+of \link{dataProcessing} function. In case no coelution score needs to be
+applied, this argument can be just the peaklist data frame.}
 
-\item{MSMS2}{data frame cointaining all peaks from the high energy
-function if it is the case. It must have three columns: m.z, RT and int.
-Optional.}
+\item{MSMS2}{list with two data frames cointaining all peaks from a second high
+energy function ("peaklist" data frame) and the raw MS scans data ("rawScans"
+data frame). They must have four columns: m.z, RT (in seconds), int (intensity)
+and peakID (link between both data frames). "rawScans" data frame also needs
+a extra column named "Scan", which indicates the scan order number. Output
+of \link{dataProcessing} function. In case no coelution score needs to be
+applied, this argument can be just the peaklist data frame. Optional.}
 
 \item{ppm_precursor}{mass tolerance for precursor ions. By default, 5 ppm.}
 
@@ -65,11 +78,13 @@ as a string (i.e. "3/1"). See \link{checkIntensityRules}.}
 \item{intrequired}{logical vector indicating if any of the rules is required.
 If not, at least one must be verified to confirm the structure.}
 
+\item{coelCutoff}{coelution score threshold between parent and fragment ions.
+Only applied if rawData info is supplied. By default, 0.8.}
+
 \item{dbs}{list of data bases required for annotation. By default, dbs
 contains the required data frames based on the default fragmentation rules.
-If these rules are modified, dbs may need to be changed. If data bases have
-been customized using \link{createLipidDB}, they also have to be modified
-here.}
+If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+and \link{assignDB}.}
 }
 \value{
 list with PS annotations (results) and some additional information
@@ -85,17 +100,19 @@ identification of candidate PS as M-H or M+Na-2H. 2) Search of PS class
 fragments: neutral loss of 87.032 (serine) coeluting with the precursor ion.
 3) Search of specific fragments that inform about chain composition at sn1
 (lysoPA as M-H or M-H-H2O resulting from the loss of the FA chain at sn2 and
-the head group) and sn2 (FA chain as M-H). 4) Look for possible chains
-structure based on the combination of chain fragments. 5) Check intensity
-rules to confirm chains position. In this case, lysoPA from sn1 is at least
-3 times more intense than lysoPA from sn2.
+the head group) and sn2 (lysoPA as M-H or M-H-H2O resulting from the loss of
+the FA chain at sn1 and the head group or FA chain as M-H). 4) Look for
+possible chains structure based on the combination of chain fragments.
+5) Check intensity rules to confirm chains position. In this case, lysoPA
+from sn1 is at least 3 times more intense than lysoPA from sn2.
 
 Results data frame shows: ID, class of lipid, CDB (total number
 of carbons and double bounds), FA composition (specific chains composition if
 it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
 FA level, where chains are known but not their positions, or FA position
-level).
+level) and PFCS (parent-fragment coelution score mean of all fragments used
+for the identification).
 }
 \note{
 Isotopes should be removed before identification to avoid false
@@ -105,11 +122,10 @@ two different platforms (QTOF 6550 from Agilent and Sinapt G2-Si from Waters),
 but it may need to be customized for other platforms or acquisition settings.
 }
 \examples{
-idPSneg(MS1 = LipidMS::mix_neg_fullMS, MSMS1 = LipidMS::mix_neg_Ce20,
-MSMS2 = LipidMS::mix_neg_Ce40)
-
-idPSneg(MS1 = LipidMS::serum_neg_fullMS, MSMS1 = LipidMS::serum_neg_Ce20,
-MSMS2 = LipidMS::serum_neg_Ce40)
+\donttest{
+idPSneg(MS1 = LipidMS::MS1_neg, MSMS1 = LipidMS:MSMS1_neg,
+MSMS2 = LipidMS::MSMS2_neg)
+}
 
 }
 \author{

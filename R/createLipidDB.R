@@ -334,7 +334,7 @@ createLipidDB <- function(lipid, chains, chains2){
     customizedDataSets[["pip3db"]] <- pip3
     customizedDataSets[["psdb"]] <- ps
     customizedDataSets[["padb"]] <- pa
-    customizedDataSets[["pedb"]] <- pe
+    customizedDataSets[["pcdb"]] <- pc
     customizedDataSets[["dgdb"]] <- dg
     customizedDataSets[["tgdb"]] <- tg
     customizedDataSets[["cldb"]] <- cl

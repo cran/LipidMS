@@ -4,8 +4,8 @@
 \alias{findCandidates}
 \title{Search of lipid candidates of a certain class.}
 \usage{
-findCandidates(MS1, db, ppm = 10, rt = c(min(MS1$RT), max(MS1$RT)), adducts,
-  rttol = 3, dbs)
+findCandidates(MS1, db, ppm, rt, adducts, rttol = 3, dbs,
+  rawData = data.frame(), coelCutoff = 0)
 }
 \arguments{
 \item{MS1}{peaklist of the MS function. Data frame with 3 columns: m.z, RT
@@ -30,6 +30,12 @@ contains the required data frames based on the default fragmentation rules.
 If these rules are modified, dbs may need to be changed. If data bases have
 been customized using \link{createLipidDB}, they also have to be modified
 here.}
+
+\item{rawData}{raw scans data. Output of \link{dataProcessing} function
+(MS1$rawData).}
+
+\item{coelCutoff}{coelution score threshold between parent and fragment ions.
+Only applied if rawData info is supplied.}
 }
 \value{
 Data frame with the found candidates. It contains 6 columns: m.z,
@@ -50,21 +56,23 @@ modified if required (see \link{adductsTable}).
 }
 \examples{
 \donttest{
-dbs <- list(cerdb = LipidMS::cerdb, adductsTable = LipidMS::adductsTable)
+dbs <- assignDB()
 
-findCandidates(MS1 = LipidMS::mix_neg_fullMS,
-db = dbs[["cerdb"]], ppm = 5, rt = c(min(MS1$RT), max(MS1$RT)),
-adducts = c("M-H", "M-H-H2O", "M+CH3COO"), rttol = 3, dbs)
+candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
+rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 
-#If any adduct is not in the adductsTable, it can be added:
+
+# If any adduct is not in the adductsTable, it can be added:
 
 adductsTable2 <- rbind(LipidMS::adductsTable,
-c(adduct = "M+HCOO", mdiff = 44.99820, n = 1, charge = -1))
-dbs <- list(cerdb = LipidMS::cerdb, adductsTable = adductsTable2)
+c(adduct = "M+HCOO", mdiff = 44.9982, n = 1, charge = -1))
+dbs <- assignDB()
+dbs$adductsTable <- adductsTable2
 
-findCandidates(MS1 = LipidMS::mix_neg_fullMS,
-db = dbs[["cerdb"]], ppm = 5, rt = c(min(MS1$RT), max(MS1$RT)),
-adducts = c("M-H", "M-H-H2O", "M+HCOO"), rttol = 3, dbs)
+candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H", "M+HCOO"),
+rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 }
 
 }

@@ -4,8 +4,7 @@
 \alias{crossTables}
 \title{Cross the original MS1 peaklist with the annotation results}
 \usage{
-crossTables(MS1, results, ppm = 5, rttol = 5,
-  adductsTable = LipidMS::adductsTable)
+crossTables(MS1, results, ppm = 10, rttol = 10, dbs)
 }
 \arguments{
 \item{MS1}{data frame cointaining all peaks from the full MS function. It
@@ -17,7 +16,10 @@ must have three columns: m.z, RT (in seconds) and int (intensity).}
 
 \item{rttol}{rt tolerance to match peaks in seconds.}
 
-\item{adductsTable}{data frame with the adducts to employ.}
+\item{dbs}{list of data bases required for annotation. By default, dbs
+contains the required data frames based on the default fragmentation rules.
+If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+and \link{assignDB}.}
 }
 \value{
 Data frame with 6 columns: m.z, RT, int, LipidMS_id, adduct and
@@ -28,10 +30,10 @@ same feature, they are sorted based on the annotation level.
 Cross the original MS1 peaklist with the annotation results.
 }
 \examples{
-\donttest{results <- idNEG(LipidMS::serum_neg_fullMS, LipidMS::serum_neg_Ce20,
-LipidMS::serum_neg_Ce40)
-crossTables(MS1 = LipidMS::serum_neg_fullMS, results = results$results,
-ppm = 10, rttol = 5, adductsTable = LipidMS::adductsTable)}
+\donttest{
+results <- idNEG(MS1 = MS1_neg, MSMS1 = MSMS1_neg, MSMS2 = MSMS2_neg)
+crossTables(MS1_neg$peaklist, results = results$results,
+ppm = 10, rttol = 10)}
 
 }
 \author{

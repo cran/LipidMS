@@ -4,68 +4,75 @@
 \alias{dataProcessing}
 \title{Process mzXML files: peakpicking and deisotoping}
 \usage{
-dataProcessing(file, msLevel, polarity, dmzgap = 50, drtgap = 25,
+dataProcessing(file, mslevel, polarity, dmzgap = 50, drtgap = 25,
   ppm = TRUE, minpeak, maxint = 1e+09, dmzdens, drtdens = 20,
-  merged = FALSE, drtsmall, drtfill = 20, drttotal = 200, recurs = 4,
-  weight, SB, SN = 2, minint, ended = 2, progbar = FALSE, from = FALSE,
-  to = FALSE)
+  merged = FALSE, drtsmall, drtfill = 5, drttotal = 100,
+  recurs = 4, weight, SB, SN = 2, minint, ended = 2,
+  removeIsotopes = TRUE)
 }
 \arguments{
-\item{file}{path of the mzXML input file}
+\item{file}{path of the mzXML input file.}
 
-\item{msLevel}{numeric value indicating if data belongs to level 1 (fullMS)
-or level 2 (MS/MS)}
+\item{mslevel}{numeric value indicating if data belongs to level 1 (fullMS)
+or level 2 (MS/MS).}
 
-\item{polarity}{character value: negative or positive}
+\item{polarity}{character value: negative or positive.}
 
 \item{dmzgap}{enviPick parameter. 50 by default.}
 
 \item{drtgap}{enviPick parameter. 25 by default.}
 
-\item{ppm}{enviPick parameter. TRUE by default.}
+\item{ppm}{logical value. TRUE if dmzdens was set in ppm and FALSE if it was
+in as an absolute value. TRUE by default.}
 
-\item{minpeak}{enviPick parameter. Optional. By default, 5 when msLevel = 1
-and 4 when msLevel = 2.}
+\item{minpeak}{minimum number of measurements required within the RT window
+of drtsmall. Optional. By default, 5 when mslevel = 1 and 4 when mslevel = 2.}
 
-\item{maxint}{enviPick parameter. 1E9 by default.}
+\item{maxint}{EIC cluster with measurements above this intensity are kept,
+even if they do not fulfill minpeak. 1E9 by default.}
 
-\item{dmzdens}{enviPick parameter. Optional. By default, 15 when msLevel = 1
-and 20 when msLevel = 2.}
+\item{dmzdens}{maximum measurement deviation (+/-) of m/z from its mean
+within each EIC. Optional. By default, 15 when mslevel = 1 and 30 when
+mslevel = 2.}
 
-\item{drtdens}{enviPick parameter. Optional. 20 by default.}
+\item{drtdens}{RT tolerance for clustering. Optional. 20 by default.}
 
-\item{merged}{enviPick parameter. FALSE by default.}
+\item{merged}{merge EIC cluster of comparable m/z. Logical. FALSE by default.}
 
-\item{drtsmall}{enviPick parameter. Optional. By default, 100 when
-msLevel = 1 and 20 when msLevel = 2.}
+\item{drtsmall}{peak definition - RT window of a peak. Optional. By default,
+100 when mslevel = 1 and 30 when mslevel = 2.}
 
-\item{drtfill}{enviPick parameter. 20 by default.}
+\item{drtfill}{maximum RT gap length to be filled. 5 by default.}
 
-\item{drttotal}{enviPick parameter. 200 by default.}
+\item{drttotal}{maximum RT length of a single peak. 100 by default.}
 
-\item{recurs}{enviPick parameter. 4 by default.}
+\item{recurs}{maximum number of peaks within one EIC. 3 by default.}
 
-\item{weight}{enviPick parameter. Optional. By default, 1 when msLevel = 1
-and 2 when msLevel = 2.}
+\item{weight}{weight for assigning measurements to a peak. Optional.
+By default, 1 when mslevel = 1 and 2 when mslevel = 2.}
 
-\item{SB}{enviPick parameter. Optional. By default, 3 when msLevel = 1
-and 2 when msLevel = 2.}
+\item{SB}{signal-to-base ratio. Optional. By default, 3 when mslevel = 1
+and 2 when mslevel = 2.}
 
-\item{SN}{enviPick parameter. 2 by default.}
+\item{SN}{signal-to-noise ratio. 2 by default.}
 
-\item{minint}{enviPick parameter. Optional. By default, 1000 when msLevel = 1
-and 100 when msLevel = 2.}
+\item{minint}{minimum intensity of a peakr. Optional. By default, 1000 when
+mslevel = 1 and 100 when mslevel = 2.}
 
-\item{ended}{enviPick parameter. 2 by default.}
+\item{ended}{within the peak detection recursion set by argument recurs,
+how often can a peak detection fail to end the recursion?. 2 by default.}
 
-\item{progbar}{enviPick parameter. FALSE by default.}
-
-\item{from}{enviPick parameter. FALSE by default.}
-
-\item{to}{enviPick parameter. FALSE by default.}
+\item{removeIsotopes}{logical. If TRUE, only isotopes identified as M+0, are
+kept when mslevel = 1, and M+0 or unknown when mslevel = 2. TRUE by default.
+If FALSE, an additional column is added to the peak list to inform about
+isotopes.}
 }
 \value{
-Data frame with 3 columns (m.z, RT and int) containing the peaklist.
+List with two data frames: peaklist, with 4 columns (m.z, RT, int,
+and peakID) and rawScan, with all the scans information in 5 columns (m.z,
+RT, int, peakID and Scan). PeakID columns links both data frames: extracted
+peaks and raw data. The Scan column indicates the scan number (order) to which
+each row of the rawScans data frame belong.
 }
 \description{
 Process mzXML files: peak-picking using enviPick and deisotoping
@@ -73,13 +80,12 @@ using CAMERA.
 }
 \details{
 This function executes 2 steps: 1) peak-picking using enviPick
-package and 2) it removes isotopes using CAMERA. If msLevel = 1, only ions
-with more than 1 isotope are kept.
+package and 2) it seaches isotopes using CAMERA. If mslevel = 1 and remove
+isotopes is set as TRUE, only ions with more than 1 isotope are kept.
 }
 \examples{
-
 \donttest{
-dataProcessing("input_file.mzXML", msLevel = 1, polarity = "positive")
+dataProcessing("input_file.mzXML", mslevel = 1, polarity = "positive")
 }
 
 }

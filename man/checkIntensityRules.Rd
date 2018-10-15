@@ -4,8 +4,7 @@
 \alias{checkIntensityRules}
 \title{Check intensity rules}
 \usage{
-checkIntensityRules(intrules, rates, intrequired, nchains, combinations, sn1,
-  sn2 = list(), sn3 = list(), sn4 = list())
+checkIntensityRules(intrules, rates, intrequired, nchains, combinations)
 }
 \arguments{
 \item{intrules}{character vector specifying the fragments to compare. See
@@ -20,18 +19,6 @@ If not, at least one must be verified to confirm the structure.}
 \item{nchains}{number of chains of the targeted lipid class.}
 
 \item{combinations}{output of \link{combineChains}.}
-
-\item{sn1}{list of chain fragments identified for sn1 position. Output of
-\link{chainFrags}.}
-
-\item{sn2}{list of chain fragments identified for sn2 position. Output of
-\link{chainFrags}. If required.}
-
-\item{sn3}{list of chain fragments identified for sn3 position. Output of
-\link{chainFrags}. If required.}
-
-\item{sn4}{list of chain fragments identified for sn4 position. Output of
-\link{chainFrags}. If required.}
 }
 \value{
 List of logical vectors  with the confirmation for each combination.
@@ -63,19 +50,21 @@ to define the position (i.e. sphingolipid species), just leave an empty vector.
 }
 \examples{
 \donttest{
-dbs <- list(pgdb = LipidMS::pgdb, lysopgdb = LipidMS::lysopgdb,
-fadb = LipidMS::fadb, adductsTable = LipidMS::adductsTable)
+dbs <- assignDB()
 
-candidates <- findCandidates(MS1 = LipidMS::mix_neg_fullMS, dbs[["pgdb"]],
-ppm = 10, rt = c(min(MS1$RT), max(MS1$RT)), adducts = c("M-H"),
-rttol = 3, dbs)
+candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
+rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 
-MSMS <- rbind(LipidMS::mix_neg_Ce20, LipidMS::mix_neg_Ce40)
-coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol)
+MSMS <- rbind(LipidMS::MSMS1_neg$peaklist, LipidMS::MSMS2_neg$peaklist)
+rawData <- rbind(LipidMS::MS1_neg$rawScans, LipidMS::MSMS1_neg$rawScans,
+LipidMS::MSMS2_neg$rawScans)
+coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
+coelCutoff = 0.8)
 
 sn1 <- chainFrags(coelfrags, chainfrags = c("lysopg_M-H"), ppm = 10,
 dbs = dbs)
-sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10, dbs)
+sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10, dbs = dbs)
 
 chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
 

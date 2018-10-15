@@ -20,6 +20,10 @@
 #' If these rules are modified, dbs may need to be changed. If data bases have
 #' been customized using \link{createLipidDB}, they also have to be modified
 #' here.
+#' @param rawData raw scans data. Output of \link{dataProcessing} function
+#' (MS1$rawData).
+#' @param coelCutoff coelution score threshold between parent and fragment ions.
+#' Only applied if rawData info is supplied.
 #'
 #' @return Data frame with the found candidates. It contains 6 columns: m.z,
 #' RT, int (from the peaklist data.frame), ppms, cb (total number of carbons and
@@ -34,45 +38,51 @@
 #'
 #' @examples
 #' \donttest{
-#' dbs <- list(cerdb = LipidMS::cerdb, adductsTable = LipidMS::adductsTable)
+#' dbs <- assignDB()
 #'
-#' findCandidates(MS1 = LipidMS::mix_neg_fullMS,
-#' db = dbs[["cerdb"]], ppm = 5, rt = c(min(MS1$RT), max(MS1$RT)),
-#' adducts = c("M-H", "M-H-H2O", "M+CH3COO"), rttol = 3, dbs)
+#' candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+#' db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
+#' rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 #'
-#' #If any adduct is not in the adductsTable, it can be added:
+#'
+#' # If any adduct is not in the adductsTable, it can be added:
 #'
 #' adductsTable2 <- rbind(LipidMS::adductsTable,
-#' c(adduct = "M+HCOO", mdiff = 44.99820, n = 1, charge = -1))
-#' dbs <- list(cerdb = LipidMS::cerdb, adductsTable = adductsTable2)
+#' c(adduct = "M+HCOO", mdiff = 44.9982, n = 1, charge = -1))
+#' dbs <- assignDB()
+#' dbs$adductsTable <- adductsTable2
 #'
-#' findCandidates(MS1 = LipidMS::mix_neg_fullMS,
-#' db = dbs[["cerdb"]], ppm = 5, rt = c(min(MS1$RT), max(MS1$RT)),
-#' adducts = c("M-H", "M-H-H2O", "M+HCOO"), rttol = 3, dbs)
+#' candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+#' db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H", "M+HCOO"),
+#' rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
-findCandidates <- function(MS1, db, ppm = 10, rt = c(min(MS1$RT), max(MS1$RT)),
-                           adducts, rttol = 3, dbs){
-  adductsTable <- dbs[["adductsTable"]]
+findCandidates <- function(MS1, db, ppm, rt,
+                            adducts, rttol = 3, dbs, rawData = data.frame(),
+                           coelCutoff = 0){
+  adductsTable <- dbs$adductsTable
   count <- 0
   candidates <- vector()
   for (i in 1:length(adducts)){
     ad <- adductsTable[adductsTable$adduct == adducts[i],]
-    prec <- findPrecursor(MS1, db, ppm, ad$mdiff, rt, ad$n, ad$charge)
+    prec <- findPrecursor(MS1, db, ppm, massdif = ad$mdiff, rt, ad$n, ad$charge)
     if (nrow(prec) > 0){
+      prec <- cbind(prec, adducts = as.vector(adducts[i]))
       if (count == 0){
-        candidates <- rbind(candidates, cbind(prec, adducts = adducts[i]))
+        candidates <- rbind(candidates, prec)
         count <- 1
       } else {
-        candidates <- joinAdducts(candidates, prec,
-                                  rttol, "", adducts[i])
+        candidates <- crossAdducts(df1 = candidates, df2 = prec, rttol = rttol,
+                                   rawData = rawData, coelCutoff = coelCutoff)
       }
     }
   }
+  rownames(candidates) <- c()
   if (is.vector(candidates)){
     return(data.frame())
   } else {
     return(candidates)
   }
 }
+

@@ -20,9 +20,10 @@ and the compound name.
 Obtain an inclusion list from the annotation results.
 }
 \examples{
-\donttest{results <- idPOS(LipidMS::serum_pos_fullMS, LipidMS::serum_pos_Ce20,
-LipidMS::serum_pos_Ce40)
-getInclusionList(results$results)}
+\donttest{
+results <- idPOS(LipidMS::MS1_neg, LipidMS::MSMS1_neg, LipidMS::MSMS2_neg)
+getInclusionList(results$results)
+}
 
 }
 \author{

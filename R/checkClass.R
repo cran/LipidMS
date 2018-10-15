@@ -54,25 +54,46 @@
 #'
 #' @examples
 #' \donttest{
-#' dbs <- list(pgdb = LipidMS::pgdb, lysopgdb = LipidMS::lysopgdb,
-#' fadb = LipidMS::fadb, adductsTable = LipidMS::adductsTable)
+#' dbs <- assignDB()
 #'
-#' candidates <- findCandidates(MS1 = LipidMS::mix_neg_fullMS, dbs[["pgdb"]],
-#' ppm = 10, rt = c(min(MS1$RT), max(MS1$RT)), adducts = c("M-H"),
-#' rttol = 3, dbs)
+#' candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+#' db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
+#' rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 #'
-#' MSMS <- rbind(LipidMS::mix_neg_Ce20, LipidMS::mix_neg_Ce40)
-#' coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol)
+#' MSMS <- rbind(LipidMS::MSMS1_neg$peaklist, LipidMS::MSMS2_neg$peaklist)
+#' rawData <- rbind(LipidMS::MS1_neg$rawScans, LipidMS::MSMS1_neg$rawScans,
+#' LipidMS::MSMS2_neg$rawScans)
+#' coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
+#' coelCutoff = 0.8)
 #'
-#' classConf <- checkClass(candidates, clfrags = c(227.0326, 209.022, 74.0359),
-#' clrequired = c(F, F, F, F), ftype = c("F", "F", "NL"), ppm_products = 10,
-#' dbs)
+#' classConf <- checkClass(candidates, coelfrags,
+#' clfrags = c(227.0326, 209.022, 74.0359), clrequisites = c(F, F, F, F),
+#' ftype = c("F", "F", "NL"), ppm = 10, dbs = dbs)
+#' }
+#' \donttest{
+#' dbs <- assignDB()
+#'
+#' candidates <- findCandidates(MS1 = LipidMS::MS1$peaktable,
+#' db = dbs$pgdb,
+#' ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
+#' rttol = 10, rawData = MS1$rawData, coelCutoff = 0.8)
+#'
+#' MSMS <- rbind(LipidMS::MSMS1$peaktable, LipidMS::MSMS2$peaktable)
+#' rawData <- rbind(LipidMS::MS1$rawData, LipidMS::MSMS1$rawData,
+#' LipidMS::MSMS2$rawData)
+#' coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
+#' coelCutoff = 0.8)
+#'
+#' classConf <- checkClass(candidates, coelfrags,
+#' clfrags = c(227.0326, 209.022, 74.0359), clrequisites = c(F, F, F, F),
+#' ftype = c("F", "F", "NL"), ppm = 10, dbs = dbs)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
 checkClass <- function(candidates, coelfrags, clfrags, ftype, clrequisites,
                        ppm = 10, dbs){
-  adductsTable <- dbs[["adductsTable"]]
+  adductsTable <- dbs$adductsTable
+  allfragments <- rep(list(data.frame()), nrow(candidates))
   if (length(clfrags) == 0){
     return(list(presence = matrix(), passed = rep("No class fragments",
                                                   nrow(candidates))))
@@ -80,30 +101,31 @@ checkClass <- function(candidates, coelfrags, clfrags, ftype, clrequisites,
     verified <- matrix(NA, ncol=length(clfrags), nrow = nrow(candidates))
     for (i in 1:length(clfrags)){
       if (ftype[i] == "F"){
-        isf <- unlist(lapply(coelfrags, function(x){
-          filtermsms(x$m.z, as.numeric(clfrags[i]), ppm)}))
-        verified[,i] <- isf
+        classf <- lapply(coelfrags, function(x){
+          filtermsms(x, as.numeric(clfrags[i]), ppm)})
+        verified[,i] <- unlist(lapply(classf, function(x) nrow(x) > 0))
+        allfragments <- Map(rbind, classf, allfragments)
       } else if (ftype[i] == "NL") {
-        isf <- vector()
+        classf <- list()
         for (c in 1:nrow(candidates)){
-          isf <- append(isf,
-                        filtermsms(coelfrags[[c]]$m.z,
-                                   candidates$m.z[c]-as.numeric(clfrags[i]),
-                                   ppm))
+          f <- filtermsms(coelfrags[[c]], candidates$m.z[c]-as.numeric(clfrags[i]), ppm)
+          classf[[c]] <- f
         }
-        verified[,i] <- isf
+        verified[,i] <- unlist(lapply(classf, function(x) nrow(x) > 0))
+        allfragments <- Map(rbind, classf, allfragments)
       } else if (ftype[i] == "BB"){
         db <- dbs[[paste(unlist(strsplit(clfrags[i], "_"))[1], "db", sep="")]]
         mdiff <- adductsTable[adductsTable$adduct ==
                                 unlist(strsplit(clfrags[i], "_"))[2], "mdiff"]
-        isf <- vector()
+        classf <- list()
         for (c in 1:nrow(candidates)){
-          isf <- append(isf,
-                        filtermsms(coelfrags[[c]]$m.z,
-                                   db$Mass[which(db$total == candidates$cb[c])]+
-                                     mdiff, ppm))
+          f <- filtermsms(coelfrags[[c]],
+                          db$Mass[which(db$total == candidates$cb[c])]+ mdiff,
+                          ppm)
+          classf[[c]] <- f
         }
-        verified[,i] <- isf
+        verified[,i] <- unlist(lapply(classf, function(x) nrow(x) > 0))
+        allfragments <- Map(rbind, classf, allfragments)
       }
     }
     if (any(clrequisites == T | clrequisites == "TRUE")){ # when there are required fragments, we check them
@@ -121,6 +143,11 @@ checkClass <- function(candidates, coelfrags, clfrags, ftype, clrequisites,
         passed[presence == T] = FALSE
       }
     }
-    return(list(presence = verified, passed = passed))
+    return(list(presence = verified, passed = passed, fragments = allfragments))
   }
 }
+
+
+
+
+

@@ -32,25 +32,26 @@ carbons and double bounds as the precursor.
 }
 \examples{
 \donttest{
-dbs <- list(pgdb = LipidMS::pgdb, lysopgdb = LipidMS::lysopgdb,
-fadb = LipidMS::fadb, adductsTable = LipidMS::adductsTable)
+dbs <- assignDB()
 
-candidates <- findCandidates(MS1 = LipidMS::mix_neg_fullMS, dbs[["pgdb"]],
-ppm = 10, rt = c(min(MS1$RT), max(MS1$RT)), adducts = c("M-H"),
-rttol = 3, dbs)
+candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
+rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 
-MSMS <- rbind(LipidMS::mix_neg_Ce20, LipidMS::mix_neg_Ce40)
-coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol)
-
-classConf <- checkClass(candidates, clfrags = c(227.0326, 209.022, 74.0359),
-clrequired = c(F, F, F, F), ftype = c("F", "F", "NL"), ppm_products = 10,
-dbs)
+MSMS <- rbind(LipidMS::MSMS1_neg$peaklist, LipidMS::MSMS2_neg$peaklist)
+rawData <- rbind(LipidMS::MS1_neg$rawScans, LipidMS::MSMS1_neg$rawScans,
+LipidMS::MSMS2_neg$rawScans)
+coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
+coelCutoff = 0.8)
 
 sn1 <- chainFrags(coelfrags, chainfrags = c("lysopg_M-H"), ppm = 10,
 dbs = dbs)
-sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10, dbs)
+sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10, dbs = dbs)
 
 chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
+
+intConf <- checkIntensityRules(intrules = c("lysopg_sn1/lysopg_sn1"),
+rates = c("2/1"), intrequired = c(T), nchains=2, chainsComb, sn1, sn2)
 }
 
 }

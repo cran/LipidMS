@@ -11,9 +11,10 @@
 #' and the compound name.
 #'
 #' @examples
-#' \donttest{results <- idPOS(LipidMS::serum_pos_fullMS, LipidMS::serum_pos_Ce20,
-#' LipidMS::serum_pos_Ce40)
-#' getInclusionList(results$results)}
+#' \donttest{
+#' results <- idPOS(LipidMS::MS1_neg, LipidMS::MSMS1_neg, LipidMS::MSMS2_neg)
+#' getInclusionList(results$results)
+#' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
 getInclusionList <- function(results, adductsTable = LipidMS::adductsTable){
@@ -51,5 +52,6 @@ getInclusionList <- function(results, adductsTable = LipidMS::adductsTable){
     }
   }
   colnames(inclusionList) <- c("Formula", "RT", "Mn", "m.z", "Adduct", "Name")
+  inclusionList <- unique(inclusionList)
   return(inclusionList)
 }

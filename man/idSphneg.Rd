@@ -4,22 +4,35 @@
 \alias{idSphneg}
 \title{Sphingoid bases (Sph) annotation for ESI-}
 \usage{
-idSphneg(MS1, MSMS1, MSMS2 = data.frame(), ppm_precursor = 5,
-  ppm_products = 10, rttol = 3, rt = c(min(MS1$RT), max(MS1$RT)),
-  adducts = c("M-H"), clfrags = c(), clrequired = c(), ftype = c(),
-  chainfrags_sn1 = c("sph_M-H-H20", "sph_M-H-2H2O"), dbs = list(sphdb =
-  LipidMS::sphdb, adductsTable = LipidMS::adductsTable))
+idSphneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
+  rttol = 3, rt, adducts = c("M-H"), clfrags = c("sph_M-H-H2O",
+  "sph_M-H-2H2O"), clrequired = c(F, F), ftype = c("BB", "BB"),
+  coelCutoff = 0.8, dbs)
 }
 \arguments{
-\item{MS1}{data frame cointaining all peaks from the full MS function. It
-must have three columns: m.z, RT (in seconds) and int (intensity).}
+\item{MS1}{list with two data frames cointaining all peaks from the full MS
+function ("peaklist" data frame) and the raw MS scans data ("rawScans" data
+frame). They must have four columns: m.z, RT (in seconds), int (intensity)
+and peakID (link between both data frames). "rawScans" data frame also needs
+a extra column named "Scan", which indicates the scan order number. Output
+of \link{dataProcessing} function. In case no coelution score needs to be
+applied, this argument can be just the peaklist data frame.}
 
-\item{MSMS1}{data frame cointaining all peaks from the low energy function.
-It must have three columns: m.z, RT and int.}
+\item{MSMS1}{list with two data frames cointaining all peaks from the high
+energy function ("peaklist" data frame) and the raw MS scans data ("rawScans"
+data frame). They must have four columns: m.z, RT (in seconds), int (intensity)
+and peakID (link between both data frames). "rawScans" data frame also needs
+a extra column named "Scan", which indicates the scan order number. Output
+of \link{dataProcessing} function. In case no coelution score needs to be
+applied, this argument can be just the peaklist data frame.}
 
-\item{MSMS2}{data frame cointaining all peaks from the high energy
-function if it is the case. It must have three columns: m.z, RT and int.
-Optional.}
+\item{MSMS2}{list with two data frames cointaining all peaks from a second high
+energy function ("peaklist" data frame) and the raw MS scans data ("rawScans"
+data frame). They must have four columns: m.z, RT (in seconds), int (intensity)
+and peakID (link between both data frames). "rawScans" data frame also needs
+a extra column named "Scan", which indicates the scan order number. Output
+of \link{dataProcessing} function. In case no coelution score needs to be
+applied, this argument can be just the peaklist data frame. Optional.}
 
 \item{ppm_precursor}{mass tolerance for precursor ions. By default, 5 ppm.}
 
@@ -45,14 +58,13 @@ present within the coeluting fragments. See \link{checkClass} for details.}
 It can be: "F" (fragment), "NL" (neutral loss) or "BB" (building block).
 See \link{checkClass} for details.}
 
-\item{chainfrags_sn1}{character vector containing the fragmentation rules for
-the chain fragments. See \link{chainFrags} for details.}
+\item{coelCutoff}{coelution score threshold between parent and fragment ions.
+Only applied if rawData info is supplied. By default, 0.8.}
 
 \item{dbs}{list of data bases required for annotation. By default, dbs
 contains the required data frames based on the default fragmentation rules.
-If these rules are modified, dbs may need to be changed. If data bases have
-been customized using \link{createLipidDB}, they also have to be modified
-here.}
+If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+and \link{assignDB}.}
 }
 \value{
 List with Sph annotations (results) and some additional information
@@ -63,16 +75,17 @@ Sph identification based on fragmentation patterns for LC-MS/MS
 AIF data acquired in negative mode.
 }
 \details{
-\code{idSphneg} function involves 3 steps. 1) FullMS-based
-identification of candidate Sph as M-H. 2) Search of Sph class fragments in
-case some is defined. 3) Search of specific fragments that confirm chain
-composition (neutral loss of 1 or 2 H2O molecules).
+\code{idSphneg} function involves 2 steps. 1) FullMS-based
+identification of candidate Sph as M-H. 2) Search of Sph class fragments:
+neutral loss of 1 or 2 H2O molecules.
 
 Results data frame shows: ID, class of lipid, CDB (total number
 of carbons and double bounds), FA composition (specific chains composition if
 it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
-case, as Sph only have one chain, only Subclass and FA level are possible).
+case, as Sph only have one chain, only Subclass and FA level are possible)
+and PFCS (parent-fragment coelution score mean of all fragments used
+for the identification).
 }
 \note{
 Isotopes should be removed before identification to avoid false
@@ -82,11 +95,10 @@ two different platforms (QTOF 6550 from Agilent and Sinapt G2-Si from Waters),
 but it may need to be customized for other platforms or acquisition settings.
 }
 \examples{
-idSphneg(MS1 = LipidMS::mix_neg_fullMS, MSMS1 = LipidMS::mix_neg_Ce20,
-MSMS2 = LipidMS::mix_neg_Ce40)
-
-idSphneg(MS1 = LipidMS::serum_neg_fullMS, MSMS1 = LipidMS::serum_neg_Ce20,
-MSMS2 = LipidMS::serum_neg_Ce40)
+\donttest{
+idSphneg(MS1 = LipidMS::MS1_neg, MSMS1 = LipidMS:MSMS1_neg,
+MSMS2 = LipidMS::MSMS2_neg)
+}
 
 }
 \author{

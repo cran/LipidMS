@@ -5,32 +5,53 @@
 #' within a rt windows. It is used by identification functions to extract
 #' coeluting fragments from high energy functions for candidate precursor ions.
 #'
-#' @param rt numeric vector indicating candidates RT. This information comes
-#' from the output of \link{findCandidates} (candidates$RT).
-#' @param df data frame containing the peaks to subset (MSMS).
+#' @param precursors candidates data frame. Output of \link{findCandidates}.
+#' @param products peaklist for MS2 function (MSMS).
 #' @param rttol rt window in seconds.
+#' @param rawData raw scans data. Output of \link{dataProcessing} function
+#' (MSMS$rawData).
+#' @param coelCutoff coelution score threshold between parent and fragment ions.
+#' Only applied if rawData info is supplied.
 #'
 #' @return List of data frames with the coeluting fragments for each candidate.
 #'
 #' @examples
 #' \donttest{
-#' dbs <- list(pgdb = LipidMS::pgdb, lysopgdb = LipidMS::lysopgdb,
-#' fadb = LipidMS::fadb, adductsTable = LipidMS::adductsTable)
+#' dbs <- assignDB()
 #'
-#' candidates <- findCandidates(MS1 = LipidMS::mix_neg_fullMS, dbs[["pgdb"]],
-#' ppm = 10, rt = c(min(MS1$RT), max(MS1$RT)), adducts = c("M-H"),
-#' rttol = 3, dbs)
+#' candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+#' db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
+#' rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 #'
-#' MSMS <- rbind(LipidMS::mix_neg_Ce20, LipidMS::mix_neg_Ce40)
-#' coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol)
+#' MSMS <- rbind(LipidMS::MSMS1_neg$peaklist, LipidMS::MSMS2_neg$peaklist)
+#' rawData <- rbind(LipidMS::MS1_neg$rawScans, LipidMS::MSMS1_neg$rawScans,
+#' LipidMS::MSMS2_neg$rawScans)
+#' coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
+#' coelCutoff = 0.8)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
-coelutingFrags <- function(rt, df, rttol){
-  psubset <- lapply(rt, function(x){
-    peaks <- which(df[,"RT"] <= x+(rttol/2) & df[,"RT"] >= x-(rttol/2))
-    df2 <- df[peaks, c("m.z", "int", "RT")]
-    return(df2)
+coelutingFrags <- function(precursors, products, rttol, rawData = data.frame(),
+                           coelCutoff = 0){
+  psubset <- apply(precursors, 1, function(x){
+    peaks <- which(products[,"RT"] <= as.numeric(x["RT"])+(rttol/2) & products[,"RT"] >=
+                     as.numeric(x["RT"])-(rttol/2))
+    if(length(peaks) > 0){
+      df <- products[peaks,]
+      scores <- coelutionScore(as.character(x["peakID"]), df$peakID, rawData)
+      df$coelScore <- scores
+      df <- df[scores >= coelCutoff,]
+      return(df)
+    } else {
+      return(data.frame())
+    }
   })
-  return(psubset)
+  coelfrags <- lapply(psubset, function(x) {
+    if (nrow(x) > 0){
+      x <- x[!is.na(x$m.z),]
+    }
+  })
+  return(coelfrags)
 }
+
+

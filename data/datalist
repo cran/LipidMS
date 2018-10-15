@@ -1,4 +1,10 @@
 CEdb
+MS1_neg
+MS1_pos
+MSMS1_neg
+MSMS1_pos
+MSMS2_neg
+MSMS2_pos
 adductsTable
 baconjdb
 badb
@@ -17,12 +23,6 @@ lysopgdb
 lysopidb
 lysopsdb
 mgdb
-mix_neg_Ce20
-mix_neg_Ce40
-mix_neg_fullMS
-mix_pos_Ce20
-mix_pos_Ce40
-mix_pos_fullMS
 nlsphdb
 padb
 pcdb
@@ -30,12 +30,6 @@ pedb
 pgdb
 pidb
 psdb
-serum_neg_Ce20
-serum_neg_Ce40
-serum_neg_fullMS
-serum_pos_Ce20
-serum_pos_Ce40
-serum_pos_fullMS
 smdb
 sphPdb
 sphdb

@@ -4,47 +4,55 @@
 #' Process mzXML files: peak-picking using enviPick and deisotoping
 #' using CAMERA.
 #'
-#' @param file path of the mzXML input file
-#' @param msLevel numeric value indicating if data belongs to level 1 (fullMS)
-#' or level 2 (MS/MS)
-#' @param polarity character value: negative or positive
+#' @param file path of the mzXML input file.
+#' @param mslevel numeric value indicating if data belongs to level 1 (fullMS)
+#' or level 2 (MS/MS).
+#' @param polarity character value: negative or positive.
 #' @param dmzgap enviPick parameter. 50 by default.
 #' @param drtgap enviPick parameter. 25 by default.
-#' @param ppm enviPick parameter. TRUE by default.
-#' @param minpeak enviPick parameter. Optional. By default, 5 when msLevel = 1
-#' and 4 when msLevel = 2.
-#' @param maxint enviPick parameter. 1E9 by default.
-#' @param dmzdens enviPick parameter. Optional. By default, 15 when msLevel = 1
-#' and 20 when msLevel = 2.
-#' @param drtdens enviPick parameter. Optional. 20 by default.
-#' @param merged enviPick parameter. FALSE by default.
-#' @param drtsmall enviPick parameter. Optional. By default, 100 when
-#' msLevel = 1 and 20 when msLevel = 2.
-#' @param drtfill enviPick parameter. 20 by default.
-#' @param drttotal enviPick parameter. 200 by default.
-#' @param recurs enviPick parameter. 4 by default.
-#' @param weight enviPick parameter. Optional. By default, 1 when msLevel = 1
-#' and 2 when msLevel = 2.
-#' @param SB enviPick parameter. Optional. By default, 3 when msLevel = 1
-#' and 2 when msLevel = 2.
-#' @param SN enviPick parameter. 2 by default.
-#' @param minint enviPick parameter. Optional. By default, 1000 when msLevel = 1
-#' and 100 when msLevel = 2.
-#' @param ended enviPick parameter. 2 by default.
-#' @param progbar enviPick parameter. FALSE by default.
-#' @param from enviPick parameter. FALSE by default.
-#' @param to enviPick parameter. FALSE by default.
+#' @param ppm logical value. TRUE if dmzdens was set in ppm and FALSE if it was
+#' in as an absolute value. TRUE by default.
+#' @param minpeak minimum number of measurements required within the RT window
+#' of drtsmall. Optional. By default, 5 when mslevel = 1 and 4 when mslevel = 2.
+#' @param maxint EIC cluster with measurements above this intensity are kept,
+#' even if they do not fulfill minpeak. 1E9 by default.
+#' @param dmzdens maximum measurement deviation (+/-) of m/z from its mean
+#' within each EIC. Optional. By default, 15 when mslevel = 1 and 30 when
+#' mslevel = 2.
+#' @param drtdens RT tolerance for clustering. Optional. 20 by default.
+#' @param merged merge EIC cluster of comparable m/z. Logical. FALSE by default.
+#' @param drtsmall peak definition - RT window of a peak. Optional. By default,
+#' 100 when mslevel = 1 and 30 when mslevel = 2.
+#' @param drtfill maximum RT gap length to be filled. 5 by default.
+#' @param drttotal maximum RT length of a single peak. 100 by default.
+#' @param recurs maximum number of peaks within one EIC. 3 by default.
+#' @param weight weight for assigning measurements to a peak. Optional.
+#' By default, 1 when mslevel = 1 and 2 when mslevel = 2.
+#' @param SB signal-to-base ratio. Optional. By default, 3 when mslevel = 1
+#' and 2 when mslevel = 2.
+#' @param SN signal-to-noise ratio. 2 by default.
+#' @param minint minimum intensity of a peakr. Optional. By default, 1000 when
+#' mslevel = 1 and 100 when mslevel = 2.
+#' @param ended within the peak detection recursion set by argument recurs,
+#' how often can a peak detection fail to end the recursion?. 2 by default.
+#' @param removeIsotopes logical. If TRUE, only isotopes identified as M+0, are
+#' kept when mslevel = 1, and M+0 or unknown when mslevel = 2. TRUE by default.
+#' If FALSE, an additional column is added to the peak list to inform about
+#' isotopes.
 #'
-#' @return Data frame with 3 columns (m.z, RT and int) containing the peaklist.
+#' @return List with two data frames: peaklist, with 4 columns (m.z, RT, int,
+#' and peakID) and rawScan, with all the scans information in 5 columns (m.z,
+#' RT, int, peakID and Scan). PeakID columns links both data frames: extracted
+#' peaks and raw data. The Scan column indicates the scan number (order) to which
+#' each row of the rawScans data frame belong.
 #'
 #' @details This function executes 2 steps: 1) peak-picking using enviPick
-#' package and 2) it removes isotopes using CAMERA. If msLevel = 1, only ions
-#' with more than 1 isotope are kept.
+#' package and 2) it seaches isotopes using CAMERA. If mslevel = 1 and remove
+#' isotopes is set as TRUE, only ions with more than 1 isotope are kept.
 #'
 #' @examples
-#'
 #' \donttest{
-#' dataProcessing("input_file.mzXML", msLevel = 1, polarity = "positive")
+#' dataProcessing("input_file.mzXML", mslevel = 1, polarity = "positive")
 #' }
 #'
 #' @references https://cran.r-project.org/web/packages/enviPick/index.html
@@ -55,86 +63,100 @@
 #' pp. 283-289. htto://pubs.acs.org/doi/abs/10.1021/ac202450g.
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
-dataProcessing <- function(file, msLevel, polarity, dmzgap = 50, drtgap = 25,
+dataProcessing <- function(file, mslevel, polarity, dmzgap = 50, drtgap = 25,
                            ppm = TRUE, minpeak, maxint = 1E9, dmzdens, drtdens = 20,
-                           merged = FALSE, drtsmall, drtfill = 20, drttotal = 200,
+                           merged = FALSE, drtsmall, drtfill = 5, drttotal = 100,
                            recurs = 4, weight, SB, SN = 2, minint, ended = 2,
-                           progbar = FALSE, from = FALSE, to = FALSE){
-  if (!msLevel %in% c(1, 2)){
-    stop("msLevel must be 1 or 2")
+                           removeIsotopes = TRUE){
+  if (!mslevel %in% c(1, 2)){
+    stop("mslevel must be 1 or 2")
   }
   if (!polarity %in% c("positive", "negative")){
     stop("polarity must be positive or negative")
   }
   if (file.exists(file)){
     if(missing(minpeak)){
-      if (msLevel == 1){
+      if (mslevel == 1){
         minpeak <- 5
       } else {
-        minpeak <- 4
+        minpeak <- 3
       }
     }
     if(missing(dmzdens)){
-      if (msLevel == 1){
+      if (mslevel == 1){
         dmzdens <- 15
       } else {
-        dmzdens <- 20
+        dmzdens <- 30
       }
     }
     if(missing(minint)){
-      if (msLevel == 1){
+      if (mslevel == 1){
         minint <- 1000
       } else {
         minint <- 100
       }
     }
     if(missing(weight)){
-      if (msLevel == 1){
+      if (mslevel == 1){
         weight <- 2
       } else {
         weight <- 1
       }
     }
     if(missing(SB)){
-      if (msLevel == 1){
+      if (mslevel == 1){
         SB <- 3
       } else {
         SB <- 2
       }
     }
     if(missing(drtsmall)){
-      if (msLevel == 1){
+      if (mslevel == 1){
         drtsmall <- 100
       } else {
-        drtsmall <- 20
+        drtsmall <- 30
       }
     }
     # peakPicking
     MSlist <- enviPick::readMSdata(file, MSlevel=1)
     MSlist <- enviPick::mzagglom(MSlist, dmzgap = dmzgap, ppm = ppm,
-      drtgap = drtgap, minpeak = minpeak, maxint = maxint)
+                                 drtgap = drtgap, minpeak = minpeak,
+                                 maxint = maxint)
     MSlist <- enviPick::mzclust(MSlist, dmzdens = dmzdens, ppm = ppm,
-      drtdens = drtdens, minpeak = minpeak, merged = merged)
+                                drtdens = drtdens, minpeak = minpeak,
+                                merged = merged)
     MSlist <- enviPick::mzpick(MSlist, minpeak = minpeak, drtsmall = drtsmall,
-      drtfill = drtfill, drttotal = drttotal, recurs = recurs, weight = weight,
-      SB = SB, SN = SN, minint = minint, maxint = maxint, ended = ended,
-      progbar = progbar, from = from, to = to)
-  # deisotope
-  ## search isotopes
-  sample <- makexcmsSet(MSlist, files=file, pD="data",
-    polarity=polarity)
-  sa <- CAMERA::xsAnnotate(sample, polarity=polarity)
-  saF <- CAMERA::groupFWHM(sa, perfwhm = 0.8)
-  saFI <- CAMERA::findIsotopes(saF, mzabs = 0.01, ppm = dmzdens)
-  peaklist <- CAMERA::getPeaklist(saFI)
-  ## remove isotopes
-  M <- grepl("\\[M\\]\\+|\\[M\\]-", peaklist$isotopes)
-  if (msLevel != 1){
-    M <- grepl("\\[M\\]\\+|\\[M\\]-|^$", peaklist$isotopes)
-  }
-  peaks <- peaklist[M, c("mz", "rt", "into")]
-  colnames(peaks) <- c("m.z", "RT", "int")
-  return(peaks)
+                               drtfill = drtfill, drttotal = drttotal,
+                               recurs = recurs, weight = weight,
+                               SB = SB, SN = SN, minint = minint, maxint = maxint,
+                               ended = ended)
+    # deisotope
+    ## search isotopes
+    sample <- makexcmsSet(MSlist, files=file, pD="data",
+                          polarity=polarity)
+    sa <- CAMERA::xsAnnotate(sample, polarity=polarity)
+    saF <- CAMERA::groupFWHM(sa, perfwhm = 1)
+    saFI <- CAMERA::findIsotopes(saF, mzabs = 0.01, ppm = 10)
+    peaklist <- CAMERA::getPeaklist(saFI)
+
+    peaklist <- peaklist[, c("mz", "rt", "into", "isotopes")]
+    peaklist$peakID <- MSlist$Peaklist[,"peak_ID"]
+    colnames(peaklist) <- c("m.z", "RT", "int", "isotopes", "peakID")
+    if (removeIsotopes == TRUE){
+      ## remove isotopes
+      if (mslevel != 1){
+        M <- grepl("\\[M\\]\\+|\\[M\\]-|^$", peaklist$isotopes)
+      } else {
+        M <- grepl("\\[M\\]\\+|\\[M\\]-", peaklist$isotopes)
+      }
+      peaklist <- peaklist[M, c("m.z", "RT", "int", "peakID")]
+    }
+    rawScans <- data.frame(MSlist$Scans[[2]][,c("m/z", "RT", "intensity", "peakID")],
+                           stringsAsFactors = F)
+    rawScans$Scan <- as.numeric(as.factor(rawScans$RT))
+    rawScans <- rawScans[rawScans$peakID %in% peaklist$peakID,]
+    colnames(rawScans) <- c("m.z", "RT", "int", "peakID", "Scan")
+    return(list(peaklist = peaklist, rawScans = rawScans))
   } else {
     stop("The file doesn't exist!")
   }

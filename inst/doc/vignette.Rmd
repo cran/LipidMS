@@ -1,0 +1,407 @@
+---
+title: "LipidMS workflow"
+author: "M Isabel Alcoriza"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.cap = TRUE
+)
+```
+
+LipidMS is an R-package aimed to confidently identify lipid species in 
+untargeted LC-DIA-MS. It combines a set of fragmentation and intensity rules 
+with a parent and fragment co-elution score PFCS), which is calculated in 
+predefined retention time windows. Depending on the MS evidence reached by the 
+identification function survey, LipidMS provides three levels of structural 
+annotations: i) subclass level, e.g., PG(34:1); ii) fatty acyl level, e.g., 
+PG(16:0_18:1); and iii) fatty acyl position level, e.g., PG(16:0/18:1).
+
+
+## LipidMS Overview
+
+LipidMS annotation is based on coelution between parent and daughter ions, 
+what means that peaks coming for the same molecule will have the same retention 
+time (RT) and a good coelution score (based on Pearson correlation). As a 
+general rule, parent ions will be found when no collision energy 
+is applied, while fragment ions will be found when it is. Each lipid class has 
+characteristic ionization and fragmentation properties that allow to filter 
+informative fragments among all coeluting ions to reconstruct the 
+parent's structure. Next figure summarizes the basics of LipidMS.
+
+
+<img src="abstract.png" width="650">
+
+
+To execute identification functions, LipidMS needs a named list of two 
+data frames (peaklist and rawScans) for each collision energy applied. First data 
+frame need to have 4 columns: m.z, RT (in seconds by default), int (peak 
+intensity) and peakID, while the second one requires an extra column named Scan,
+which will inform about the scan (order) to which each observation belongs. The 
+first data frame contains peak extracted information and the second, the raw 
+data for each MS scan. These data are used to define parent and fragment peaks 
+in order to calculate the PFCS for each lipid identification in a determined RT 
+window.
+
+We propose to convert vendor files to mzXML format, split them by collision 
+energy (CE) and then, process these files separately using LipidMS 
+(dataProcessing function) or any other package/software to obtain the required 
+tables.
+
+In case other software is employed for processing and raw scans data are not 
+available or no coelution score wants to be applied, just the peak table data 
+frame for each MS function have to be provided. The coelution score calculation 
+may take long times of computation, but results improve substantially.
+
+## Files convertion
+
+After MS acquisition using MSe/All ions/DIA mode, we have to get one peak table 
+for each collision energy employed. As most peak picking tools handle only MS1 
+as input and do not allow to treat different CE separately, we propose to obtain 
+as many files as different CE and process them individually as if they were MS1. 
+
+Vendor files can be converted to mzXML format using MSConvert (proteowizard), 
+but their separation by CE is platform-dependent. When CE information is kept in 
+the mzXML files (i.e. convertion from .d files from Agilent), they can be split 
+using the `sepByCE` function.
+
+```{r, echo=T, eval=F}
+library(LipidMS)
+sepByCE(input = "mix_pos.mzXML",  output = "mix_pos_sep")
+
+# to convert a batch of files you can use the following code:
+files <- dir()[grepl(".mzXML", dir())]
+outputs <- unlist(lapply(sapply(files, strsplit, ".mzXML"), "[[", 1))
+outputs <- paste(outputs, "_sep", sep="")
+mapply(sepByCE, files, outputs)
+```
+
+
+Otherwise, if CE information is not kept in the mzXML file, alternative 
+procedures will have to been followed. Here we show an example for .raw files 
+from a Waters Synapt G2-Si Q-TOF. In this case, no CE information is obtained 
+when converting to mzXML format, and lockspray scans are mixed with MS1 and MS2
+functions. We propose to 1) remove lockspray function files (three files in 
+total), 2) convert to mzXML, where MS1 and MS2 scans will be alternative, and
+3) separate mzXML files. The following code can be employed to save time.
+
+```{r, echo=T, eval=F}
+## 1) remove lockspray function
+
+# first, you will need to set your working directory where all you raw files are saved. Then run the following code:
+
+folders <- dir()[grepl("raw", dir())]
+
+for (f in folders){
+  files <- dir(f)
+  unlink(paste(f, files[grep("FUNC003", files)], sep = "/"))
+}
+
+
+## 2) convert to mzXML format using MSConvert
+
+## 3) separate mzXML files
+
+files <- dir()
+files <- files[grep(".mzXML", files)]
+outputs <- paste(unlist(sapply(files, strsplit, ".mzXML")), "_sep", sep="")
+
+for (f in 1:length(files)){
+  nCE <- 2  ## change if you have more than 2 remaining functions after removing lockspray
+  lines <- readLines(files[f])
+  scans <- grep("    <scan num", lines)
+  length(scans)
+  runs <- grep("</msRun>", lines)
+  for (i in 1:nCE){
+    pos <- seq(i,length(scans), nCE)
+    lines2write <- c(1:(scans[1]-1))
+    for (x in pos[1:length(pos)-1]){
+      if (x == scans[length(scans)]){
+        lines2write <- append(lines2write, c(scans[x]:c(runs-1)))
+      } else {
+        lines2write <- append(lines2write, c(scans[x]:(scans[x+1]-1)))
+      }
+    }
+    lines2write <- append(lines2write, c(runs:length(lines)))
+    write(lines[lines2write], file=paste(c(outputs[f], as.character(i), ".mzXML"),
+                                         collapse=""))
+  }
+}
+
+```
+
+
+## Data Processing
+
+Once all files have been obtained, peak picking and deisotoping have to been 
+performed. This can be done using dataProcessing function from LipidMS, which 
+requires enviPick and CAMERA packages, or any other software/package. For 
+further details see `help(dataProcessing, package = "LipidMS")`.
+
+```{r, echo=T, eval=F}
+ms1 <- dir()[grepl("fullMS.mzXML", dir())] #fullMS or any other nomenclature employed for MS1
+ms2 <- dir()[grepl("sep40.mzXML"), dir()] #sep40 or any other nomenclature employed for MS2
+data_ms1 <- sapply(ms1, dataProcessing, msLevel = 1, polarity = "positive")
+data_ms2 <- sapply(ms2, dataProcessing, msLevel = 2, polarity = "positive")
+head(data_ms1[[1]]$peaklist)
+head(data_ms1[[1]]$rawScans)
+```
+
+This function will return a list with two data frames (peaklist and rawScans) 
+for each file.
+ 
+
+## Lipid Annotation
+
+LipidMS contains a total of 32 functions aimed to annotate lipid species:
+30 class and polarity-specific functions (i.e. idPGneg) and two general 
+functions (idPOS and idNEG) for ESI+ and ESI+, respectively. Class-specific 
+functions allow to customize fragmentation rules, while general identification 
+functions execute all functions for a given polarity sequentially using the 
+predefined rules.
+
+### General annotation functions
+
+If predefined fragmentation rules are convenient for your analysis, the easiest 
+way to run the annotation step is to use idPOS or idNEG for ESI+ or ESI- data, 
+respectively. This two functions will run all class-specific functions for the
+given polarity. The output will be a list with two data frames: the results 
+table, which contains information for each annotated lipid, and the 
+annotatedPeaklist table, which links the original MS1 data and the results table, 
+and provides information for each feature.
+
+```{r, echo=T, eval=F}
+pos_res <- idPOS(MS1 = data_ms1[[1]], MSMS1 = data_ms2[[1]], ppm_precursor = 10, 
+                 ppm_products = 10, rttol = 10, coelCutoff = 0.8)
+```
+
+Then, you can use `pos_res$results` and `pos_res$annotatedPeaklist` to see the 
+results.
+
+
+### Class-specific annotation functions
+
+A more customizable option is to use the class-specific functions for lipid
+identification. These functions allow you to change fragmentation and intensity 
+rules. In addition, they provide more detailed information about 
+the fragments found for each identified lipid. For further information see the 
+documentation page for each function.
+
+```{r, echo=T, eval=F}
+MS1 <- data_ms1[[1]] # CE = 0
+MSMS1 <- data_ms2[[1]] # CE > 0
+ppm_precursor <- 10
+ppm_products <- 10
+rttol <- 10
+dbs <- assignDB()
+
+# example code for idPEpos function
+pe <- idPEpos(MS1 = MS1, MSMS1 = MSMS1, 
+          ppm_precursor = ppm_precursor, 
+          ppm_products = ppm_products, rttol = 6, 
+          chainfrags_sn1 = c("mg_M+H-H2O", "lysope_M+H-H2O"), 
+          chainfrags_sn2 = c("fa_M+H-H2O", "mg_M+H-H2O"),
+          intrules = c("mg_sn1/mg_sn2", "lysope_sn1/lysope_sn2"), 
+          rates = c("3/1", "3/1"), intrequired = c(T),
+          dbs = dbs, coelCutoff = 0.8)
+
+# additional information about how to change rules is given in the documentation 
+# of the following functions: chainFrags , checkClass, checkIntensityRules, 
+# coelutingFrag, combineChains and organizeResults. These functions could be also
+# empoyed to build customized identification functions.
+```
+
+
+The output of these functions is a list with sevaral data frames that contain:
+annotation results of lipids supported by fragments in MS2 (`pe$results`), 
+all feasible candidates for the given lipid class based only on MS1 
+(`pe$candidates`), class-specific fragments found (`pe$classfragments`) and 
+chain-specific fragments (`pe$chainfragments`).
+
+To obtain similar tables than the ones obtained with idPOS, you can run the 
+following code:
+
+```{r, echo=T, eval=F}
+MS1 <- data_ms1[[1]] # CE = 0
+MSMS1 <- data_ms2[[1]] # CE > 0
+ppm_precursor <- 10
+ppm_products <- 10
+rttol <- 10
+
+# example to customize several id functions
+results <- vector()
+results <- rbind(results, idLPCpos(MS1 = MS1, MSMS1 = MSMS1, 
+          ppm_precursor = ppm_precursor, 
+          ppm_products = ppm_products, rttol = rttol)$results)
+results <- rbind(results, idLPEpos(MS1 = MS1, MSMS1 = MSMS1,
+          ppm_precursor = ppm_precursor, 
+          ppm_products = ppm_products, rttol = rttol)$results)
+# in this case you should add the rest of functions for annotation in ESI+
+
+# Once you have the complete results table, you can cross it with the MS1 original peak table.
+annotatedPeaklist <- crossTables(MS1, results, ppm_precursor, rttol)
+
+
+# To see results:
+View(results)
+View(annotatedPeaklist)
+
+# if you want to see just the features annotated by LipidMS:
+View(annotatedPeaklist[annotatedPeaklist$LipidMS_id != "",])
+```
+
+
+
+## High customization of LipidMS
+
+### Data bases
+
+By default, LipidMS data bases (for each lipid class), are based on the 
+combination of the following chain building blocks: 30 fatty acyl chains and 4 
+sphingoid bases, which were selected based on their biological relevance.
+If you want to add or remove any of the building blocks, `createLipidDB` function
+can be employed to rebuild the data bases of interest.
+
+```{r, echo=T, eval=F}
+fas <- c("8:0", "10:0", "12:0", "14:0", "14:1", "15:0", "16:0", "16:1",
+"17:0", "18:0", "18:1", "18:2", "18:3", "18:4", "20:0", "20:1", "20:2",
+"20:3", "20:4", "20:5", "22:0", "22:1", "22:2", "22:3", "22:4", "22:5",
+"22:6", "24:0", "24:1", "26:0")
+sph <- c("16:0", "16:1", "18:0", "18:1")
+dbs <- createLipidDB(lipid = "all", chains = fas, chains2 = sph)
+
+# to use for identification function two additional data frames need to be added
+dbs$adductsTable <- LipidMS::adductsTable
+dbs$nlsphdb <- LipidMS::nlsphdb
+```
+
+If just some DB need to be modified, you can use the following code:
+
+
+```{r, echo=T, eval=F}
+fas <- c("8:0", "10:0", "12:0", "14:0", "14:1", "15:0", "16:0", "16:1",
+         "17:0", "18:0", "18:1", "18:2", "18:3", "18:4", "19:0", "20:0", "20:1",
+         "20:2", "20:3", "20:4", "20:5", "22:0", "22:1", "22:2", "22:3", "22:4",
+         "22:5", "22:6", "24:0", "24:1", "26:0")
+newfadb <- createLipidDB(lipid = "FA", chains = fas)
+dbs <- assignDB() # This function loads all DBs required
+dbs$fadb <- newfadb$fadb # Then, you can modify some of these DBs
+```
+
+
+
+### Adducts
+
+LipidMS uses specific adducts for each lipid class and polarity. All the adducts 
+searched must be included in the `adductsTable` data frame that is within the
+package data. In case you want to use an adduct that is not included, you will 
+need to add it:
+
+```{r, echo=T, eval=F}
+adductsTable <- LipidMS::adductsTable
+adductsTable <- data.frame(adduct = c(adductsTable$adduct, "M+X"), 
+                          mdiff = c(adductsTable$mdiff, 52.65), 
+                          charge = c(adductsTable$charge, 1), 
+                          n = c(adductsTable$n, 1),
+                          stringsAsFactors = F)
+```
+
+Once included, this adduct can be used when calling the identification function:
+
+```{r, echo=T, eval=F}
+# The new adductsTable has to be also uploaded in the dbs list.
+dbs <- assignDB()
+dbs$adductsTable <- adductsTable
+
+idPCpos(MS1 = LipidMS::mix_pos_fullMS, MSMS1 = LipidMS::mix_pos_Ce20,
+MSMS2 = LipidMS::mix_pos_Ce40, adducts = c("M+H", "M+Na", "M+X"), 
+dbs = dbs)
+```
+
+
+### Fragmentation and intensity rules
+
+For a higher customization of LipidMS rules, different arguments of the 
+identification functions can be modified:
+
+* `clfrags`, `clrequired` and `ftype` are employed by `checkClass` function to 
+confirm a given lipid class. This function allows three different types of 
+fragments: fragments with a specific m/z as for example 227.0326 for PG in 
+negative mode, which needs to be defined as clfrags = c(227.0326) and 
+ftype = c("F"); neutral losses such as the head group of some PL (i.e. NL of 
+74.0359 in PG in negative mode), which will be defined as clfrags = c(74.0359) 
+and ftype = c("NL"); or building blocks resulting from the loss of some groups, 
+as for example, PA as M-H resulting from the loss of the head group (glycerol) 
+in PG in ESI-, which will be defined as clfrags = c("pa_M-H") and ftype = c("BB"). 
+The last two options could define the same fragments. In this case just one of 
+them would be necessary. 
+When using the third type of fragment ("BB"), the building block will 
+be specified in lower case (i.e. pa, dg, lysopa, mg, etc.) and the adduct will be 
+given as it appears in the adductsTable, both separated by "_". Names for the 
+building blocks are the ones used for the LipidMS databases without the "db" at 
+the end.
+In case the presence of a fragment indicates that the candidate does not belong 
+to the lipid class (i.e. loss of CH3 in PE, which corresponds to a PC actually), 
+this will be specified by using clrequisites = c("excluding").
+
+* `chainfrags` argument are employed by `chainFrags` function to look for
+specific fragments that inform about the chains of a given class.  For example, 
+in the case of PG subclass, the chain in sn1 position is identified by the LPG 
+as M-H resulting from the loss of the FA chain of sn2; and the chain in sn2 
+position is identified as the free FA chain as M-H. These two fragments need 
+to be searched in two different steps: in the fist step we will look for LPG 
+coeluting with the precursor using chainfrags = c("lysopg_M-H"); then, we will 
+look for FA chains using chainfrags = c("fa_M-H"). This information can be 
+combined later using combineChains function.
+To indicate the fragments to be searched, the class of lipid is writen using the 
+same names as the LipidMS databases without the "db" at the end (i.e. pa, dg, 
+lysopa, mg, CE, etc.), and the adduct has to be indicated as it appears in the 
+adductsTable, both parts separated by "_". In case some chain needs to be 
+searched based on a neutral loss, this can be defined using "NL-" prefix, 
+followed by the database and the adduct. If this neutral loss is employed to 
+find the remaining chain, "cbdiff-" prefix allows to calculate the difference 
+in carbons and doubles bounds between the precursor and the building block found. 
+For example, "cbdiff-dg_M+H-H2O" will look for DG as M+H-H2O and then, it will 
+return the difference between their number of carbons and double bounds and the 
+ones from the precursor. On the other hand, "NL-mg_M+H-H2O" will look for 
+fragments coming from the loss of MGs.
+In case these fragments identified as losses from the precursors are going to be 
+employed for the intensity rules, this same prefix has to be added.
+If a chain is calculated based on the difference of total number of carbons and 
+double bounds between the precursor and a previously searched chain, chainfrags 
+argument must be must be a character vector c("") and the candidates data frame 
+and the chain fragments list must be provided.
+
+* `intrules`, `rates` and `intrequired` arguments are used by `checkIntensityRules` 
+function to confirm chain structure and position. Taking PG subclass as an 
+example, intensities of lysoPG fragments (informative for sn1) can be employed 
+to confirm the chains structure (intrules = c("lysopg_sn1/lysopg_sn2")). In this 
+case, the intensity of the lysoPG resulting from the loss of the FA chain in sn2
+is at least 3 times greater (rates = c("3/1")) than the lysoPG resulting from 
+the loss of the FA chain in sn1.
+For the intrules argument, "/" will be use to separate the fragments related to 
+each chain (i.e. 16:0/18:1), and "_" will be use to indicate the list 
+in which they (sn1 or sn2) will be searched. This will depend on the chain 
+fragments rules defined previously. If you only search for LPG in chainfrags_sn1 
+but you want to compare in both positions, you need to use "_sn1" in both cases.
+For classes with more than one FA chain, if some intensity rule should be 
+employed to identify their position but they are no defined yet, use "Unknown". 
+If it is not necessary because the fragmentation rules are informative enough to 
+define the position (i.e. sphingolipid species), just leave an empty vector.
+
+
+
+If you have any further questions, please do not hesitate to contact us at:
+maialba@alumni.uv.es or maribel_alcoriza@hotmail.com
+
+
+
+

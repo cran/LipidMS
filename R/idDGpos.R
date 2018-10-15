@@ -4,13 +4,27 @@
 #' DG identification based on fragmentation patterns for LC-MS/MS
 #' AIF data acquired in positive mode.
 #'
-#' @param MS1 data frame cointaining all peaks from the full MS function. It
-#' must have three columns: m.z, RT (in seconds) and int (intensity).
-#' @param MSMS1 data frame cointaining all peaks from the low energy function.
-#' It must have three columns: m.z, RT and int.
-#' @param MSMS2 data frame cointaining all peaks from the high energy
-#' function if it is the case. It must have three columns: m.z, RT and int.
-#' Optional.
+#' @param MS1 list with two data frames cointaining all peaks from the full MS
+#' function ("peaklist" data frame) and the raw MS scans data ("rawScans" data
+#' frame). They must have four columns: m.z, RT (in seconds), int (intensity)
+#' and peakID (link between both data frames). "rawScans" data frame also needs
+#' a extra column named "Scan", which indicates the scan order number. Output
+#' of \link{dataProcessing} function. In case no coelution score needs to be
+#' applied, this argument can be just the peaklist data frame.
+#' @param MSMS1 list with two data frames cointaining all peaks from the high
+#' energy function ("peaklist" data frame) and the raw MS scans data ("rawScans"
+#' data frame). They must have four columns: m.z, RT (in seconds), int (intensity)
+#' and peakID (link between both data frames). "rawScans" data frame also needs
+#' a extra column named "Scan", which indicates the scan order number. Output
+#' of \link{dataProcessing} function. In case no coelution score needs to be
+#' applied, this argument can be just the peaklist data frame.
+#' @param MSMS2 list with two data frames cointaining all peaks from a second high
+#' energy function ("peaklist" data frame) and the raw MS scans data ("rawScans"
+#' data frame). They must have four columns: m.z, RT (in seconds), int (intensity)
+#' and peakID (link between both data frames). "rawScans" data frame also needs
+#' a extra column named "Scan", which indicates the scan order number. Output
+#' of \link{dataProcessing} function. In case no coelution score needs to be
+#' applied, this argument can be just the peaklist data frame. Optional.
 #' @param ppm_precursor mass tolerance for precursor ions. By default, 5 ppm.
 #' @param ppm_products mass tolerance for product ions. By default, 10 ppm.
 #' @param rttol total rt window for coelution between precursor and product
@@ -39,11 +53,12 @@
 #' as a string (i.e. "3/1"). See \link{checkIntensityRules}.
 #' @param intrequired logical vector indicating if any of the rules is required.
 #' If not, at least one must be verified to confirm the structure.
+#' @param coelCutoff coelution score threshold between parent and fragment ions.
+#' Only applied if rawData info is supplied. By default, 0.8.
 #' @param dbs list of data bases required for annotation. By default, dbs
 #' contains the required data frames based on the default fragmentation rules.
-#' If these rules are modified, dbs may need to be changed. If data bases have
-#' been customized using \link{createLipidDB}, they also have to be modified
-#' here.
+#' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+#' and \link{assignDB}.
 #'
 #' @return List with DG annotations (results) and some additional information
 #' (class fragments and chain fragments).
@@ -54,15 +69,16 @@
 #' specific fragments that inform about the FA chains (MGs as M+H-H2O
 #' resulting from the loss of the FA chains). 4) Look for possible chains
 #' structure based on the combination of chain fragments. 5) Check intensity
-#' rules to confirm chains position. In this case, there are no intensity rules
-#' by default.
+#' rules to confirm chains position: MG coming from the loss of the sn2 chain is
+#' more intense than the one coming from the loss of sn1.
 #'
 #' Results data frame shows: ID, class of lipid, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
-#' level).
+#' level) and PFCS (parent-fragment coelution score mean of all fragments used
+#' for the identification).
 #'
 #' @note Isotopes should be removed before identification to avoid false
 #' positives.
@@ -71,34 +87,76 @@
 #' but it may need to be customized for other platforms or acquisition settings.
 #'
 #' @examples
-#' idDGpos(MS1 = LipidMS::mix_pos_fullMS, MSMS1 = LipidMS::mix_pos_Ce20,
-#' MSMS2 = LipidMS::mix_pos_Ce40)
-#'
-#' idDGpos(MS1 = LipidMS::serum_pos_fullMS, MSMS1 = LipidMS::serum_pos_Ce20,
-#' MSMS2 = LipidMS::serum_pos_Ce40)
+#' \donttest{
+#' idDGpos(MS1 = LipidMS::MS1_pos, MSMS1 = LipidMS:MSMS1_pos,
+#' MSMS2 = LipidMS::MSMS2_pos)
+#' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
-idDGpos <- function(MS1, MSMS1, MSMS2 = data.frame(), ppm_precursor = 5,
-                    ppm_products = 10, rttol = 3,
-                    rt = c(min(MS1$RT), max(MS1$RT)),
+idDGpos <- function(MS1, MSMS1, MSMS2, ppm_precursor = 5,
+                    ppm_products = 10, rttol = 3, rt,
                     adducts = c("M+H-H2O", "M+NH4", "M+Na"),
                     clfrags = c(),
                     clrequired = c(),
                     ftype = c(),
                     chainfrags_sn1 = c("mg_M+H-H2O"),
                     chainfrags_sn2 = c("mg_M+H-H2O"),
-                    intrules = c("Unknown"),
-                    rates = c(),
-                    intrequired = c(),
-                    dbs = list(dgdb = LipidMS::dgdb,
-                               mgdb = LipidMS::mgdb,
-                               fadb = LipidMS::fadb,
-                               adductsTable = LipidMS::adductsTable)){
+                    intrules = c("mg_sn1/mg_sn2"),
+                    rates = c("1"),
+                    intrequired = c(T),
+                    coelCutoff = 0.8,
+                    dbs){
 
-  if (!all(colnames(MS1) %in% c("m.z", "RT", "int")) |
-      !all(colnames(MSMS1) %in% c("m.z", "RT", "int"))){
-    stop("Peaklists (MS1, MSMS1 and MSMS2 if supplied, should have 3 columns
-         with the following names: m.z, RT, int.")
+  # load dbs
+  if (missing(dbs)){
+    dbs <- assignDB()
+  }
+  if (missing(MSMS2) | is.null(MSMS2)){
+    rawDataMSMS2 <- MSMS2 <- data.frame()
+  }
+  #reorder MS data
+  if (class(MS1) == "list" & length(MS1) == 2){
+    if (!all(c("peaklist", "rawScans") %in% names(MS1))){
+      stop("MS1, MSMS1 and MSMS2 (if supplied) lists should have two elements
+           named as peaklist and rawScans")
+    }
+    if(!all(c("m.z", "RT", "int", "peakID") %in% colnames(MS1$peaklist))){
+      stop("peaklist element of MS1, MSMS1 and MSMS2 needs to have at least 4
+           columns: m.z, RT, int and peakID")
+    }
+    if(!all(c("m.z", "RT", "int", "peakID", "Scan") %in% colnames(MS1$rawScans))){
+      stop("rawScans element of MS1, MSMS1 and MSMS2 needs to have at least 5
+           columns: m.z, RT, int, peakID and Scan")
+    }
+    rawDataMS1 <- MS1$rawScans
+    rawDataMS1$peakID <- as.vector(paste(rawDataMS1$peakID, "MS1", sep = "_"))
+    MS1 <- MS1$peaklist
+    MS1$peakID <- as.vector(paste(MS1$peakID, "MS1", sep = "_"))
+    rawDataMSMS1 <- MSMS1$rawScans
+    rawDataMSMS1$peakID <- as.vector(paste(rawDataMSMS1$peakID, "MSMS1", sep = "_"))
+    MSMS1 <- MSMS1$peaklist
+    MSMS1$peakID <- as.vector(paste(MSMS1$peakID, "MSMS1", sep = "_"))
+    if (!missing(MSMS2) & !is.data.frame(MSMS2)){
+      rawDataMSMS2 <- MSMS2$rawScans
+      rawDataMSMS2$peakID <- as.vector(paste(rawDataMSMS2$peakID, "MSMS2", sep = "_"))
+      MSMS2 <- MSMS2$peaklist
+      MSMS2$peakID <- as.vector(paste(MSMS2$peakID, "MSMS2", sep = "_"))
+    }
+    } else {
+      rawDataMS1 <- rawDataMSMS1 <- rawDataMSMS2 <- data.frame()
+      coelCutoff <- 0
+    }
+  if(!"peakID" %in% colnames(MS1)){
+    MS1$peakID <- as.vector(rep("", nrow(MS1)))
+    MSMS1$peakID <- as.vector(rep("", nrow(MSMS1)))
+    if (nrow(MSMS2) != 0){
+      MSMS2$peakID <- as.vector(rep("", nrow(MSMS2)))
+    }
+  }
+  if (!(c("m.z", "RT", "int") %in% colnames(MS1)) ||
+      !(c("m.z", "RT", "int") %in% colnames(MS1))){
+    stop("Peaklists (MS1, MSMS1 and MSMS2 if supplied, should have at least
+         3 columns with the following names: m.z, RT, int.")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
     stop("Some adducts can't be found at the aductsTable. Add them.")
@@ -123,15 +181,22 @@ idDGpos <- function(MS1, MSMS1, MSMS2 = data.frame(), ppm_precursor = 5,
       }
     }
   }
+  if (missing(rt)){
+    rt <- c(min(MS1$RT), max(MS1$RT))
+  }
 
+  rawData <- rbind(rawDataMS1, rawDataMSMS1, rawDataMSMS2)
+  rawData <- rawData[!rawData$peakID %in% c("0_MS1", "0_MSMS1", "0_MSMS2"),]
   # candidates search
-  candidates <- findCandidates(MS1, dbs[["dgdb"]], ppm_precursor, rt, adducts,
-                               rttol, dbs)
+  candidates <- findCandidates(MS1, dbs$dgdb, ppm = ppm_precursor, rt = rt,
+                               adducts = adducts, rttol = rttol, dbs = dbs,
+                               rawData = rawData, coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
     # isolation of coeluting fragments
     MSMS <- rbind(MSMS1, MSMS2)
-    coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol)
+    coelfrags <- coelutingFrags(candidates, MSMS, rttol, rawData,
+                                coelCutoff = coelCutoff)
 
     # check class fragments
     classConf <- checkClass(candidates, coelfrags, clfrags, ftype, clrequired,
@@ -148,11 +213,12 @@ idDGpos <- function(MS1, MSMS1, MSMS2 = data.frame(), ppm_precursor = 5,
 
     # check chains position based on intensity ratios
     intConf <- checkIntensityRules(intrules, rates, intrequired, nchains=2,
-                                    chainsComb, sn1, sn2)
+                                   chainsComb)
 
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
                            intConf, nchains = 2, class="DG")
+
 
     if (length(clfrags) > 0){
       classfragments <- classConf$presence

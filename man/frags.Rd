@@ -4,7 +4,7 @@
 \alias{frags}
 \title{Search for fragments of interest withing a list of coeluting fragments}
 \usage{
-frags(df, ppm, db, charge)
+frags(df, ppm, db, mdiff, charge, n)
 }
 \arguments{
 \item{df}{data frame containing coeluting fragments}
