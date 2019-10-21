@@ -21,7 +21,8 @@ Obtain an inclusion list from the annotation results.
 }
 \examples{
 \donttest{
-results <- idPOS(LipidMS::MS1_neg, LipidMS::MSMS1_neg, LipidMS::MSMS2_neg)
+library(LipidMSdata)
+results <- idPOS(MS1_neg, MSMS1_neg, MSMS2_neg)
 getInclusionList(results$results)
 }
 

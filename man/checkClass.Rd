@@ -69,15 +69,16 @@ actually), this will be specified by using \code{clrequisites} = c("excluding").
 }
 \examples{
 \donttest{
+library(LipidMSdata)
 dbs <- assignDB()
 
-candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+candidates <- findCandidates(MS1 = MS1_neg$peaklist,
 db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
 rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 
-MSMS <- rbind(LipidMS::MSMS1_neg$peaklist, LipidMS::MSMS2_neg$peaklist)
-rawData <- rbind(LipidMS::MS1_neg$rawScans, LipidMS::MSMS1_neg$rawScans,
-LipidMS::MSMS2_neg$rawScans)
+MSMS <- rbind(MSMS1_neg$peaklist, MSMS2_neg$peaklist)
+rawData <- rbind(MS1_neg$rawScans, MSMS1_neg$rawScans,
+MSMS2_neg$rawScans)
 coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
 coelCutoff = 0.8)
 
@@ -86,16 +87,17 @@ clfrags = c(227.0326, 209.022, 74.0359), clrequisites = c(F, F, F, F),
 ftype = c("F", "F", "NL"), ppm = 10, dbs = dbs)
 }
 \donttest{
+library(LipidMSdata)
 dbs <- assignDB()
 
-candidates <- findCandidates(MS1 = LipidMS::MS1$peaktable,
+candidates <- findCandidates(MS1 = MS1_neg$peaktable,
 db = dbs$pgdb,
 ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
 rttol = 10, rawData = MS1$rawData, coelCutoff = 0.8)
 
-MSMS <- rbind(LipidMS::MSMS1$peaktable, LipidMS::MSMS2$peaktable)
-rawData <- rbind(LipidMS::MS1$rawData, LipidMS::MSMS1$rawData,
-LipidMS::MSMS2$rawData)
+MSMS <- rbind(MSMS1_neg$peaktable, MSMS2_neg$peaktable)
+rawData <- rbind(MS1_neg$rawData, MSMS1_neg$rawData,
+MSMS2_neg$rawData)
 coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
 coelCutoff = 0.8)
 

@@ -38,21 +38,22 @@
 #'
 #' @examples
 #' \donttest{
+#' library(LipidMSdata)
 #' dbs <- assignDB()
 #'
-#' candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+#' candidates <- findCandidates(MS1 =MS1_neg$peaklist,
 #' db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
 #' rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 #'
 #'
 #' # If any adduct is not in the adductsTable, it can be added:
 #'
-#' adductsTable2 <- rbind(LipidMS::adductsTable,
+#' adductsTable2 <- rbind(adductsTable,
 #' c(adduct = "M+HCOO", mdiff = 44.9982, n = 1, charge = -1))
 #' dbs <- assignDB()
 #' dbs$adductsTable <- adductsTable2
 #'
-#' candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+#' candidates <- findCandidates(MS1 = MS1_neg$peaklist,
 #' db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H", "M+HCOO"),
 #' rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 #' }
@@ -77,6 +78,9 @@ findCandidates <- function(MS1, db, ppm, rt,
                                    rawData = rawData, coelCutoff = coelCutoff)
       }
     }
+  }
+  if(length(candidates) > 0){
+    candidates <- filtrateAdducts(df = candidates)
   }
   rownames(candidates) <- c()
   if (is.vector(candidates)){

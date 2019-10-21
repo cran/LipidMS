@@ -72,8 +72,8 @@
 #'
 #' @examples
 #' \donttest{
-#' idFAneg(MS1 = LipidMS::MS1_neg, MSMS1 = LipidMS:MSMS1_neg,
-#' MSMS2 = LipidMS::MSMS2_neg)
+#' library(LipidMSdata)
+#' idFAneg(MS1 = MS1_neg, MSMS1 = MSMS1_neg, MSMS2 = MSMS2_neg)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>

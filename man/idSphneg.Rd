@@ -96,8 +96,8 @@ but it may need to be customized for other platforms or acquisition settings.
 }
 \examples{
 \donttest{
-idSphneg(MS1 = LipidMS::MS1_neg, MSMS1 = LipidMS:MSMS1_neg,
-MSMS2 = LipidMS::MSMS2_neg)
+library(LipidMSdata)
+idSphneg(MS1 = MS1_neg, MSMS1 = MSMS1_neg, MSMS2 = MSMS2_neg)
 }
 
 }

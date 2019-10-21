@@ -8,7 +8,7 @@ dataProcessing(file, mslevel, polarity, dmzgap = 50, drtgap = 25,
   ppm = TRUE, minpeak, maxint = 1e+09, dmzdens, drtdens = 20,
   merged = FALSE, drtsmall, drtfill = 5, drttotal = 100,
   recurs = 4, weight, SB, SN = 2, minint, ended = 2,
-  removeIsotopes = TRUE)
+  removeIsotopes = TRUE, rttolIso = 2, ppmIso = 20)
 }
 \arguments{
 \item{file}{path of the mzXML input file.}
@@ -66,6 +66,10 @@ how often can a peak detection fail to end the recursion?. 2 by default.}
 kept when mslevel = 1, and M+0 or unknown when mslevel = 2. TRUE by default.
 If FALSE, an additional column is added to the peak list to inform about
 isotopes.}
+
+\item{rttolIso}{numeric. Time windows for isotope matching.}
+
+\item{ppmIso}{numeric. Mass tolerance for isotope matching.}
 }
 \value{
 List with two data frames: peaklist, with 4 columns (m.z, RT, int,
@@ -76,12 +80,13 @@ each row of the rawScans data frame belong.
 }
 \description{
 Process mzXML files: peak-picking using enviPick and deisotoping
-using CAMERA.
+using an adaptation of the CAMERA algorithm.
 }
 \details{
 This function executes 2 steps: 1) peak-picking using enviPick
-package and 2) it seaches isotopes using CAMERA. If mslevel = 1 and remove
-isotopes is set as TRUE, only ions with more than 1 isotope are kept.
+package and 2) it searches isotopes using an adaptation of the CAMERA
+algorithm. If mslevel = 1 and remove isotopes is set as TRUE, only ions with
+more than 1 isotope are kept.
 }
 \examples{
 \donttest{

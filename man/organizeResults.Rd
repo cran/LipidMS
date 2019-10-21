@@ -31,15 +31,15 @@ Prepare a readable output for LipidMS identification functions.
 }
 \examples{
 \donttest{
+library(LipidMSdata)
 dbs <- assignDB()
 
-candidates <- findCandidates(MS1 = LipidMS::MS1_neg$peaklist,
+candidates <- findCandidates(MS1 = MS1_neg$peaklist,
 db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
 rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 
-MSMS <- rbind(LipidMS::MSMS1_neg$peaklist, LipidMS::MSMS2_neg$peaklist)
-rawData <- rbind(LipidMS::MS1_neg$rawScans, LipidMS::MSMS1_neg$rawScans,
-LipidMS::MSMS2_neg$rawScans)
+MSMS <- rbind(MSMS1_neg$peaklist, MSMS2_neg$peaklist)
+rawData <- rbind(MS1_neg$rawScans, MSMS1_neg$rawScans, MSMS2_neg$rawScans)
 coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
 coelCutoff = 0.8)
 

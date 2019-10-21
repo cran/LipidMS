@@ -2,7 +2,7 @@
 #' Process mzXML files: peakpicking and deisotoping
 #'
 #' Process mzXML files: peak-picking using enviPick and deisotoping
-#' using CAMERA.
+#' using an adaptation of the CAMERA algorithm.
 #'
 #' @param file path of the mzXML input file.
 #' @param mslevel numeric value indicating if data belongs to level 1 (fullMS)
@@ -39,6 +39,8 @@
 #' kept when mslevel = 1, and M+0 or unknown when mslevel = 2. TRUE by default.
 #' If FALSE, an additional column is added to the peak list to inform about
 #' isotopes.
+#' @param rttolIso numeric. Time windows for isotope matching.
+#' @param ppmIso numeric. Mass tolerance for isotope matching.
 #'
 #' @return List with two data frames: peaklist, with 4 columns (m.z, RT, int,
 #' and peakID) and rawScan, with all the scans information in 5 columns (m.z,
@@ -47,8 +49,9 @@
 #' each row of the rawScans data frame belong.
 #'
 #' @details This function executes 2 steps: 1) peak-picking using enviPick
-#' package and 2) it seaches isotopes using CAMERA. If mslevel = 1 and remove
-#' isotopes is set as TRUE, only ions with more than 1 isotope are kept.
+#' package and 2) it searches isotopes using an adaptation of the CAMERA
+#' algorithm. If mslevel = 1 and remove isotopes is set as TRUE, only ions with
+#' more than 1 isotope are kept.
 #'
 #' @examples
 #' \donttest{
@@ -67,7 +70,7 @@ dataProcessing <- function(file, mslevel, polarity, dmzgap = 50, drtgap = 25,
                            ppm = TRUE, minpeak, maxint = 1E9, dmzdens, drtdens = 20,
                            merged = FALSE, drtsmall, drtfill = 5, drttotal = 100,
                            recurs = 4, weight, SB, SN = 2, minint, ended = 2,
-                           removeIsotopes = TRUE){
+                           removeIsotopes = TRUE, rttolIso = 2, ppmIso = 20){
   if (!mslevel %in% c(1, 2)){
     stop("mslevel must be 1 or 2")
   }
@@ -118,6 +121,7 @@ dataProcessing <- function(file, mslevel, polarity, dmzgap = 50, drtgap = 25,
       }
     }
     # peakPicking
+    cat("\n Searching for features...")
     MSlist <- enviPick::readMSdata(file, MSlevel=1)
     MSlist <- enviPick::mzagglom(MSlist, dmzgap = dmzgap, ppm = ppm,
                                  drtgap = drtgap, minpeak = minpeak,
@@ -130,33 +134,36 @@ dataProcessing <- function(file, mslevel, polarity, dmzgap = 50, drtgap = 25,
                                recurs = recurs, weight = weight,
                                SB = SB, SN = SN, minint = minint, maxint = maxint,
                                ended = ended)
-    # deisotope
-    ## search isotopes
-    sample <- makexcmsSet(MSlist, files=file, pD="data",
-                          polarity=polarity)
-    sa <- CAMERA::xsAnnotate(sample, polarity=polarity)
-    saF <- CAMERA::groupFWHM(sa, perfwhm = 1)
-    saFI <- CAMERA::findIsotopes(saF, mzabs = 0.01, ppm = 10)
-    peaklist <- CAMERA::getPeaklist(saFI)
-
-    peaklist <- peaklist[, c("mz", "rt", "into", "isotopes")]
-    peaklist$peakID <- MSlist$Peaklist[,"peak_ID"]
-    colnames(peaklist) <- c("m.z", "RT", "int", "isotopes", "peakID")
-    if (removeIsotopes == TRUE){
-      ## remove isotopes
-      if (mslevel != 1){
-        M <- grepl("\\[M\\]\\+|\\[M\\]-|^$", peaklist$isotopes)
-      } else {
-        M <- grepl("\\[M\\]\\+|\\[M\\]-", peaklist$isotopes)
-      }
-      peaklist <- peaklist[M, c("m.z", "RT", "int", "peakID")]
-    }
-    rawScans <- data.frame(MSlist$Scans[[2]][,c("m/z", "RT", "intensity", "peakID")],
+    cat("OK")
+    peaklist <- data.frame(MSlist$Peaklist[,c("m/z", "RT", "sum_int", "peak_ID")],
                            stringsAsFactors = F)
+    colnames(peaklist) <- c("m.z", "RT", "int", "peakID")
+    rawScans <- data.frame(MSlist$Scans[[2]][,c("m/z", "RT", "intensity",
+                                                "peakID")], stringsAsFactors = F)
     rawScans$Scan <- as.numeric(as.factor(rawScans$RT))
-    rawScans <- rawScans[rawScans$peakID %in% peaklist$peakID,]
     colnames(rawScans) <- c("m.z", "RT", "int", "peakID", "Scan")
-    return(list(peaklist = peaklist, rawScans = rawScans))
+
+    cat("\n Annotating isotopes...")
+    peaklistIso <- annotateIsotopes(peaklist, rawScans, ppm = ppmIso,
+                                    rttol = rttolIso)
+    cat("OK")
+
+    if (removeIsotopes){
+      cat("\n Removing isotopes...")
+      if (mslevel == 1){
+        peaklistIso <- peaklistIso[peaklistIso[,"isotope"] %in% c("[M+0]"),]
+      } else {
+        peaklistIso <- peaklistIso[peaklistIso[,"isotope"] %in% c("", "[M+0]"),]
+      }
+
+      cat("OK")
+    }
+    cat("\n")
+
+    rawScans <- rawScans[rawScans[,"peakID"] %in% peaklistIso[,"peakID"],]
+
+    return(list(peaklist = peaklistIso[,c("m.z", "RT", "int", "peakID")],
+                rawScans = rawScans))
   } else {
     stop("The file doesn't exist!")
   }

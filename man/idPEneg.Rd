@@ -124,8 +124,8 @@ but it may need to be customized for other platforms or acquisition settings.
 }
 \examples{
 \donttest{
-idPEneg(MS1 = LipidMS::MS1_neg, MSMS1 = LipidMS:MSMS1_neg,
-MSMS2 = LipidMS::MSMS2_neg)
+library(LipidMSdata)
+idPEneg(MS1 = MS1_neg, MSMS1 = MSMS1_neg, MSMS2 = MSMS2_neg)
 }
 
 }

@@ -90,8 +90,8 @@
 #'
 #' @examples
 #' \donttest{
-#' idPCpos(MS1 = LipidMS::MS1_pos, MSMS1 = LipidMS:MSMS1_pos,
-#' MSMS2 = LipidMS::MSMS2_pos)
+#' library(LipidMSdata)
+#' idPCpos(MS1 = MS1_pos, MSMS1 = MSMS1_pos, MSMS2 = MSMS2_pos)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -239,4 +239,4 @@ idPCpos <- function(MS1, MSMS1, MSMS2, ppm_precursor = 5,
   } else {
     return(list(results = data.frame()))
   }
-  }
+}

@@ -132,8 +132,8 @@ but it may need to be customized for other platforms or acquisition settings.
 }
 \examples{
 \donttest{
-idTGpos(MS1 = LipidMS::MS1_pos, MSMS1 = LipidMS:MSMS1_pos,
-MSMS2 = LipidMS::MSMS2_pos)
+library(LipidMSdata)
+idTGpos(MS1 = MS1_pos, MSMS1 = MSMS1_pos, MSMS2 = MSMS2_pos)
 }
 
 }

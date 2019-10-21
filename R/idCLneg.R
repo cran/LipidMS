@@ -92,8 +92,8 @@
 #'
 #' @examples
 #' \donttest{
-#' idCL(MS1 = LipidMS::MS1_neg, MSMS1 = LipidMS:MSMS1_neg,
-#' MSMS2 = LipidMS::MSMS2_neg, coelCutoff = 0)
+#' library(LipidMSdata)
+#' idCL(MS1 = MS1_neg, MSMS1 = MSMS1_neg, MSMS2 = MSMS2_neg, coelCutoff = 0)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>

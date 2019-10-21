@@ -372,6 +372,44 @@ crossAdducts <- function(df1, df2, rttol, rawData, coelCutoff){
       }
     }
     df <- rbind(df1, df2)
+    df <- filtrateAdducts(df)
+  }
+  return(df)
+}
+
+# filtrateAdducts
+#' Remove low adduct supported candidates to avoid false positives.
+#'
+#' In case some feature has been annotated to different candidate species,
+#' this function removes the one with less adducts assigned.
+#'
+#' @param df data frame containing candidates
+#'
+#' @return Subset of the original data frame
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+filtrateAdducts <- function(df){
+  if (nrow(df) > 0){
+    toremove <- c()
+    for (c in 1:(nrow(df)-1)){
+      same <- which(df[,"m.z"] == df[c, "m.z"] &
+                      df[,"RT"] == df[c, "RT"])
+      same <- same[same != c]
+      if (length(same) > 0){
+        same <- c(c, same)
+        nadducts <- sapply(same, function(x){
+          length(unlist(strsplit(df[x,"adducts"], ";")))-1
+        })
+        if (any(same[1] < same[2:length(same)])){
+          toremove <- append(c, toremove)
+        }
+      }
+    }
+    if (length(toremove) > 0){
+      df <- df[-toremove,]
+    }
   }
   return(df)
 }
@@ -395,19 +433,19 @@ coelutionScore <- function(peak1, peak2, rawData){
     chrom1 <- rawData[rawData$peakID == peak1, c("int", "Scan")]
     chrom1 <- chrom1[order(chrom1$Scan),]
     pred1 <- tryCatch({predict(smooth.spline(chrom1$Scan, chrom1$int), x = chrom1$Scan)},
-                      error = function(e) {return(list(x = chrom1$int, y = chrom1$Scan))})
+                      error = function(e) {return(list(x = chrom1$Scan, y = chrom1$int))})
     if(length(pred1) > 0){
-      chrom1 <- data.frame(int = pred1$y, Scan = chrom1$Scan)
+      chrom1 <- data.frame(int = pred1$y, Scan = floor(chrom1$Scan))
     }
     scores <- sapply(peak2, function(x) {
       chrom2 <- rawData[rawData$peakID == x, c("int", "Scan")]
       chrom2 <- chrom2[order(chrom2$Scan),]
       pred2 <- tryCatch({predict(smooth.spline(chrom2$Scan, chrom2$int),
                                  x = chrom2$Scan)},
-                        error = function(e) {return(list(x = chrom2$int,
-                                                         y = chrom2$Scan))})
+                        error = function(e) {return(list(x = chrom2$Scan,
+                                                         y = chrom2$int))})
       if (length(pred2) > 0 & length(pred1) > 0){
-        chrom2 <- data.frame(int = pred2$y, Scan = chrom2$Scan)
+        chrom2 <- data.frame(int = pred2$y, Scan = floor(chrom2$Scan))
         merged <- merge(chrom1, chrom2, by="Scan")
       } else {
         merged <- data.frame()

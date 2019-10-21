@@ -61,8 +61,8 @@ ESI+ annotations.
 }
 \examples{
 \donttest{
-idPOS(MS1 = LipidMS::serum_pos_fullMS, MSMS1 = LipidMS::serum_pos_Ce20,
-MSMS2 = LipidMS::serum_pos_Ce40)
+library(LipidMSdata)
+idPOS(MS1_pos, MSMS1_pos, MSMS2_pos)
 }
 
 }

@@ -8,7 +8,7 @@ idPEpos(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
   rttol = 3, rt, adducts = c("M+H", "M+Na"),
   clfrags = c("dg_M+H-H2O"), clrequired = c(F), ftype = c("BB"),
   chainfrags_sn1 = c("lysope_M+H-H2O", "mg_M+H-H2O"),
-  chainfrags_sn2 = c("fa_M+H-H2O", "mg_M+H-H2O"),
+  chainfrags_sn2 = c("mg_M+H-H2O"),
   intrules = c("lysope_sn1/lysope_sn1", "mg_sn1/mg_sn2"),
   rates = c("3/1", "1/2"), intrequired = c(F, F), coelCutoff = 0.8,
   dbs)
@@ -84,8 +84,8 @@ Only applied if rawData info is supplied. By default, 0.8.}
 
 \item{dbs}{list of data bases required for annotation. By default, dbs
 contains the required data frames based on the default fragmentation rules.
-If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
-and \link{assignDB}.}
+If these rules are modified, dbs may need to be supplied. See
+\link{createLipidDB} and \link{assignDB}.}
 }
 \value{
 List with PE annotations (results) and some additional information
@@ -102,10 +102,11 @@ fragments: loss of head group (DG as M+H-H2O) coeluting with the precursor
 ion. 3) Search of specific fragments that inform about chain composition at
 sn1 (MG as M+H-H2O resulting from the loss of the FA chain at sn2 and
 the head group or LPE as M+H-H2O resulting just from the loss of the FA chain)
-and sn2 (FA or MG chain from sn2as M+H-H2O). 4) Look for possible chains
-structure based on the combination of chain fragments. 5) Check intensity
-rules to confirm chains position. LPE or MG from sn1 is at least 3 times more
-intense than the ones from sn2.
+and sn2 (FA or MG chain from sn2as M+H-H2O or the difference between precursor
+and sn1 chain fragments). 4) Look for possible chains structure based on the
+combination of chain fragments. 5) Check intensity rules to confirm chains
+position. LPE or MG from sn1 is at least 3 times more intense than the ones
+from sn2.
 
 Results data frame shows: ID, class of lipid, CDB (total number
 of carbons and double bounds), FA composition (specific chains composition if
@@ -124,8 +125,8 @@ but it may need to be customized for other platforms or acquisition settings.
 }
 \examples{
 \donttest{
-idPEpos(MS1 = LipidMS::MS1_pos, MSMS1 = LipidMS:MSMS1_pos,
-MSMS2 = LipidMS::MSMS2_pos)
+library(LipidMSdata)
+idPEpos(MS1 = MS1_pos, MSMS1 = MSMS1_pos, MSMS2 = MSMS2_pos)
 }
 
 }

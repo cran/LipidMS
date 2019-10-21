@@ -31,6 +31,7 @@ Cross the original MS1 peaklist with the annotation results.
 }
 \examples{
 \donttest{
+library(LipidMSdata)
 results <- idNEG(MS1 = MS1_neg, MSMS1 = MSMS1_neg, MSMS2 = MSMS2_neg)
 crossTables(MS1_neg$peaklist, results = results$results,
 ppm = 10, rttol = 10)}

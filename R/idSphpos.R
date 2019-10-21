@@ -70,8 +70,8 @@
 #'
 #' @examples
 #' \donttest{
-#' idSphpos(MS1 = LipidMS::MS1_pos, MSMS1 = LipidMS:MSMS1_pos,
-#' MSMS2 = LipidMS::MSMS2_pos)
+#' library(LipidMSdata)
+#' idSphpos(MS1 = MS1_pos, MSMS1 = MSMS1_pos, MSMS2 = MSMS2_pos)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
