@@ -4,12 +4,26 @@
 \alias{idCerpos}
 \title{Ceramides (Cer) annotation for ESI+}
 \usage{
-idCerpos(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M+H-H2O", "M+Na", "M+H"),
-  clfrags = c(), clrequired = c(), ftype = c(),
-  chainfrags_sn1 = c("sph_M+H-2H2O"), chainfrags_sn2 = c(""),
-  intrules = c(), rates = c(), intrequired = c(), coelCutoff = 0.8,
-  dbs)
+idCerpos(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M+H-H2O", "M+Na", "M+H"),
+  clfrags = c(),
+  clrequired = c(),
+  ftype = c(),
+  chainfrags_sn1 = c("sph_M+H-2H2O"),
+  chainfrags_sn2 = c(""),
+  intrules = c(),
+  rates = c(),
+  intrequired = c(),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

@@ -54,7 +54,7 @@
 #' more than 1 isotope are kept.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' dataProcessing("input_file.mzXML", mslevel = 1, polarity = "positive")
 #' }
 #'
@@ -162,8 +162,12 @@ dataProcessing <- function(file, mslevel, polarity, dmzgap = 50, drtgap = 25,
 
     rawScans <- rawScans[rawScans[,"peakID"] %in% peaklistIso[,"peakID"],]
 
-    return(list(peaklist = peaklistIso[,c("m.z", "RT", "int", "peakID")],
-                rawScans = rawScans))
+    if (!removeIsotopes){
+    return(list(peaklist = peaklistIso, rawScans = rawScans))
+    } else {
+      return(list(peaklist = peaklistIso[,c("m.z", "RT", "int", "peakID")],
+                  rawScans = rawScans))
+    }
   } else {
     stop("The file doesn't exist!")
   }

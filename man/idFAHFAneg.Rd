@@ -4,11 +4,26 @@
 \alias{idFAHFAneg}
 \title{FAHFA annotation for ESI-}
 \usage{
-idFAHFAneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M-H"), clfrags = c(),
-  clrequired = c(), ftype = c(), chainfrags_sn1 = c("hfa_M-H"),
-  chainfrags_sn2 = c("fa_M-H"), intrules = c("hfa_sn1/fa_sn2"),
-  rates = c("3/1"), intrequired = c(T), coelCutoff = 0.8, dbs)
+idFAHFAneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M-H"),
+  clfrags = c(),
+  clrequired = c(),
+  ftype = c(),
+  chainfrags_sn1 = c("hfa_M-H"),
+  chainfrags_sn2 = c("fa_M-H"),
+  intrules = c("hfa_sn1/fa_sn2"),
+  rates = c("3/1"),
+  intrequired = c(T),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

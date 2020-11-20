@@ -61,96 +61,114 @@ idNEG <- function(MS1, MSMS1, MSMS2, ppm_precursor = 10,
   }
   if (missing(MSMS2)){MSMS2 <- NULL}
   results <- vector()
-  print("Searching for FA...")
+  cat("\nSearching for FA...")
   results <- rbind(results, idFAneg(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for FAHFA...")
+  cat("OK")
+  cat("\nSearching for FAHFA...")
   results <- rbind(results, idFAHFAneg(MS1 = MS1,
                                        MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                        ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                        dbs = dbs)$results)
-  print("Searching for LPC...")
+  cat("OK")
+  cat("\nSearching for LPC...")
   results <- rbind(results, idLPCneg(MS1 = MS1,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for LPE...")
+  cat("OK")
+  cat("\nSearching for LPE...")
   results <- rbind(results, idLPEneg(MS1 = MS1,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for LPG...")
+  cat("OK")
+  cat("\nSearching for LPG...")
   results <- rbind(results, idLPGneg(MS1 = MS1,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for LPI...")
+  cat("OK")
+  cat("\nSearching for LPI...")
   results <- rbind(results, idLPIneg(MS1 = MS1,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for LPS...")
+  cat("OK")
+  cat("\nSearching for LPS...")
   results <- rbind(results, idLPSneg(MS1 = MS1,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for PC...")
+  cat("OK")
+  cat("\nSearching for PC...")
   results <- rbind(results, idPCneg(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for PE...")
+  cat("OK")
+  cat("\nSearching for PE...")
   results <- rbind(results, idPEneg(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for PG...")
+  cat("OK")
+  cat("\nSearching for PG...")
   results <- rbind(results, idPGneg(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for PI...")
+  cat("OK")
+  cat("\nSearching for PI...")
   results <- rbind(results, idPIneg(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for PS...")
+  cat("OK")
+  cat("\nSearching for PS...")
   results <- rbind(results, idPSneg(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for Sph...")
+  cat("OK")
+  cat("\nSearching for Sph...")
   results <- rbind(results, idSphneg(MS1 = MS1,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for SphP...")
+  cat("OK")
+  cat("\nSearching for SphP...")
   results <- rbind(results, idSphPneg(MS1 = MS1,
                                       MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                       ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                       dbs = dbs)$results)
-  print("Searching for Cer...")
+  cat("OK")
+  cat("\nSearching for Cer...")
   results <- rbind(results, idCerneg(MS1 = MS1,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for CL...")
+  cat("OK")
+  cat("\nSearching for CL...")
   results <- rbind(results, idCLneg(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for Bile Acids...")
+  cat("OK")
+  cat("\nSearching for Bile Acids...")
   results <- rbind(results, idBAneg(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Preparing output...")
+  cat("OK")
+  cat("\nPreparing output...")
   if (nrow(results) > 0){
     annotatedPeaklist <- crossTables(MS1, results, ppm_precursor, rttol, dbs)
   } else {
     annotatedPeaklist <- data.frame()
   }
+  cat("OK\n")
   return(list(results = results, annotatedPeaklist = annotatedPeaklist))
 }

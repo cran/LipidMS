@@ -4,10 +4,21 @@
 \alias{idFAneg}
 \title{Fatty Acids (FA) annotation for ESI-}
 \usage{
-idFAneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M-H", "2M-H"), clfrags = c("fa_M-H",
-  "fa_M-H-H2O"), clrequired = c(F, F), ftype = c("BB", "BB"),
-  coelCutoff = 0.8, dbs)
+idFAneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M-H", "2M-H"),
+  clfrags = c("fa_M-H", "fa_M-H-H2O"),
+  clrequired = c(FALSE, FALSE),
+  ftype = c("BB", "BB"),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

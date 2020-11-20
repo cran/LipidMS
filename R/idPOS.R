@@ -60,36 +60,42 @@ idPOS <- function(MS1, MSMS1, MSMS2, ppm_precursor = 10,
   }
   if (missing(MSMS2)){MSMS2 <- NULL}
   results <- vector()
-  print("Searching for MG...")
+  cat("\nSearching for MG...")
   results <- rbind(results, idMGpos(MS1 = MS1, MSMS1 = MSMS1,
                                     MSMS2 = MSMS2, ppm_precursor= ppm_precursor, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for LPC...")
+  cat("OK")
+  cat("\nSearching for LPC...")
   results <- rbind(results, idLPCpos(MS1 = MS1,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for LPE...")
+  cat("OK")
+  cat("\nSearching for LPE...")
   results <- rbind(results, idLPEpos(MS1 = MS1,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for PC...")
+  cat("OK")
+  cat("\nSearching for PC...")
   results <- rbind(results, idPCpos(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for PE...")
+  cat("OK")
+  cat("\nSearching for PE...")
   results <- rbind(results, idPEpos(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for Sph...")
+  cat("OK")
+  cat("\nSearching for Sph...")
   results <- rbind(results, idSphpos(MS1 = MS1,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for SphP...")
+  cat("OK")
+  cat("\nSearching for SphP...")
   results <- rbind(results, idSphPpos(MS1 = MS1,
                                       MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                       ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
@@ -99,36 +105,43 @@ idPOS <- function(MS1, MSMS1, MSMS2, ppm_precursor = 10,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for SM...")
+  cat("OK")
+  cat("\nSearching for SM...")
   results <- rbind(results, idSMpos(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for Acylcarnitines...")
+  cat("OK")
+  cat("\nSearching for Acylcarnitines...")
   results <- rbind(results, idCarpos(MS1 = MS1,
                                      MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                      ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                      dbs = dbs)$results)
-  print("Searching for CE...")
+  cat("OK")
+  cat("\nSearching for CE...")
   results <- rbind(results, idCEpos(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for DG...")
+  cat("OK")
+  cat("\nSearching for DG...")
   results <- rbind(results, idDGpos(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Searching for TG...")
+  cat("OK")
+  cat("\nSearching for TG...")
   results <- rbind(results, idTGpos(MS1 = MS1,
                                     MSMS1 = MSMS1, MSMS2 = MSMS2, ppm_precursor = ppm_precursor,
                                     ppm_products = ppm_products, rttol = rttol, coelCutoff = coelCutoff,
                                     dbs = dbs)$results)
-  print("Preparing output...")
+  cat("OK")
+  cat("\nPreparing output...")
   if (nrow(results) > 0){
     annotatedPeaklist <- crossTables(MS1, results, ppm_precursor, rttol, dbs)
   } else {
     annotatedPeaklist <- data.frame()
   }
+  cat("OK\n")
   return(list(results = results, annotatedPeaklist = annotatedPeaklist))
 }

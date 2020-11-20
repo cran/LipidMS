@@ -4,16 +4,28 @@
 \alias{idTGpos}
 \title{Triacylglycerols (TG) annotation for ESI+}
 \usage{
-idTGpos(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M+NH4", "M+Na"), clfrags = c(),
-  clrequired = c(), ftype = c(),
+idTGpos(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M+NH4", "M+Na"),
+  clfrags = c(),
+  clrequired = c(),
+  ftype = c(),
   chainfrags_sn1 = c("cbdiff-dg_M+H-H2O"),
   chainfrags_sn2 = c("cbdiff-dg_M+H-H2O"),
   chainfrags_sn3 = c("cbdiff-dg_M+H-H2O"),
-  intrules = c("cbdiff-dg_sn2/cbdiff-dg_sn1",
-  "cbdiff-dg_sn2/cbdiff-dg_sn3", "cbdiff-dg_sn1/cbdiff-dg_sn3"),
-  rates = c("1", "1", "1"), intrequired = c(T, T, T),
-  coelCutoff = 0.8, dbs)
+  intrules = c("cbdiff-dg_sn2/cbdiff-dg_sn1", "cbdiff-dg_sn2/cbdiff-dg_sn3",
+    "cbdiff-dg_sn1/cbdiff-dg_sn3"),
+  rates = c("1", "1", "1"),
+  intrequired = c(T, T, T),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

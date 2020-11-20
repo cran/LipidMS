@@ -4,9 +4,20 @@
 \alias{idBAneg}
 \title{Bile Acids (BA) annotation for ESI-}
 \usage{
-idBAneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M-H"), conjfrag = c("baconj_M-H"),
-  bafrag = c("ba_M-H-H2O", "ba_M-H-2H2O"), coelCutoff = 0.8, dbs)
+idBAneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M-H"),
+  conjfrag = c("baconj_M-H"),
+  bafrag = c("ba_M-H-H2O", "ba_M-H-2H2O"),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

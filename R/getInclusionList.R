@@ -49,7 +49,7 @@ getInclusionList <- function(results, adductsTable = LipidMS::adductsTable){
   for (i in 1:nrow(results)){
     for (a in 1:length(adducts[[i]])){
       inclusionList <- rbind(inclusionList, data.frame(Formula[i], RT[i], Mn[i],
-        mzs[[i]][a], adducts[[i]][a], Name[i], stringsAsFactors = F))
+                                                       mzs[[i]][a], adducts[[i]][a], Name[i], stringsAsFactors = F))
     }
   }
   colnames(inclusionList) <- c("Formula", "RT", "Mn", "m.z", "Adduct", "Name")

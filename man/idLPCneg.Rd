@@ -4,11 +4,22 @@
 \alias{idLPCneg}
 \title{Lysophosphocholines (LPC) annotation for ESI-}
 \usage{
-idLPCneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M+CH3COO", "M-CH3", "M+CH3COO-CH3"),
+idLPCneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M+CH3COO", "M-CH3", "M+CH3COO-CH3"),
   clfrags = c(168.0426, 224.0688, "lysopa_M-H", "lysopc_M-CH3"),
-  clrequired = c(F, F, F, F), ftype = c("F", "F", "BB", "BB"),
-  chainfrags_sn1 = c("fa_M-H"), coelCutoff = 0.8, dbs)
+  clrequired = c(F, F, F, F),
+  ftype = c("F", "F", "BB", "BB"),
+  chainfrags_sn1 = c("fa_M-H"),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

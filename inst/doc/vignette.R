@@ -1,11 +1,11 @@
-## ----setup, include = FALSE----------------------------------------------
+## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.cap = TRUE
 )
 
-## ---- echo=T, eval=F-----------------------------------------------------
+## ---- echo=T, eval=F----------------------------------------------------------
 #  library(LipidMS)
 #  sepByCE(input = "mix_pos.mzXML",  output = "mix_pos_sep")
 #  
@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 #  outputs <- paste(outputs, "_sep", sep="")
 #  mapply(sepByCE, files, outputs)
 
-## ---- echo=T, eval=F-----------------------------------------------------
+## ---- echo=T, eval=F----------------------------------------------------------
 #  ## 1) remove lockspray function
 #  
 #  # first, you will need to set your working directory where all you raw files are saved. Then run the following code:
@@ -59,7 +59,7 @@ knitr::opts_chunk$set(
 #  }
 #  
 
-## ---- echo=T, eval=F-----------------------------------------------------
+## ---- echo=T, eval=F----------------------------------------------------------
 #  ms1 <- dir()[grepl("fullMS.mzXML", dir())] #fullMS or any other nomenclature employed for MS1
 #  ms2 <- dir()[grepl("sep40.mzXML"), dir()] #sep40 or any other nomenclature employed for MS2
 #  data_ms1 <- sapply(ms1, dataProcessing, msLevel = 1, polarity = "positive")
@@ -67,11 +67,11 @@ knitr::opts_chunk$set(
 #  head(data_ms1[[1]]$peaklist)
 #  head(data_ms1[[1]]$rawScans)
 
-## ---- echo=T, eval=F-----------------------------------------------------
+## ---- echo=T, eval=F----------------------------------------------------------
 #  pos_res <- idPOS(MS1 = data_ms1[[1]], MSMS1 = data_ms2[[1]], ppm_precursor = 10,
 #                   ppm_products = 10, rttol = 10, coelCutoff = 0.8)
 
-## ---- echo=T, eval=F-----------------------------------------------------
+## ---- echo=T, eval=F----------------------------------------------------------
 #  MS1 <- data_ms1[[1]] # CE = 0
 #  MSMS1 <- data_ms2[[1]] # CE > 0
 #  ppm_precursor <- 10
@@ -94,7 +94,7 @@ knitr::opts_chunk$set(
 #  # coelutingFrag, combineChains and organizeResults. These functions could be also
 #  # empoyed to build customized identification functions.
 
-## ---- echo=T, eval=F-----------------------------------------------------
+## ---- echo=T, eval=F----------------------------------------------------------
 #  MS1 <- data_ms1[[1]] # CE = 0
 #  MSMS1 <- data_ms2[[1]] # CE > 0
 #  ppm_precursor <- 10
@@ -122,7 +122,7 @@ knitr::opts_chunk$set(
 #  # if you want to see just the features annotated by LipidMS:
 #  View(annotatedPeaklist[annotatedPeaklist$LipidMS_id != "",])
 
-## ---- echo=T, eval=F-----------------------------------------------------
+## ---- echo=T, eval=F----------------------------------------------------------
 #  fas <- c("8:0", "10:0", "12:0", "14:0", "14:1", "15:0", "16:0", "16:1",
 #  "17:0", "18:0", "18:1", "18:2", "18:3", "18:4", "20:0", "20:1", "20:2",
 #  "20:3", "20:4", "20:5", "22:0", "22:1", "22:2", "22:3", "22:4", "22:5",
@@ -134,7 +134,7 @@ knitr::opts_chunk$set(
 #  dbs$adductsTable <- LipidMS::adductsTable
 #  dbs$nlsphdb <- LipidMS::nlsphdb
 
-## ---- echo=T, eval=F-----------------------------------------------------
+## ---- echo=T, eval=F----------------------------------------------------------
 #  fas <- c("8:0", "10:0", "12:0", "14:0", "14:1", "15:0", "16:0", "16:1",
 #           "17:0", "18:0", "18:1", "18:2", "18:3", "18:4", "19:0", "20:0", "20:1",
 #           "20:2", "20:3", "20:4", "20:5", "22:0", "22:1", "22:2", "22:3", "22:4",
@@ -143,7 +143,7 @@ knitr::opts_chunk$set(
 #  dbs <- assignDB() # This function loads all DBs required
 #  dbs$fadb <- newfadb$fadb # Then, you can modify some of these DBs
 
-## ---- echo=T, eval=F-----------------------------------------------------
+## ---- echo=T, eval=F----------------------------------------------------------
 #  adductsTable <- LipidMS::adductsTable
 #  adductsTable <- data.frame(adduct = c(adductsTable$adduct, "M+X"),
 #                            mdiff = c(adductsTable$mdiff, 52.65),
@@ -151,7 +151,7 @@ knitr::opts_chunk$set(
 #                            n = c(adductsTable$n, 1),
 #                            stringsAsFactors = F)
 
-## ---- echo=T, eval=F-----------------------------------------------------
+## ---- echo=T, eval=F----------------------------------------------------------
 #  # The new adductsTable has to be also uploaded in the dbs list.
 #  dbs <- assignDB()
 #  dbs$adductsTable <- adductsTable

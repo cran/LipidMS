@@ -4,10 +4,21 @@
 \alias{idMGpos}
 \title{Monoacylglycerol (MG) annotation for ESI+}
 \usage{
-idMGpos(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M+H-H2O", "M+NH4", "M+Na"),
-  clfrags = c(), clrequired = c(), ftype = c(), coelCutoff = 0.8,
-  dbs)
+idMGpos(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M+H-H2O", "M+NH4", "M+Na"),
+  clfrags = c(),
+  clrequired = c(),
+  ftype = c(),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

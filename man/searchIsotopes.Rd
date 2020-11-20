@@ -4,8 +4,14 @@
 \alias{searchIsotopes}
 \title{Target isotopes search}
 \usage{
-searchIsotopes(results, MS1, label, adductsTable = LipidMS::adductsTable,
-  rttol = 10, ppm = 10)
+searchIsotopes(
+  results,
+  MS1,
+  label,
+  adductsTable = LipidMS::adductsTable,
+  rttol = 10,
+  ppm = 10
+)
 }
 \arguments{
 \item{results}{annotation results for an unlabelled sample. Output of

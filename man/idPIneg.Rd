@@ -4,14 +4,26 @@
 \alias{idPIneg}
 \title{Phosphoinositols (PI) annotation for ESI-}
 \usage{
-idPIneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M-H"), clfrags = c(241.0115, 223.0008,
-  259.0219, 297.0375), clrequired = c(F, F, F, F), ftype = c("F", "F",
-  "F", "F"), chainfrags_sn1 = c("lysopi_M-H", "lysopa_M-H"),
+idPIneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M-H"),
+  clfrags = c(241.0115, 223.0008, 259.0219, 297.0375),
+  clrequired = c(F, F, F, F),
+  ftype = c("F", "F", "F", "F"),
+  chainfrags_sn1 = c("lysopi_M-H", "lysopa_M-H"),
   chainfrags_sn2 = c("lysopi_M-H", "lysopa_M-H", "fa_M-H"),
   intrules = c("lysopi_sn1/lysopi_sn2", "lysopa_sn1/lysopa_sn2"),
-  rates = c("3/1", "3/1"), intrequired = c(F, F), coelCutoff = 0.8,
-  dbs)
+  rates = c("3/1", "3/1"),
+  intrequired = c(F, F),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

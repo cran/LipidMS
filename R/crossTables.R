@@ -46,6 +46,11 @@ crossTables <- function(MS1, results, ppm=10, rttol=10, dbs){
            columns: m.z, RT, int, peakID and Scan")
     }
     MS1 <- MS1$peaklist
+  }
+  if (class(results) == "list" & length(results) == 2){
+    results <- results$results
+  }
+  if (!all(grepl("_MS1",MS1$peakID))){
     MS1$peakID <- as.vector(paste(MS1$peakID, "MS1", sep = "_"))
   }
   results <- results[order(results$CDB,
@@ -58,19 +63,20 @@ crossTables <- function(MS1, results, ppm=10, rttol=10, dbs){
   rawPeaks <- data.frame(MS1, LipidMS_id = "", Adduct = "",
                          confidenceLevel = "",
                          PFCS = "", stringsAsFactors = F)
-  Form_Mn <- apply(results, 1, getFormula)
-  if (class(Form_Mn) == "matrix"){
-    new <- list()
-    for (i in 1:ncol(Form_Mn)){
-      new[[i]] <- c(Form_Mn[1,i], Form_Mn[2,i])
-    }
-    Form_Mn <- new
-  }
-  na <- which(unlist(lapply(Form_Mn, length)) == 0)
-  if (length(na) > 0){
-    Form_Mn[[na]] <- c(NA, NA)
-  }
-  Mn <- as.numeric(unlist(lapply(Form_Mn, "[[", 2)))
+  Form_Mn <- do.call(rbind, apply(results, 1, getFormula))
+  # if (any(class(Form_Mn) == "matrix")){
+  #   new <- list()
+  #   for (i in 1:ncol(Form_Mn)){
+  #     new[[i]] <- c(Form_Mn[1,i], Form_Mn[2,i])
+  #   }
+  #   Form_Mn <- new
+  # }
+  # na <- which(unlist(lapply(Form_Mn, length)) == 0)
+  # if (length(na) > 0){
+  #   Form_Mn[[na]] <- c(NA, NA)
+  # }
+  # Mn <- as.numeric(unlist(lapply(Form_Mn, "[[", 2)))
+  Mn <- Form_Mn[,"Mn"]
   for (r in 1:nrow(results)){
     adducts <- unlist(strsplit(as.character(results$Adducts)[r], ";"))
     mzs <- vector()

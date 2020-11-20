@@ -43,19 +43,20 @@
 #'
 #' candidates <- findCandidates(MS1 =MS1_neg$peaklist,
 #' db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
-#' rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
+#' rttol = 10, dbs = dbs, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 #'
 #'
 #' # If any adduct is not in the adductsTable, it can be added:
 #'
-#' adductsTable2 <- rbind(adductsTable,
-#' c(adduct = "M+HCOO", mdiff = 44.9982, n = 1, charge = -1))
+#' adductsTable2 <- rbind(dbs$adductsTable,
+#' data.frame(adduct = "M+X", mdiff = 44.9982, n = 1, charge = -1,
+#' stringsAsFactors = FALSE))
 #' dbs <- assignDB()
 #' dbs$adductsTable <- adductsTable2
 #'
 #' candidates <- findCandidates(MS1 = MS1_neg$peaklist,
-#' db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H", "M+HCOO"),
-#' rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
+#' db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H", "M+X"),
+#' rttol = 10, dbs = dbs, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -66,8 +67,9 @@ findCandidates <- function(MS1, db, ppm, rt,
   count <- 0
   candidates <- vector()
   for (i in 1:length(adducts)){
-    ad <- adductsTable[adductsTable$adduct == adducts[i],]
-    prec <- findPrecursor(MS1, db, ppm, massdif = ad$mdiff, rt, ad$n, ad$charge)
+    ad <- unique(adductsTable[adductsTable$adduct == adducts[i],])
+    prec <- findPrecursor(MS1, db, ppm, massdif = ad$mdiff,
+                          rt = rt, n = ad$n, charge = ad$charge)
     if (nrow(prec) > 0){
       prec <- cbind(prec, adducts = as.vector(adducts[i]))
       if (count == 0){

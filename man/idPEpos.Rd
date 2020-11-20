@@ -4,14 +4,26 @@
 \alias{idPEpos}
 \title{Phosphoethanolamines (PE) annotation for ESI+}
 \usage{
-idPEpos(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M+H", "M+Na"),
-  clfrags = c("dg_M+H-H2O"), clrequired = c(F), ftype = c("BB"),
+idPEpos(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M+H", "M+Na"),
+  clfrags = c("dg_M+H-H2O"),
+  clrequired = c(F),
+  ftype = c("BB"),
   chainfrags_sn1 = c("lysope_M+H-H2O", "mg_M+H-H2O"),
   chainfrags_sn2 = c("mg_M+H-H2O"),
   intrules = c("lysope_sn1/lysope_sn1", "mg_sn1/mg_sn2"),
-  rates = c("3/1", "1/2"), intrequired = c(F, F), coelCutoff = 0.8,
-  dbs)
+  rates = c("3/1", "1/2"),
+  intrequired = c(F, F),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

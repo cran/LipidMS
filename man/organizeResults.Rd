@@ -4,8 +4,16 @@
 \alias{organizeResults}
 \title{Prepare output for LipidMS annotation functions}
 \usage{
-organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
-  intConf, nchains, class)
+organizeResults(
+  candidates,
+  clfrags,
+  classConf,
+  chainsComb,
+  intrules,
+  intConf,
+  nchains,
+  class
+)
 }
 \arguments{
 \item{candidates}{candidates data frame. Output of \link{findCandidates}.}
@@ -36,25 +44,27 @@ dbs <- assignDB()
 
 candidates <- findCandidates(MS1 = MS1_neg$peaklist,
 db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
-rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
+rttol = 10, dbs = dbs, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 
 MSMS <- rbind(MSMS1_neg$peaklist, MSMS2_neg$peaklist)
 rawData <- rbind(MS1_neg$rawScans, MSMS1_neg$rawScans, MSMS2_neg$rawScans)
-coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
+coelfrags <- coelutingFrags(candidates, MSMS, rttol = 10, rawData = rawData,
 coelCutoff = 0.8)
 
 classConf <- checkClass(candidates, coelfrags,
-clfrags = c(227.0326, 209.022, 74.0359), clrequisites = c(F, F, F, F),
+clfrags = c(227.0326, 209.022, 74.0359),
+clrequisites = c(FALSE, FALSE, FALSE, FALSE),
 ftype = c("F", "F", "NL"), ppm = 10, dbs = dbs)
 
-sn1 <- chainFrags(coelfrags, chainfrags = c("lysopg_M-H"), ppm = 10,
-dbs = dbs)
-sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10, dbs = dbs)
+sn1 <- chainFrags(coelfrags, chainfrags = c("lysopg_M-H"),
+candidates = candidates, ppm = 10, dbs = dbs)
+sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10,
+candidates = candidates, dbs = dbs)
 
 chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
 
 intConf <- checkIntensityRules(intrules = c("lysopg_sn1/lysopg_sn1"),
-rates = c("2/1"), intrequired = c(T), nchains=2, chainsComb, sn1, sn2)
+rates = c("2/1"), intrequired = c(TRUE), nchains=2, chainsComb)
 
 res <- organizeResults(candidates, clfrags = c(227.0326, 209.022, 74.0359),
 classConf, chainsComb, intrules = c("lysopg_sn1/lysopg_sn1"), intConf,

@@ -4,10 +4,22 @@
 \alias{idLPIneg}
 \title{Lysophosphoinositols (LPI) annotation for ESI-}
 \usage{
-idLPIneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M-H"), clfrags = c(241.0115, 223.0008,
-  259.0219, 297.0375), clrequired = c(F, F, F, F), ftype = c("F", "F",
-  "F", "F"), chainfrags_sn1 = c("fa_M-H"), coelCutoff = 0.8, dbs)
+idLPIneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M-H"),
+  clfrags = c(241.0115, 223.0008, 259.0219, 297.0375),
+  clrequired = c(F, F, F, F),
+  ftype = c("F", "F", "F", "F"),
+  chainfrags_sn1 = c("fa_M-H"),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

@@ -4,13 +4,26 @@
 \alias{idPGneg}
 \title{Phosphoglycerols (PG) annotation for ESI-}
 \usage{
-idPGneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M-H"), clfrags = c(152.9958, 227.0326,
-  209.022, 74.0359), clrequired = c(F, F, F, F), ftype = c("F", "F",
-  "F", "NL"), chainfrags_sn1 = c("lysopg_M-H"),
+idPGneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M-H"),
+  clfrags = c(152.9958, 227.0326, 209.022, 74.0359),
+  clrequired = c(F, F, F, F),
+  ftype = c("F", "F", "F", "NL"),
+  chainfrags_sn1 = c("lysopg_M-H"),
   chainfrags_sn2 = c("lysopg_M-H", "fa_M-H"),
-  intrules = c("lysopg_sn1/lysopg_sn2"), rates = c("2/1"),
-  intrequired = c(T), coelCutoff = 0.8, dbs)
+  intrules = c("lysopg_sn1/lysopg_sn2"),
+  rates = c("2/1"),
+  intrequired = c(T),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

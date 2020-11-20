@@ -4,10 +4,22 @@
 \alias{idCarpos}
 \title{Carnitine annotation for ESI+}
 \usage{
-idCarpos(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M+H", "M+Na"), clfrags = c(60.0807,
-  85.0295, "fa_M+H-H2O"), clrequired = c(F, F, F), ftype = c("F", "F",
-  "BB"), chainfrags_sn1 = c("fa_M+H-H2O"), coelCutoff = 0.8, dbs)
+idCarpos(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M+H", "M+Na"),
+  clfrags = c(60.0807, 85.0295, "fa_M+H-H2O"),
+  clrequired = c(F, F, F),
+  ftype = c("F", "F", "BB"),
+  chainfrags_sn1 = c("fa_M+H-H2O"),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

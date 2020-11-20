@@ -4,14 +4,28 @@
 \alias{idCLneg}
 \title{Cardiolipines (CL) annotation for ESI-}
 \usage{
-idCLneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 5, rt, adducts = c("M-H", "M+Na-2H"), clfrags = c(),
-  clrequired = c(), ftype = c(),
+idCLneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 5,
+  rt,
+  adducts = c("M-H", "M+Na-2H"),
+  clfrags = c(),
+  clrequired = c(),
+  ftype = c(),
   chainfrags_sn1 = c("lysopa_M-H-H2O"),
   chainfrags_sn2 = c("lysopa_M-H-H2O"),
   chainfrags_sn3 = c("lysopa_M-H-H2O"),
-  chainfrags_sn4 = c("lysopa_M-H-H2O"), intrules = c("Unknown"),
-  rates = c(), intrequired = c(), coelCutoff = 0.8, dbs)
+  chainfrags_sn4 = c("lysopa_M-H-H2O"),
+  intrules = c("Unknown"),
+  rates = c(),
+  intrequired = c(),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS
@@ -129,7 +143,7 @@ but it may need to be customized for other platforms or acquisition settings.
 \examples{
 \donttest{
 library(LipidMSdata)
-idCL(MS1 = MS1_neg, MSMS1 = MSMS1_neg, MSMS2 = MSMS2_neg, coelCutoff = 0)
+idCLneg(MS1 = MS1_neg, MSMS1 = MSMS1_neg, MSMS2 = MSMS2_neg, coelCutoff = 0)
 }
 
 }

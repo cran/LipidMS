@@ -4,13 +4,26 @@
 \alias{idPEneg}
 \title{Phosphoethanolamines (PE) annotation for ESI-}
 \usage{
-idPEneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 5, rt, adducts = c("M-H"), clfrags = c(140.0118, 196.038,
-  214.048, "pe_M-CH3"), clrequired = c(F, F, F, "excluding"),
-  ftype = c("F", "F", "F", "BB"), chainfrags_sn1 = c("lysope_M-H"),
+idPEneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 5,
+  rt,
+  adducts = c("M-H"),
+  clfrags = c(140.0118, 196.038, 214.048, "pe_M-CH3"),
+  clrequired = c(F, F, F, "excluding"),
+  ftype = c("F", "F", "F", "BB"),
+  chainfrags_sn1 = c("lysope_M-H"),
   chainfrags_sn2 = c("lysope_M-H", "fa_M-H"),
-  intrules = c("lysope_sn1/lysope_sn2"), rates = c("3/1"),
-  intrequired = c(T), coelCutoff = 0.8, dbs)
+  intrules = c("lysope_sn1/lysope_sn2"),
+  rates = c("3/1"),
+  intrequired = c(T),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

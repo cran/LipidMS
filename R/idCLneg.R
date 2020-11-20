@@ -93,7 +93,7 @@
 #' @examples
 #' \donttest{
 #' library(LipidMSdata)
-#' idCL(MS1 = MS1_neg, MSMS1 = MSMS1_neg, MSMS2 = MSMS2_neg, coelCutoff = 0)
+#' idCLneg(MS1 = MS1_neg, MSMS1 = MSMS1_neg, MSMS2 = MSMS2_neg, coelCutoff = 0)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -159,8 +159,8 @@ idCLneg <- function(MS1, MSMS1, MSMS2, ppm_precursor = 5,
       MSMS2$peakID <- as.vector(rep("", nrow(MSMS2)))
     }
   }
-  if (!(c("m.z", "RT", "int") %in% colnames(MS1)) ||
-      !(c("m.z", "RT", "int") %in% colnames(MS1))){
+  if (!any(c("m.z", "RT", "int") %in% colnames(MS1)) |
+      !any(c("m.z", "RT", "int") %in% colnames(MSMS1))){
     stop("Peaklists (MS1, MSMS1 and MSMS2 if supplied, should have at least
          3 columns with the following names: m.z, RT, int.")
   }

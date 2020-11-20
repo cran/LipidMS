@@ -4,12 +4,26 @@
 \alias{idDGpos}
 \title{Diacylglycerols (DG) annotation for ESI+}
 \usage{
-idDGpos(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M+H-H2O", "M+NH4", "M+Na"),
-  clfrags = c(), clrequired = c(), ftype = c(),
-  chainfrags_sn1 = c("mg_M+H-H2O"), chainfrags_sn2 = c("mg_M+H-H2O"),
-  intrules = c("mg_sn1/mg_sn2"), rates = c("1"), intrequired = c(T),
-  coelCutoff = 0.8, dbs)
+idDGpos(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M+H-H2O", "M+NH4", "M+Na"),
+  clfrags = c(),
+  clrequired = c(),
+  ftype = c(),
+  chainfrags_sn1 = c("mg_M+H-H2O"),
+  chainfrags_sn2 = c("mg_M+H-H2O"),
+  intrules = c("mg_sn1/mg_sn2"),
+  rates = c("1"),
+  intrequired = c(T),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

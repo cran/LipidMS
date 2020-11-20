@@ -4,10 +4,22 @@
 \alias{idLPGneg}
 \title{Lysophosphoglycerols (LPG) annotation for ESI-}
 \usage{
-idLPGneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M-H"), clfrags = c(152.9958, 227.0326,
-  209.022, 74.0359), clrequired = c(F, F, F, F), ftype = c("F", "F",
-  "F", "NL"), chainfrags_sn1 = c("fa_M-H"), coelCutoff = 0.8, dbs)
+idLPGneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M-H"),
+  clfrags = c(152.9958, 227.0326, 209.022, 74.0359),
+  clrequired = c(F, F, F, F),
+  ftype = c("F", "F", "F", "NL"),
+  chainfrags_sn1 = c("fa_M-H"),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

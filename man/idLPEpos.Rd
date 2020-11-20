@@ -4,10 +4,22 @@
 \alias{idLPEpos}
 \title{Lysophosphoethanolamines (LPE) annotation for ESI+}
 \usage{
-idLPEpos(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M+H", "M+Na"), clfrags = c(141.01909),
-  clrequired = c(F), ftype = c("NL"),
-  chainfrags_sn1 = c("mg_M+H-H2O"), coelCutoff = 0.8, dbs)
+idLPEpos(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M+H", "M+Na"),
+  clfrags = c(141.01909),
+  clrequired = c(F),
+  ftype = c("NL"),
+  chainfrags_sn1 = c("mg_M+H-H2O"),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

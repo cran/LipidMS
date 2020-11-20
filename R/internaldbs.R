@@ -39,7 +39,7 @@ MassSphP <- function(SphP){
   C <- as.numeric(cb[1])
   H <- as.numeric(cb[1])*2+4-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "NO5P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+14.00305+5*15.9949+30.97393
   return(c(formula, mass))
 }
@@ -62,7 +62,7 @@ MassCer <- function(cer){
   C <- as.numeric(cb[1])
   H <- as.numeric(cb[1])*2+1-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "NO3"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+14.00305+3*15.9949
   return(c(formula, mass))
 }
@@ -85,7 +85,7 @@ MassCerP <- function(cerP){
   C <- as.numeric(cb[1])
   H <- as.numeric(cb[1])*2+2-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "NO6P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+14.00305+6*15.9949+30.97393
   return(c(formula, mass))
 }
@@ -108,7 +108,7 @@ MassGlcCer <- function(glccer){
   C <- as.numeric(cb[1])+6
   H <- as.numeric(cb[1])*2+11-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "NO8"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+14.00305+8*15.9949
   return(c(formula, mass))
 }
@@ -131,7 +131,7 @@ MassSM <- function(SM){
   C <- as.numeric(cb[1])+5
   H <- as.numeric(cb[1])*2+13-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "N2O6P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+2*14.00305+6*15.9949+30.97393
   return(c(formula, mass))
 }
@@ -154,7 +154,7 @@ MassCarnitines <- function(carnitine){
   C <- as.numeric(cb[1])+7
   H <- as.numeric(cb[1])*2+13-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "NO4"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825++14.00305+4*15.9949
   return(c(formula, mass))
 }
@@ -177,7 +177,7 @@ MassCE <- function(CE){
   C <- as.numeric(cb[1])+27
   H <- as.numeric(cb[1])*2+44-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O2"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+2*15.9949
   return(c(formula, mass))
 }
@@ -200,7 +200,7 @@ MassFA <- function(FA){
   C <- as.numeric(cb[1])
   H <- as.numeric(cb[1])*2-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O2"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+2*15.9949
   return(c(formula, mass))
 }
@@ -223,7 +223,7 @@ MassHFA <- function(HFA){
   C <- as.numeric(cb[1])
   H <- as.numeric(cb[1])*2-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O3"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+3*15.9949
   return(c(formula, mass))
 }
@@ -246,7 +246,7 @@ MassFAHFA <- function(FAHFA){
   C <- as.numeric(cb[1])
   H <- as.numeric(cb[1])*2-2-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O4"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+4*15.9949
   return(c(formula, mass))
 }
@@ -269,8 +269,31 @@ MassLysoPA <- function(LPA){
   C <- as.numeric(cb[1])+3
   H <- as.numeric(cb[1])*2+7-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H),
-    "O7P"), collapse="")
+                     "O7P"), collapse="")
   mass <- C*12+H*1.007825+7*15.9949+30.97393
+  return(c(formula, mass))
+}
+
+# MassLysoPAo
+#' Calculate formula and mass of LPAo
+#'
+#' Calculate formula and mass of LPAo
+#'
+#' @param LPAo character value indicating total number of carbons and
+#' double bounds
+#'
+#' @return vector containing formula and mass
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+MassLysoPAo <- function(LPAo){
+  cb <- unlist(strsplit(LPAo, "[: ]"))
+  C <- as.numeric(cb[1])+3
+  H <- as.numeric(cb[1])*2+9-as.numeric(cb[2])*2
+  formula <- paste(c("C", as.character(C), "H", as.character(H),
+                     "O6P"), collapse="")
+  mass <- C*12+H*1.007825+6*15.9949+30.97393
   return(c(formula, mass))
 }
 
@@ -292,7 +315,7 @@ MassPA <- function(PA){
   C <- as.numeric(cb[1])+3
   H <- as.numeric(cb[1])*2+5-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O8P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+8*15.9949+30.97393
   return(c(formula, mass))
 }
@@ -315,8 +338,54 @@ MassLysoPE <- function(LPE){
   C <- as.numeric(cb[1])+5
   H <- as.numeric(cb[1])*2+12-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "NO7P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+14.00305+7*15.9949+30.97393
+  return(c(formula, mass))
+}
+
+# MassLysoPEo
+#' Calculate formula and mass of LPEo
+#'
+#' Calculate formula and mass of LPEo
+#'
+#' @param LPEo character value indicating total number of carbons and
+#' double bounds
+#'
+#' @return vector containing formula and mass
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+MassLysoPEo <- function(LPEo){
+  cb <- unlist(strsplit(LPEo, "[: ]"))
+  C <- as.numeric(cb[1])+5
+  H <- as.numeric(cb[1])*2+14-as.numeric(cb[2])*2
+  formula <- paste(c("C", as.character(C), "H", as.character(H), "NO6P"),
+                   collapse="")
+  mass <- C*12+H*1.007825+14.00305+6*15.9949+30.97393
+  return(c(formula, mass))
+}
+
+# MassLysoPEp
+#' Calculate formula and mass of LPEp
+#'
+#' Calculate formula and mass of LPEp
+#'
+#' @param LPEp character value indicating total number of carbons and
+#' double bounds
+#'
+#' @return vector containing formula and mass
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+MassLysoPEp <- function(LPEp){
+  cb <- unlist(strsplit(LPEp, "[: ]"))
+  C <- as.numeric(cb[1])+5
+  H <- as.numeric(cb[1])*2+12-as.numeric(cb[2])*2
+  formula <- paste(c("C", as.character(C), "H", as.character(H), "NO6P"),
+                   collapse="")
+  mass <- C*12+H*1.007825+14.00305+6*15.9949+30.97393
   return(c(formula, mass))
 }
 
@@ -338,8 +407,54 @@ MassPE <- function(PE){
   C <- as.numeric(cb[1])+5
   H <- as.numeric(cb[1])*2+10-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "NO8P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+14.00305+8*15.9949+30.97393
+  return(c(formula, mass))
+}
+
+# MassPEo
+#' Calculate formula and mass of plasmanyl PE
+#'
+#' Calculate formula and mass of plasmanyl PE
+#'
+#' @param PEp character value indicating total number of carbons and
+#' double bounds
+#'
+#' @return vector containing formula and mass
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+MassPEo <- function(PEo){
+  cb <- unlist(strsplit(PEo, "[: ]"))
+  C <- as.numeric(cb[1])+5
+  H <- as.numeric(cb[1])*2+12-as.numeric(cb[2])*2
+  formula <- paste(c("C", as.character(C), "H", as.character(H), "NO7P"),
+                   collapse="")
+  mass <- C*12+H*1.007825+14.00305+7*15.9949+30.97393
+  return(c(formula, mass))
+}
+
+# MassPEp
+#' Calculate formula and mass of plasmenyl PE
+#'
+#' Calculate formula and mass of plasmenyl PE
+#'
+#' @param PEp character value indicating total number of carbons and
+#' double bounds
+#'
+#' @return vector containing formula and mass
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+MassPEp <- function(PEp){
+  cb <- unlist(strsplit(PEp, "[: ]"))
+  C <- as.numeric(cb[1])+5
+  H <- as.numeric(cb[1])*2+10-as.numeric(cb[2])*2
+  formula <- paste(c("C", as.character(C), "H", as.character(H), "NO7P"),
+                   collapse="")
+  mass <- C*12+H*1.007825+14.00305+7*15.9949+30.97393
   return(c(formula, mass))
 }
 
@@ -361,7 +476,7 @@ MassLysoPG <- function(LPG){
   C <- as.numeric(cb[1])+6
   H <- as.numeric(cb[1])*2+13-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H),
-    "O9P"), collapse="")
+                     "O9P"), collapse="")
   mass <- C*12+H*1.007825+9*15.9949+30.97393
   return(c(formula, mass))
 }
@@ -384,7 +499,7 @@ MassPG <- function(PG){
   C <- as.numeric(cb[1])+6
   H <- as.numeric(cb[1])*2+11-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H),
-    "O10P"), collapse="")
+                     "O10P"), collapse="")
   mass <- C*12+H*1.007825+10*15.9949+30.97393
   return(c(formula, mass))
 }
@@ -407,7 +522,7 @@ MassLysoPI <- function(LPI){
   C <- as.numeric(cb[1])+9
   H <- as.numeric(cb[1])*2+17-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O12P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+12*15.9949+30.97393
   return(c(formula, mass))
 }
@@ -430,7 +545,7 @@ MassPI <- function(PI){
   C <- as.numeric(cb[1])+9
   H <- as.numeric(cb[1])*2+15-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O13P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+13*15.9949+30.97393
   return(c(formula, mass))
 }
@@ -453,7 +568,7 @@ MassPIP <- function(PIP){
   C <- as.numeric(cb[1])+9
   H <- as.numeric(cb[1])*2+16-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O16P2"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+16*15.9949+2*30.97393
   return(c(formula, mass))
 }
@@ -476,7 +591,7 @@ MassPIP2 <- function(PIP2){
   C <- as.numeric(cb[1])+9
   H <- as.numeric(cb[1])*2+17-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O19P3"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+19*15.9949+3*30.97393
   return(c(formula, mass))
 }
@@ -499,7 +614,7 @@ MassPIP3 <- function(PIP3){
   C <- as.numeric(cb[1])+9
   H <- as.numeric(cb[1])*2+18-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O22P4"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+22*15.9949+4*30.97393
   return(c(formula, mass))
 }
@@ -522,7 +637,7 @@ MassLysoPS <- function(LPS){
   C <- as.numeric(cb[1])+6
   H <- as.numeric(cb[1])*2+12-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "NO9P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+9*15.9949+30.97393+14.00305
   return(c(formula, mass))
 }
@@ -545,7 +660,7 @@ MassPS <- function(PS){
   C <- as.numeric(cb[1])+6
   H <- as.numeric(cb[1])*2+10-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "NO10P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+10*15.9949+30.97393+14.00305
   return(c(formula, mass))
 }
@@ -568,8 +683,54 @@ MassLysoPC <- function(LPC){
   C <- as.numeric(cb[1])+8
   H <- as.numeric(cb[1])*2+18-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "NO7P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+7*15.9949+30.97393+14.00305
+  return(c(formula, mass))
+}
+
+# MassLysoPCp
+#' Calculate formula and mass of LysoPCp
+#'
+#' Calculate formula and mass of LysoPCp
+#'
+#' @param LPCp character value indicating total number of carbons and
+#' double bounds
+#'
+#' @return vector containing formula and mass
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+MassLysoPCp <- function(LPCp){
+  cb <- unlist(strsplit(LPCp, "[: ]"))
+  C <- as.numeric(cb[1])+8
+  H <- as.numeric(cb[1])*2+18-as.numeric(cb[2])*2
+  formula <- paste(c("C", as.character(C), "H", as.character(H), "NO6P"),
+                   collapse="")
+  mass <- C*12+H*1.007825+6*15.9949+30.97393+14.00305
+  return(c(formula, mass))
+}
+
+# MassLysoPCo
+#' Calculate formula and mass of LysoPCo
+#'
+#' Calculate formula and mass of LysoPCo
+#'
+#' @param LPCo character value indicating total number of carbons and
+#' double bounds
+#'
+#' @return vector containing formula and mass
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+MassLysoPCo <- function(LPCo){
+  cb <- unlist(strsplit(LPCo, "[: ]"))
+  C <- as.numeric(cb[1])+8
+  H <- as.numeric(cb[1])*2+20-as.numeric(cb[2])*2
+  formula <- paste(c("C", as.character(C), "H", as.character(H), "NO6P"),
+                   collapse="")
+  mass <- C*12+H*1.007825+6*15.9949+30.97393+14.00305
   return(c(formula, mass))
 }
 
@@ -591,8 +752,54 @@ MassPC <- function(PC){
   C <- as.numeric(cb[1])+8
   H <- as.numeric(cb[1])*2+16-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "NO8P"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+8*15.9949+30.97393+14.00305
+  return(c(formula, mass))
+}
+
+# MassPCp
+#' Calculate formula and mass of PCp
+#'
+#' Calculate formula and mass of PCp
+#'
+#' @param PCp character value indicating total number of carbons and
+#' double bounds
+#'
+#' @return vector containing formula and mass
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+MassPCp <- function(PCp){
+  cb <- unlist(strsplit(PCp, "[: ]"))
+  C <- as.numeric(cb[1])+8
+  H <- as.numeric(cb[1])*2+16-as.numeric(cb[2])*2
+  formula <- paste(c("C", as.character(C), "H", as.character(H), "NO7P"),
+                   collapse="")
+  mass <- C*12+H*1.007825+7*15.9949+30.97393+14.00305
+  return(c(formula, mass))
+}
+
+# MassPCo
+#' Calculate formula and mass of PCo
+#'
+#' Calculate formula and mass of PCo
+#'
+#' @param PCo character value indicating total number of carbons and
+#' double bounds
+#'
+#' @return vector containing formula and mass
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+MassPCo <- function(PCo){
+  cb <- unlist(strsplit(PCo, "[: ]"))
+  C <- as.numeric(cb[1])+8
+  H <- as.numeric(cb[1])*2+18-as.numeric(cb[2])*2
+  formula <- paste(c("C", as.character(C), "H", as.character(H), "NO7P"),
+                   collapse="")
+  mass <- C*12+H*1.007825+7*15.9949+30.97393+14.00305
   return(c(formula, mass))
 }
 
@@ -614,7 +821,7 @@ MassMG <- function(MG){
   C <- as.numeric(cb[1])+3
   H <- as.numeric(cb[1])*2+6-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O4"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+4*15.9949
   return(c(formula, mass))
 }
@@ -637,7 +844,7 @@ MassDG <- function(DG){
   C <- as.numeric(cb[1])+3
   H <- as.numeric(cb[1])*2+4-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O5"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+5*15.9949
   return(c(formula, mass))
 }
@@ -660,7 +867,7 @@ MassTG <- function(TG){
   C <- as.numeric(cb[1])+3
   H <- as.numeric(cb[1])*2+2-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O6"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+6*15.9949
   return(c(formula, mass))
 }
@@ -683,7 +890,7 @@ MassCL <- function(CL){
   C <- as.numeric(cb[1])+9
   H <- as.numeric(cb[1])*2+14-as.numeric(cb[2])*2
   formula <- paste(c("C", as.character(C), "H", as.character(H), "O17P2"),
-    collapse="")
+                   collapse="")
   mass <- C*12+H*1.007825+17*15.9949+2*30.97393
   return(c(formula, mass))
 }
@@ -720,7 +927,7 @@ dbSphingolipids <- function(chains, chains2, lipid){
     fm <- lapply(total, MassSM)
   }
   db <- data.frame(formula=unlist(lapply(fm, "[[", 1)), total=total,
-    Mass=as.numeric(unlist(lapply(fm, "[[", 2))), stringsAsFactors = F)
+                   Mass=as.numeric(unlist(lapply(fm, "[[", 2))), stringsAsFactors = F)
   return(db)
 }
 
@@ -770,8 +977,8 @@ dbOneChain <- function(chains, lipid){
     fm <- lapply(fas, MassSphP)
   }
   db <- data.frame(formula=unlist(lapply(fm, "[[", 1)), total=fas,
-    Mass=as.numeric(as.vector(unlist(lapply(fm, "[[", 2)))),
-    stringsAsFactors = F)
+                   Mass=as.numeric(as.vector(unlist(lapply(fm, "[[", 2)))),
+                   stringsAsFactors = F)
   return(db)
 }
 
@@ -817,8 +1024,8 @@ dbTwoChains <- function(chains, lipid){
     fm <- lapply(total, MassPA)
   }
   db <- data.frame(formula=unlist(lapply(fm, "[[", 1)), total=total,
-    Mass=as.numeric(as.vector(unlist(lapply(fm, "[[", 2)))),
-    stringsAsFactors = F)
+                   Mass=as.numeric(as.vector(unlist(lapply(fm, "[[", 2)))),
+                   stringsAsFactors = F)
   return(db)
 }
 
@@ -844,8 +1051,8 @@ dbThreeChains <- function(chains, lipid){
     fm <- lapply(total, MassTG)
   }
   db <- data.frame(formula=unlist(lapply(fm, "[[", 1)), total=total,
-    Mass=as.numeric(as.vector(unlist(lapply(fm, "[[", 2)))),
-    stringsAsFactors = F)
+                   Mass=as.numeric(as.vector(unlist(lapply(fm, "[[", 2)))),
+                   stringsAsFactors = F)
   return(db)
 }
 
@@ -871,8 +1078,8 @@ dbFourChains <- function(chains, lipid){
     fm <- lapply(total, MassCL)
   }
   db <- data.frame(formula=unlist(lapply(fm, "[[", 1)), total=total,
-    Mass=as.numeric(as.vector(unlist(lapply(fm, "[[", 2)))),
-    stringsAsFactors = F)
+                   Mass=as.numeric(as.vector(unlist(lapply(fm, "[[", 2)))),
+                   stringsAsFactors = F)
   return(db)
 }
 
@@ -939,6 +1146,8 @@ getFormula <- function(df){
     db <- LipidMS::sphPdb
   } else if (lipidClass == "TG"){
     db <- LipidMS::tgdb
+  } else if (lipidClass == "TG"){
+    db <- LipidMS::tgdb
   }
   index <- which(db$total == as.character(cdb))
   if(length(index) > 0){
@@ -952,7 +1161,8 @@ getFormula <- function(df){
     formula <- tempdb[tempdb$total == as.character(cdb), 1]
     Mn <- tempdb[tempdb$total == as.character(cdb), 3]
   }
-  return(c(formula, Mn))
+  return(data.frame(Formula = as.character(formula),
+                    Mn = as.numeric(Mn), stringsAsFactors = FALSE))
 }
 
 

@@ -118,10 +118,10 @@ idBAneg <- function(MS1, MSMS1, MSMS2, ppm_precursor = 5,
       MSMS2 <- MSMS2$peaklist
       MSMS2$peakID <- as.vector(paste(MSMS2$peakID, "MSMS2", sep = "_"))
     }
-  } else {
-    rawDataMS1 <- rawDataMSMS1 <- rawDataMSMS2 <- data.frame()
-    coelCutoff <- 0
-  }
+    } else {
+      rawDataMS1 <- rawDataMSMS1 <- rawDataMSMS2 <- data.frame()
+      coelCutoff <- 0
+    }
   if(!"peakID" %in% colnames(MS1)){
     MS1$peakID <- as.vector(rep("", nrow(MS1)))
     MSMS1$peakID <- as.vector(rep("", nrow(MSMS1)))
@@ -129,8 +129,8 @@ idBAneg <- function(MS1, MSMS1, MSMS2, ppm_precursor = 5,
       MSMS2$peakID <- as.vector(rep("", nrow(MSMS2)))
     }
   }
-  if (!(c("m.z", "RT", "int") %in% colnames(MS1)) ||
-      !(c("m.z", "RT", "int") %in% colnames(MS1))){
+  if (!any(c("m.z", "RT", "int") %in% colnames(MS1)) |
+      !any(c("m.z", "RT", "int") %in% colnames(MSMS1))){
     stop("Peaklists (MS1, MSMS1 and MSMS2 if supplied, should have at least
          3 columns with the following names: m.z, RT, int.")
   }

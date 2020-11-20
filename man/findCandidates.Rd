@@ -4,8 +4,17 @@
 \alias{findCandidates}
 \title{Search of lipid candidates of a certain class.}
 \usage{
-findCandidates(MS1, db, ppm, rt, adducts, rttol = 3, dbs,
-  rawData = data.frame(), coelCutoff = 0)
+findCandidates(
+  MS1,
+  db,
+  ppm,
+  rt,
+  adducts,
+  rttol = 3,
+  dbs,
+  rawData = data.frame(),
+  coelCutoff = 0
+)
 }
 \arguments{
 \item{MS1}{peaklist of the MS function. Data frame with 3 columns: m.z, RT
@@ -61,19 +70,20 @@ dbs <- assignDB()
 
 candidates <- findCandidates(MS1 =MS1_neg$peaklist,
 db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
-rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
+rttol = 10, dbs = dbs, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 
 
 # If any adduct is not in the adductsTable, it can be added:
 
-adductsTable2 <- rbind(adductsTable,
-c(adduct = "M+HCOO", mdiff = 44.9982, n = 1, charge = -1))
+adductsTable2 <- rbind(dbs$adductsTable,
+data.frame(adduct = "M+X", mdiff = 44.9982, n = 1, charge = -1,
+stringsAsFactors = FALSE))
 dbs <- assignDB()
 dbs$adductsTable <- adductsTable2
 
 candidates <- findCandidates(MS1 = MS1_neg$peaklist,
-db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H", "M+HCOO"),
-rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
+db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H", "M+X"),
+rttol = 10, dbs = dbs, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 }
 
 }

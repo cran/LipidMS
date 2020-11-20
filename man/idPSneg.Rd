@@ -4,13 +4,26 @@
 \alias{idPSneg}
 \title{Phosphoserines (PS) annotation for ESI-}
 \usage{
-idPSneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M-H", "M+Na-2H"), clfrags = c(87.032,
-  152.9958), clrequired = c(F, F), ftype = c("NL", "F"),
+idPSneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M-H", "M+Na-2H"),
+  clfrags = c(87.032, 152.9958),
+  clrequired = c(F, F),
+  ftype = c("NL", "F"),
   chainfrags_sn1 = c("lysopa_M-H", "lysopa_M-H-H2O"),
   chainfrags_sn2 = c("lysopa_M-H", "lysopa_M-H-H2O", "fa_M-H"),
-  intrules = c("lysopa_sn1/lysopa_sn2"), rates = c("3/1"),
-  intrequired = c(T), coelCutoff = 0.8, dbs)
+  intrules = c("lysopa_sn1/lysopa_sn2"),
+  rates = c("3/1"),
+  intrequired = c(T),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

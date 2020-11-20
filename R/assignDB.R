@@ -31,7 +31,7 @@ assignDB <- function(){
   dbs[["fahfadb"]] <- LipidMS::fahfadb
   dbs[["pcdb"]] <- LipidMS::pcdb
   dbs[["pedb"]] <- LipidMS::pedb
-  dbs[["pgdb"]] <- LipidMS::pgdb
+ dbs[["pgdb"]] <- LipidMS::pgdb
   dbs[["pidb"]] <- LipidMS::pidb
   dbs[["psdb"]] <- LipidMS::psdb
   dbs[["padb"]] <- LipidMS::padb

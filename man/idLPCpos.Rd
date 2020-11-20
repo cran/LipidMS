@@ -4,10 +4,22 @@
 \alias{idLPCpos}
 \title{Lysophosphocholines (LPC) annotation for ESI+}
 \usage{
-idLPCpos(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M+H", "M+Na"), clfrags = c(104.1075,
-  184.0739), clrequired = c(F, F), ftype = c("F", "F"),
-  chainfrags_sn1 = c("mg_M+H-H2O"), coelCutoff = 0.8, dbs)
+idLPCpos(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M+H", "M+Na"),
+  clfrags = c(104.1075, 184.0739),
+  clrequired = c(F, F),
+  ftype = c("F", "F"),
+  chainfrags_sn1 = c("mg_M+H-H2O"),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

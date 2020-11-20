@@ -4,10 +4,21 @@
 \alias{idSphPneg}
 \title{Sphingoid bases phosphate (SphP) annotation for ESI-}
 \usage{
-idSphPneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M-H"), clfrags = c(78.9585, 96.9691,
-  "sphP_M-H-H2O"), clrequired = c(F, F, F), ftype = c("F", "F", "BB"),
-  coelCutoff = 0.8, dbs)
+idSphPneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M-H"),
+  clfrags = c(78.9585, 96.9691, "sphP_M-H-H2O"),
+  clrequired = c(F, F, F),
+  ftype = c("F", "F", "BB"),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

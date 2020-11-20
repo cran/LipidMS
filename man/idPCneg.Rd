@@ -4,13 +4,26 @@
 \alias{idPCneg}
 \title{Phosphocholines (PC) annotation for ESI-}
 \usage{
-idPCneg(MS1, MSMS1, MSMS2, ppm_precursor = 5, ppm_products = 10,
-  rttol = 3, rt, adducts = c("M+CH3COO", "M-CH3", "M+CH3COO-CH3"),
-  clfrags = c(168.0426, 224.0688, "pc_M-CH3"), clrequired = c(F, F, F),
-  ftype = c("F", "F", "BB"), chainfrags_sn1 = c("lysopc_M-CH3"),
+idPCneg(
+  MS1,
+  MSMS1,
+  MSMS2,
+  ppm_precursor = 5,
+  ppm_products = 10,
+  rttol = 3,
+  rt,
+  adducts = c("M+CH3COO", "M-CH3", "M+CH3COO-CH3"),
+  clfrags = c(168.0426, 224.0688, "pc_M-CH3"),
+  clrequired = c(F, F, F),
+  ftype = c("F", "F", "BB"),
+  chainfrags_sn1 = c("lysopc_M-CH3"),
   chainfrags_sn2 = c("fa_M-H", "lysopc_M-CH3"),
-  intrules = c("lysopc_sn1/lysopc_sn2"), rates = c("3/1"),
-  intrequired = c(T), coelCutoff = 0.8, dbs)
+  intrules = c("lysopc_sn1/lysopc_sn2"),
+  rates = c("3/1"),
+  intrequired = c(T),
+  coelCutoff = 0.8,
+  dbs
+)
 }
 \arguments{
 \item{MS1}{list with two data frames cointaining all peaks from the full MS

@@ -37,21 +37,23 @@ dbs <- assignDB()
 
 candidates <- findCandidates(MS1 = MS1_neg$peaklist,
 db = dbs$pgdb, ppm = 10, rt = c(0, 2000), adducts = c("M-H"),
-rttol = 10, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
+rttol = 10, dbs = dbs, rawData = MS1_neg$rawScans, coelCutoff = 0.8)
 
 MSMS <- rbind(MSMS1_neg$peaklist, MSMS2_neg$peaklist)
 rawData <- rbind(MS1_neg$rawScans, MSMS1_neg$rawScans, MSMS2_neg$rawScans)
-coelfrags <- coelutingFrags(candidates$RT, MSMS, rttol = 10, rawData = rawData,
+coelfrags <- coelutingFrags(candidates, MSMS, rttol = 10, rawData = rawData,
 coelCutoff = 0.8)
 
 sn1 <- chainFrags(coelfrags, chainfrags = c("lysopg_M-H"), ppm = 10,
-dbs = dbs)
-sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10, dbs = dbs)
+candidates = candidates, dbs = dbs)
+sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10,
+candidates = candidates, dbs = dbs)
 
-chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
+chainsComb <- combineChains(candidates, nchains=2, sn1 = sn1,
+sn2 = sn2)
 
 intConf <- checkIntensityRules(intrules = c("lysopg_sn1/lysopg_sn1"),
-rates = c("2/1"), intrequired = c(T), nchains=2, chainsComb, sn1, sn2)
+rates = c("2/1"), intrequired = c(TRUE), nchains=2, chainsComb)
 }
 
 }

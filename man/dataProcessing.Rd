@@ -4,11 +4,31 @@
 \alias{dataProcessing}
 \title{Process mzXML files: peakpicking and deisotoping}
 \usage{
-dataProcessing(file, mslevel, polarity, dmzgap = 50, drtgap = 25,
-  ppm = TRUE, minpeak, maxint = 1e+09, dmzdens, drtdens = 20,
-  merged = FALSE, drtsmall, drtfill = 5, drttotal = 100,
-  recurs = 4, weight, SB, SN = 2, minint, ended = 2,
-  removeIsotopes = TRUE, rttolIso = 2, ppmIso = 20)
+dataProcessing(
+  file,
+  mslevel,
+  polarity,
+  dmzgap = 50,
+  drtgap = 25,
+  ppm = TRUE,
+  minpeak,
+  maxint = 1e+09,
+  dmzdens,
+  drtdens = 20,
+  merged = FALSE,
+  drtsmall,
+  drtfill = 5,
+  drttotal = 100,
+  recurs = 4,
+  weight,
+  SB,
+  SN = 2,
+  minint,
+  ended = 2,
+  removeIsotopes = TRUE,
+  rttolIso = 2,
+  ppmIso = 20
+)
 }
 \arguments{
 \item{file}{path of the mzXML input file.}
@@ -89,7 +109,7 @@ algorithm. If mslevel = 1 and remove isotopes is set as TRUE, only ions with
 more than 1 isotope are kept.
 }
 \examples{
-\donttest{
+\dontrun{
 dataProcessing("input_file.mzXML", mslevel = 1, polarity = "positive")
 }
 
