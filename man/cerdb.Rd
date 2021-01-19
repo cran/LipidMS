@@ -2,7 +2,7 @@
 \alias{cerdb}
 \docType{data}
 \title{
-ceramides database
+Ceramides database
 }
 \description{
 In silico generated database for common ceramides.

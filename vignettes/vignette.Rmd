@@ -17,152 +17,86 @@ knitr::opts_chunk$set(
 )
 ```
 
-LipidMS is an R-package aimed to confidently identify lipid species in 
-untargeted LC-DIA-MS. It combines a set of fragmentation and intensity rules 
-with a parent and fragment co-elution score PFCS), which is calculated in 
-predefined retention time windows. Depending on the MS evidence reached by the 
-identification function survey, LipidMS provides three levels of structural 
-annotations: i) subclass level, e.g., PG(34:1); ii) fatty acyl level, e.g., 
-PG(16:0_18:1); and iii) fatty acyl position level, e.g., PG(16:0/18:1).
-
-
 ## LipidMS Overview
 
-LipidMS annotation is based on coelution between parent and daughter ions, 
-what means that peaks coming for the same molecule will have the same retention 
-time (RT) and a good coelution score (based on Pearson correlation). As a 
-general rule, parent ions will be found when no collision energy 
-is applied, while fragment ions will be found when it is. Each lipid class has 
-characteristic ionization and fragmentation properties that allow to filter 
-informative fragments among all coeluting ions to reconstruct the 
-parent's structure. Next figure summarizes the basics of LipidMS.
+LipidMS v2.0.0 is an R-package aimed to confidently identify lipid species in 
+untargeted LC-MS for DIA or DDA data analysis. It combines a set of fragmentation 
+and intensity rules with a parent and fragment co-elution score (PFCS, only 
+applied for DIA analysis), which is calculated in predefined retention time 
+windows. Depending on the MS evidence reached by the annotations: i) subclass 
+level, e.g., PG(34:1); ii) fatty acyl level, e.g., PG(16:0_18:1); and iii) fatty 
+acyl position level, e.g., PG(16:0/18:1). As a general rule, parent ions will be found when no collision energy is applied, while fragment ions will be found when it is. Each lipid class has characteristic ionization and fragmentation properties that 
+allow to filter informative fragments among all fragment ions to reconstruct the parent's structure. Next figure summarizes the basics of LipidMS.
 
 
-<img src="abstract.png" width="650">
+<img src="abstract2.png" width="650">
 
 
-To execute identification functions, LipidMS needs a named list of two 
-data frames (peaklist and rawScans) for each collision energy applied. First data 
-frame need to have 4 columns: m.z, RT (in seconds by default), int (peak 
-intensity) and peakID, while the second one requires an extra column named Scan,
-which will inform about the scan (order) to which each observation belongs. The 
-first data frame contains peak extracted information and the second, the raw 
-data for each MS scan. These data are used to define parent and fragment peaks 
-in order to calculate the PFCS for each lipid identification in a determined RT 
-window.
+## Files conversion
 
-We propose to convert vendor files to mzXML format, split them by collision 
-energy (CE) and then, process these files separately using LipidMS 
-(dataProcessing function) or any other package/software to obtain the required 
-tables.
-
-In case other software is employed for processing and raw scans data are not 
-available or no coelution score wants to be applied, just the peak table data 
-frame for each MS function have to be provided. The coelution score calculation 
-may take long times of computation, but results improve substantially.
-
-## Files convertion
-
-After MS acquisition using MSe/All ions/DIA mode, we have to get one peak table 
-for each collision energy employed. As most peak picking tools handle only MS1 
-as input and do not allow to treat different CE separately, we propose to obtain 
-as many files as different CE and process them individually as if they were MS1. 
-
-Vendor files can be converted to mzXML format using MSConvert (proteowizard), 
-but their separation by CE is platform-dependent. When CE information is kept in 
-the mzXML files (i.e. convertion from .d files from Agilent), they can be split 
-using the `sepByCE` function.
-
-```{r, echo=T, eval=F}
-library(LipidMS)
-sepByCE(input = "mix_pos.mzXML",  output = "mix_pos_sep")
-
-# to convert a batch of files you can use the following code:
-files <- dir()[grepl(".mzXML", dir())]
-outputs <- unlist(lapply(sapply(files, strsplit, ".mzXML"), "[[", 1))
-outputs <- paste(outputs, "_sep", sep="")
-mapply(sepByCE, files, outputs)
-```
-
-
-Otherwise, if CE information is not kept in the mzXML file, alternative 
-procedures will have to been followed. Here we show an example for .raw files 
-from a Waters Synapt G2-Si Q-TOF. In this case, no CE information is obtained 
-when converting to mzXML format, and lockspray scans are mixed with MS1 and MS2
-functions. We propose to 1) remove lockspray function files (three files in 
-total), 2) convert to mzXML, where MS1 and MS2 scans will be alternative, and
-3) separate mzXML files. The following code can be employed to save time.
-
-```{r, echo=T, eval=F}
-## 1) remove lockspray function
-
-# first, you will need to set your working directory where all you raw files are saved. Then run the following code:
-
-folders <- dir()[grepl("raw", dir())]
-
-for (f in folders){
-  files <- dir(f)
-  unlink(paste(f, files[grep("FUNC003", files)], sep = "/"))
-}
-
-
-## 2) convert to mzXML format using MSConvert
-
-## 3) separate mzXML files
-
-files <- dir()
-files <- files[grep(".mzXML", files)]
-outputs <- paste(unlist(sapply(files, strsplit, ".mzXML")), "_sep", sep="")
-
-for (f in 1:length(files)){
-  nCE <- 2  ## change if you have more than 2 remaining functions after removing lockspray
-  lines <- readLines(files[f])
-  scans <- grep("    <scan num", lines)
-  length(scans)
-  runs <- grep("</msRun>", lines)
-  for (i in 1:nCE){
-    pos <- seq(i,length(scans), nCE)
-    lines2write <- c(1:(scans[1]-1))
-    for (x in pos[1:length(pos)-1]){
-      if (x == scans[length(scans)]){
-        lines2write <- append(lines2write, c(scans[x]:c(runs-1)))
-      } else {
-        lines2write <- append(lines2write, c(scans[x]:(scans[x+1]-1)))
-      }
-    }
-    lines2write <- append(lines2write, c(runs:length(lines)))
-    write(lines[lines2write], file=paste(c(outputs[f], as.character(i), ".mzXML"),
-                                         collapse=""))
-  }
-}
-
-```
-
+To start the MS analysis raw files need to be converted into mzXML format (you 
+can use any software such as MSConvert from proteowizard) and then, LipidMS can 
+be run. Unlike previous versions, LipidMS v2.0 can read mzXML files directly 
+converted from raw files with no additional steps.
 
 ## Data Processing
 
-Once all files have been obtained, peak picking and deisotoping have to been 
-performed. This can be done using dataProcessing function from LipidMS, which 
-requires enviPick and CAMERA packages, or any other software/package. For 
-further details see `help(dataProcessing, package = "LipidMS")`.
+Once all files have been obtained, peak picking have to be performed using  the dataProcessing function from LipidMS. For further details use `help(dataProcessing, package = "LipidMS")`.
 
 ```{r, echo=T, eval=F}
-ms1 <- dir()[grepl("fullMS.mzXML", dir())] #fullMS or any other nomenclature employed for MS1
-ms2 <- dir()[grepl("sep40.mzXML"), dir()] #sep40 or any other nomenclature employed for MS2
-data_ms1 <- sapply(ms1, dataProcessing, msLevel = 1, polarity = "positive")
-data_ms2 <- sapply(ms2, dataProcessing, msLevel = 2, polarity = "positive")
-head(data_ms1[[1]]$peaklist)
-head(data_ms1[[1]]$rawScans)
+# load LipidMS library
+library(LipidMS)
+
+# get mzXML files
+files <- dir()[grepl(".mzXML", dir())]
+
+# set the processing parameters
+acquisitionmode <- "DIA"
+polarity <- "negative"
+dmzagglom <- 5
+drtagglom <- 25
+drtclust <- 25
+minpeak <- c(4, 3)
+drtgap <- 5
+drtminpeak <- 20
+drtmaxpeak <- 200
+recurs <- 5
+sb <- 2
+sn <- 2
+minint <- c(500, 100)
+weight <- c(2, 3)
+dmzIso <- 5
+drtIso <- 5
+
+# run the dataProcessing function to obtain the requires msobjects
+msobjects <- list()
+
+for (f in 1:length(files)){
+  msobjects[[f]] <- dataProcessing(file = files[f],
+                                   polarity = polarity,
+                                   dmzagglom = dmzagglom,
+                                   drtagglom = drtagglom,
+                                   drtclust = drtclust,
+                                   minpeak = minpeak,
+                                   drtgap = drtgap,
+                                   drtminpeak = drtminpeak,
+                                   drtmaxpeak = drtmaxpeak,
+                                   recurs = recurs,
+                                   sb = sb,
+                                   sn = sn,
+                                   minint = minint,
+                                   weight = weight,
+                                   dmzIso = dmzIso,
+                                   drtIso = drtIso)
+}
 ```
 
-This function will return a list with two data frames (peaklist and rawScans) 
-for each file.
- 
+This function will return a list of msobjects which will contain raw data and peaklists for each file.
 
 ## Lipid Annotation
 
-LipidMS contains a total of 32 functions aimed to annotate lipid species:
-30 class and polarity-specific functions (i.e. idPGneg) and two general 
+LipidMS contains a total of 33 functions aimed to annotate lipid species:
+31 class and polarity-specific functions (i.e. idPGneg) and two general 
 functions (idPOS and idNEG) for ESI+ and ESI+, respectively. Class-specific 
 functions allow to customize fragmentation rules, while general identification 
 functions execute all functions for a given polarity sequentially using the 
@@ -173,38 +107,55 @@ predefined rules.
 If predefined fragmentation rules are convenient for your analysis, the easiest 
 way to run the annotation step is to use idPOS or idNEG for ESI+ or ESI- data, 
 respectively. This two functions will run all class-specific functions for the
-given polarity. The output will be a list with two data frames: the results 
-table, which contains information for each annotated lipid, and the 
+given polarity. The output will be an annotated msobject with two data frames: 
+the results table, which contains information for each annotated lipid, and the 
 annotatedPeaklist table, which links the original MS1 data and the results table, 
-and provides information for each feature.
+and provides information for each feature. 
 
 ```{r, echo=T, eval=F}
-pos_res <- idPOS(MS1 = data_ms1[[1]], MSMS1 = data_ms2[[1]], ppm_precursor = 10, 
-                 ppm_products = 10, rttol = 10, coelCutoff = 0.8)
+# set annotation parameters
+dmzprecursor <- 5
+dmzproducts <- 10
+rttol <- 5
+coelcutoff <- 0.8
+
+# If polarity is positive
+if (polarity == "positive"){
+  for (m in 1:length(msobjects)){
+    msobjects[[m]] <- idPOS(msobjects[[m]],
+                            ppm_precursor = dmzprecursor,
+                            ppm_products = dmzproducts,
+                            rttol = rttol,
+                            coelCutoff = coelcutoff)
+  }
+}
+
+# If polarity is negative
+if (polarity == "negative"){
+  for (m in 1:length(msobjects)){
+    msobjects[[m]] <- idNEG(msobjects[[m]],
+                            ppm_precursor = dmzprecursor,
+                            ppm_products = dmzproducts,
+                            rttol = rttol,
+                            coelCutoff = coelcutoff)
+  }
+}
 ```
 
-Then, you can use `pos_res$results` and `pos_res$annotatedPeaklist` to see the 
-results.
+Then, you can use `msobjects[[1]]$results` and `msobject[[1]]$annotatedPeaklist` 
+to see the results. Detailed information about the fragments supporting each 
+annotation can also be found at `msobjects[[1]]$detailsAnnotation`.
 
 
 ### Class-specific annotation functions
 
 A more customizable option is to use the class-specific functions for lipid
 identification. These functions allow you to change fragmentation and intensity 
-rules. In addition, they provide more detailed information about 
-the fragments found for each identified lipid. For further information see the 
-documentation page for each function.
+rules. For further information see the documentation page for each function.
 
 ```{r, echo=T, eval=F}
-MS1 <- data_ms1[[1]] # CE = 0
-MSMS1 <- data_ms2[[1]] # CE > 0
-ppm_precursor <- 10
-ppm_products <- 10
-rttol <- 10
-dbs <- assignDB()
-
 # example code for idPEpos function
-pe <- idPEpos(MS1 = MS1, MSMS1 = MSMS1, 
+pe <- idPEpos(msobject = LipidMSdata2::msobjectDIApos, 
           ppm_precursor = ppm_precursor, 
           ppm_products = ppm_products, rttol = 6, 
           chainfrags_sn1 = c("mg_M+H-H2O", "lysope_M+H-H2O"), 
@@ -215,49 +166,42 @@ pe <- idPEpos(MS1 = MS1, MSMS1 = MSMS1,
 
 # additional information about how to change rules is given in the documentation 
 # of the following functions: chainFrags , checkClass, checkIntensityRules, 
-# coelutingFrag, combineChains and organizeResults. These functions could be also
-# empoyed to build customized identification functions.
+# coelutingFrags, ddaFrags, combineChains and organizeResults. These functions 
+# could be also empoyed to build customized identification functions.
 ```
 
 
-The output of these functions is a list with sevaral data frames that contain:
-annotation results of lipids supported by fragments in MS2 (`pe$results`), 
-all feasible candidates for the given lipid class based only on MS1 
-(`pe$candidates`), class-specific fragments found (`pe$classfragments`) and 
-chain-specific fragments (`pe$chainfragments`).
+## Plot your results
 
-To obtain similar tables than the ones obtained with idPOS, you can run the 
-following code:
+Once you have obtained your results, you can visualize the results with the 
+plotLipids function. It will plot informative peaks for each lipid annotated 
+using idPOS and idNEG (or similar functions). Plots on the left side represent 
+raw values while plots on the left side are smoothed or clean scans (MS2 in DDA).
 
 ```{r, echo=T, eval=F}
-MS1 <- data_ms1[[1]] # CE = 0
-MSMS1 <- data_ms2[[1]] # CE > 0
-ppm_precursor <- 10
-ppm_products <- 10
-rttol <- 10
+msobject <- idPOS(LipidMSdata2::msobjectDIApos)
+msobject <- plotLipids(msobject)
 
-# example to customize several id functions
-results <- vector()
-results <- rbind(results, idLPCpos(MS1 = MS1, MSMS1 = MSMS1, 
-          ppm_precursor = ppm_precursor, 
-          ppm_products = ppm_products, rttol = rttol)$results)
-results <- rbind(results, idLPEpos(MS1 = MS1, MSMS1 = MSMS1,
-          ppm_precursor = ppm_precursor, 
-          ppm_products = ppm_products, rttol = rttol)$results)
-# in this case you should add the rest of functions for annotation in ESI+
+# display the first plot
+msobject$plots[[1]]
+msobject$plots[["yourpeakIDofinterest"]]
 
-# Once you have the complete results table, you can cross it with the MS1 original peak table.
-annotatedPeaklist <- crossTables(MS1, results, ppm_precursor, rttol)
-
-
-# To see results:
-View(results)
-View(annotatedPeaklist)
-
-# if you want to see just the features annotated by LipidMS:
-View(annotatedPeaklist[annotatedPeaklist$LipidMS_id != "",])
+# save all plot to a pdf file
+pdf("plotresults.pdf")
+msobject$plots
+dev.off()
 ```
 
+## LipidMSapp
+
+LipidMS also includes an easy-to-use shiny app which aims to be more user-friendly.
+It allows to customize all processing and annotation parameters and download the
+results once your job is completed. Results will be downloaded in .zip files.
+
+```{r, echo=T, eval=F}
+# To run LipidMS shiny app execute:
+LipidMSapp()
+```
 
 
 ## High customization of LipidMS
@@ -297,7 +241,6 @@ dbs$fadb <- newfadb$fadb # Then, you can modify some of these DBs
 ```
 
 
-
 ### Adducts
 
 LipidMS uses specific adducts for each lipid class and polarity. All the adducts 
@@ -321,9 +264,8 @@ Once included, this adduct can be used when calling the identification function:
 dbs <- assignDB()
 dbs$adductsTable <- adductsTable
 
-idPCpos(MS1 = LipidMS::mix_pos_fullMS, MSMS1 = LipidMS::mix_pos_Ce20,
-MSMS2 = LipidMS::mix_pos_Ce40, adducts = c("M+H", "M+Na", "M+X"), 
-dbs = dbs)
+idPCpos(msobject = LipidMSdata2::msobjectDIApos, 
+        adducts = c("M+H", "M+Na", "M+X"), dbs = dbs)
 ```
 
 
@@ -400,7 +342,7 @@ define the position (i.e. sphingolipid species), just leave an empty vector.
 
 
 If you have any further questions, please do not hesitate to contact us at:
-maialba@alumni.uv.es or maribel_alcoriza@hotmail.com
+maribel_alcoriza@iislafe.es or maribel_alcoriza@hotmail.com
 
 
 

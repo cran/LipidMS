@@ -998,7 +998,7 @@ dbOneChain <- function(chains, lipid){
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
 dbTwoChains <- function(chains, lipid){
   fas <- rep(chains, 2)
-  comb <- unique(combn(fas, 2, simplify=F))
+  comb <- unique(utils::combn(fas, 2, simplify=F))
   total  <- unique(unlist(lapply(comb, sumChains, n = 2)))
   if (lipid == "PE"){
     fm <- lapply(total, MassPE)
@@ -1045,7 +1045,7 @@ dbTwoChains <- function(chains, lipid){
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
 dbThreeChains <- function(chains, lipid){
   fas <- rep(chains, 3)
-  comb <- unique(combn(fas, 3, simplify=F))
+  comb <- unique(utils::combn(fas, 3, simplify=F))
   total  <- unique(unlist(lapply(comb, sumChains, n = 3)))
   if (lipid == "TG"){
     fm <- lapply(total, MassTG)
@@ -1072,7 +1072,7 @@ dbThreeChains <- function(chains, lipid){
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
 dbFourChains <- function(chains, lipid){
   fas <- rep(chains, 4)
-  comb <- unique(combn(fas, 4, simplify=F))
+  comb <- unique(utils::combn(fas, 4, simplify=F))
   total  <- unique(unlist(lapply(comb, sumChains, n = 4)))
   if (lipid == "CL"){
     fm <- lapply(total, MassCL)

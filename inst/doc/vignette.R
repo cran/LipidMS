@@ -6,81 +6,84 @@ knitr::opts_chunk$set(
 )
 
 ## ---- echo=T, eval=F----------------------------------------------------------
+#  # load LipidMS library
 #  library(LipidMS)
-#  sepByCE(input = "mix_pos.mzXML",  output = "mix_pos_sep")
 #  
-#  # to convert a batch of files you can use the following code:
+#  # get mzXML files
 #  files <- dir()[grepl(".mzXML", dir())]
-#  outputs <- unlist(lapply(sapply(files, strsplit, ".mzXML"), "[[", 1))
-#  outputs <- paste(outputs, "_sep", sep="")
-#  mapply(sepByCE, files, outputs)
-
-## ---- echo=T, eval=F----------------------------------------------------------
-#  ## 1) remove lockspray function
 #  
-#  # first, you will need to set your working directory where all you raw files are saved. Then run the following code:
+#  # set the processing parameters
+#  acquisitionmode <- "DIA"
+#  polarity <- "negative"
+#  dmzagglom <- 5
+#  drtagglom <- 25
+#  drtclust <- 25
+#  minpeak <- c(4, 3)
+#  drtgap <- 5
+#  drtminpeak <- 20
+#  drtmaxpeak <- 200
+#  recurs <- 5
+#  sb <- 2
+#  sn <- 2
+#  minint <- c(500, 100)
+#  weight <- c(2, 3)
+#  dmzIso <- 5
+#  drtIso <- 5
 #  
-#  folders <- dir()[grepl("raw", dir())]
-#  
-#  for (f in folders){
-#    files <- dir(f)
-#    unlink(paste(f, files[grep("FUNC003", files)], sep = "/"))
-#  }
-#  
-#  
-#  ## 2) convert to mzXML format using MSConvert
-#  
-#  ## 3) separate mzXML files
-#  
-#  files <- dir()
-#  files <- files[grep(".mzXML", files)]
-#  outputs <- paste(unlist(sapply(files, strsplit, ".mzXML")), "_sep", sep="")
+#  # run the dataProcessing function to obtain the requires msobjects
+#  msobjects <- list()
 #  
 #  for (f in 1:length(files)){
-#    nCE <- 2  ## change if you have more than 2 remaining functions after removing lockspray
-#    lines <- readLines(files[f])
-#    scans <- grep("    <scan num", lines)
-#    length(scans)
-#    runs <- grep("</msRun>", lines)
-#    for (i in 1:nCE){
-#      pos <- seq(i,length(scans), nCE)
-#      lines2write <- c(1:(scans[1]-1))
-#      for (x in pos[1:length(pos)-1]){
-#        if (x == scans[length(scans)]){
-#          lines2write <- append(lines2write, c(scans[x]:c(runs-1)))
-#        } else {
-#          lines2write <- append(lines2write, c(scans[x]:(scans[x+1]-1)))
-#        }
-#      }
-#      lines2write <- append(lines2write, c(runs:length(lines)))
-#      write(lines[lines2write], file=paste(c(outputs[f], as.character(i), ".mzXML"),
-#                                           collapse=""))
+#    msobjects[[f]] <- dataProcessing(file = files[f],
+#                                     polarity = polarity,
+#                                     dmzagglom = dmzagglom,
+#                                     drtagglom = drtagglom,
+#                                     drtclust = drtclust,
+#                                     minpeak = minpeak,
+#                                     drtgap = drtgap,
+#                                     drtminpeak = drtminpeak,
+#                                     drtmaxpeak = drtmaxpeak,
+#                                     recurs = recurs,
+#                                     sb = sb,
+#                                     sn = sn,
+#                                     minint = minint,
+#                                     weight = weight,
+#                                     dmzIso = dmzIso,
+#                                     drtIso = drtIso)
+#  }
+
+## ---- echo=T, eval=F----------------------------------------------------------
+#  # set annotation parameters
+#  dmzprecursor <- 5
+#  dmzproducts <- 10
+#  rttol <- 5
+#  coelcutoff <- 0.8
+#  
+#  # If polarity is positive
+#  if (polarity == "positive"){
+#    for (m in 1:length(msobjects)){
+#      msobjects[[m]] <- idPOS(msobjects[[m]],
+#                              ppm_precursor = dmzprecursor,
+#                              ppm_products = dmzproducts,
+#                              rttol = rttol,
+#                              coelCutoff = coelcutoff)
 #    }
 #  }
 #  
+#  # If polarity is negative
+#  if (polarity == "negative"){
+#    for (m in 1:length(msobjects)){
+#      msobjects[[m]] <- idNEG(msobjects[[m]],
+#                              ppm_precursor = dmzprecursor,
+#                              ppm_products = dmzproducts,
+#                              rttol = rttol,
+#                              coelCutoff = coelcutoff)
+#    }
+#  }
 
 ## ---- echo=T, eval=F----------------------------------------------------------
-#  ms1 <- dir()[grepl("fullMS.mzXML", dir())] #fullMS or any other nomenclature employed for MS1
-#  ms2 <- dir()[grepl("sep40.mzXML"), dir()] #sep40 or any other nomenclature employed for MS2
-#  data_ms1 <- sapply(ms1, dataProcessing, msLevel = 1, polarity = "positive")
-#  data_ms2 <- sapply(ms2, dataProcessing, msLevel = 2, polarity = "positive")
-#  head(data_ms1[[1]]$peaklist)
-#  head(data_ms1[[1]]$rawScans)
-
-## ---- echo=T, eval=F----------------------------------------------------------
-#  pos_res <- idPOS(MS1 = data_ms1[[1]], MSMS1 = data_ms2[[1]], ppm_precursor = 10,
-#                   ppm_products = 10, rttol = 10, coelCutoff = 0.8)
-
-## ---- echo=T, eval=F----------------------------------------------------------
-#  MS1 <- data_ms1[[1]] # CE = 0
-#  MSMS1 <- data_ms2[[1]] # CE > 0
-#  ppm_precursor <- 10
-#  ppm_products <- 10
-#  rttol <- 10
-#  dbs <- assignDB()
-#  
 #  # example code for idPEpos function
-#  pe <- idPEpos(MS1 = MS1, MSMS1 = MSMS1,
+#  pe <- idPEpos(msobject = LipidMSdata2::msobjectDIApos,
 #            ppm_precursor = ppm_precursor,
 #            ppm_products = ppm_products, rttol = 6,
 #            chainfrags_sn1 = c("mg_M+H-H2O", "lysope_M+H-H2O"),
@@ -91,36 +94,25 @@ knitr::opts_chunk$set(
 #  
 #  # additional information about how to change rules is given in the documentation
 #  # of the following functions: chainFrags , checkClass, checkIntensityRules,
-#  # coelutingFrag, combineChains and organizeResults. These functions could be also
-#  # empoyed to build customized identification functions.
+#  # coelutingFrags, ddaFrags, combineChains and organizeResults. These functions
+#  # could be also empoyed to build customized identification functions.
 
 ## ---- echo=T, eval=F----------------------------------------------------------
-#  MS1 <- data_ms1[[1]] # CE = 0
-#  MSMS1 <- data_ms2[[1]] # CE > 0
-#  ppm_precursor <- 10
-#  ppm_products <- 10
-#  rttol <- 10
+#  msobject <- idPOS(LipidMSdata2::msobjectDIApos)
+#  msobject <- plotLipids(msobject)
 #  
-#  # example to customize several id functions
-#  results <- vector()
-#  results <- rbind(results, idLPCpos(MS1 = MS1, MSMS1 = MSMS1,
-#            ppm_precursor = ppm_precursor,
-#            ppm_products = ppm_products, rttol = rttol)$results)
-#  results <- rbind(results, idLPEpos(MS1 = MS1, MSMS1 = MSMS1,
-#            ppm_precursor = ppm_precursor,
-#            ppm_products = ppm_products, rttol = rttol)$results)
-#  # in this case you should add the rest of functions for annotation in ESI+
+#  # display the first plot
+#  msobject$plots[[1]]
+#  msobject$plots[["yourpeakIDofinterest"]]
 #  
-#  # Once you have the complete results table, you can cross it with the MS1 original peak table.
-#  annotatedPeaklist <- crossTables(MS1, results, ppm_precursor, rttol)
-#  
-#  
-#  # To see results:
-#  View(results)
-#  View(annotatedPeaklist)
-#  
-#  # if you want to see just the features annotated by LipidMS:
-#  View(annotatedPeaklist[annotatedPeaklist$LipidMS_id != "",])
+#  # save all plot to a pdf file
+#  pdf("plotresults.pdf")
+#  msobject$plots
+#  dev.off()
+
+## ---- echo=T, eval=F----------------------------------------------------------
+#  # To run LipidMS shiny app execute:
+#  LipidMSapp()
 
 ## ---- echo=T, eval=F----------------------------------------------------------
 #  fas <- c("8:0", "10:0", "12:0", "14:0", "14:1", "15:0", "16:0", "16:1",
@@ -156,7 +148,6 @@ knitr::opts_chunk$set(
 #  dbs <- assignDB()
 #  dbs$adductsTable <- adductsTable
 #  
-#  idPCpos(MS1 = LipidMS::mix_pos_fullMS, MSMS1 = LipidMS::mix_pos_Ce20,
-#  MSMS2 = LipidMS::mix_pos_Ce40, adducts = c("M+H", "M+Na", "M+X"),
-#  dbs = dbs)
+#  idPCpos(msobject = LipidMSdata2::msobjectDIApos,
+#          adducts = c("M+H", "M+Na", "M+X"), dbs = dbs)
 

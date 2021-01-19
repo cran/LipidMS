@@ -5,170 +5,232 @@
 #' using an adaptation of the CAMERA algorithm.
 #'
 #' @param file path of the mzXML input file.
-#' @param mslevel numeric value indicating if data belongs to level 1 (fullMS)
-#' or level 2 (MS/MS).
+#' @param acquisitionmode character value: DIA or DDA (acquisition mode).
 #' @param polarity character value: negative or positive.
-#' @param dmzgap enviPick parameter. 50 by default.
-#' @param drtgap enviPick parameter. 25 by default.
-#' @param ppm logical value. TRUE if dmzdens was set in ppm and FALSE if it was
-#' in as an absolute value. TRUE by default.
-#' @param minpeak minimum number of measurements required within the RT window
-#' of drtsmall. Optional. By default, 5 when mslevel = 1 and 4 when mslevel = 2.
-#' @param maxint EIC cluster with measurements above this intensity are kept,
-#' even if they do not fulfill minpeak. 1E9 by default.
-#' @param dmzdens maximum measurement deviation (+/-) of m/z from its mean
-#' within each EIC. Optional. By default, 15 when mslevel = 1 and 30 when
-#' mslevel = 2.
-#' @param drtdens RT tolerance for clustering. Optional. 20 by default.
-#' @param merged merge EIC cluster of comparable m/z. Logical. FALSE by default.
-#' @param drtsmall peak definition - RT window of a peak. Optional. By default,
-#' 100 when mslevel = 1 and 30 when mslevel = 2.
-#' @param drtfill maximum RT gap length to be filled. 5 by default.
-#' @param drttotal maximum RT length of a single peak. 100 by default.
-#' @param recurs maximum number of peaks within one EIC. 3 by default.
+#' @param dmzagglom m/z tolerance (in ppm) used for partitioning and clustering.
+#' 10 by default.
+#' @param drtagglom rt window used for partitioning (in seconds). 500 by default.
+#' @param drtclust rt window used for clustering (in seconds). 100 by default.
+#' @param minpeak minimum number of measurements required for a peak. By default,
+#' 5 for MS1 and 4 for MS2.
+#' @param drtgap maximum RT gap length to be filled (in seconds). 5 by default.
+#' @param drtminpeak minimum RT width of a peak (in seconds). 20 by default.
+#' At least minpeak within the drtminpeak window are required to
+#' define a peak.
+#' @param drtmaxpeak maximum RT width of a single peak (in seconds). 100 by default.
+#' @param recurs maximum number of peaks within one EIC. 5 by default.
+#' @param sb signal-to-base ratio. By default, 3 for MS1 and 2 for MS2.
+#' @param sn signal-to-noise ratio. 2 by default.
+#' @param minint minimum intensity of a peak. By default, 1000 for MS1 and
+#' 100 for MS2.
 #' @param weight weight for assigning measurements to a peak. Optional.
-#' By default, 1 when mslevel = 1 and 2 when mslevel = 2.
-#' @param SB signal-to-base ratio. Optional. By default, 3 when mslevel = 1
-#' and 2 when mslevel = 2.
-#' @param SN signal-to-noise ratio. 2 by default.
-#' @param minint minimum intensity of a peakr. Optional. By default, 1000 when
-#' mslevel = 1 and 100 when mslevel = 2.
-#' @param ended within the peak detection recursion set by argument recurs,
-#' how often can a peak detection fail to end the recursion?. 2 by default.
-#' @param removeIsotopes logical. If TRUE, only isotopes identified as M+0, are
-#' kept when mslevel = 1, and M+0 or unknown when mslevel = 2. TRUE by default.
-#' If FALSE, an additional column is added to the peak list to inform about
-#' isotopes.
-#' @param rttolIso numeric. Time windows for isotope matching.
-#' @param ppmIso numeric. Mass tolerance for isotope matching.
+#' By default, 2 for MS1 and 3 for MS2.
+#' @param dmzIso numeric. Mass tolerance for isotope matching. 10 by default.
+#' @param drtIso numeric. Time windows for isotope matching. 5 by default.
 #'
-#' @return List with two data frames: peaklist, with 4 columns (m.z, RT, int,
-#' and peakID) and rawScan, with all the scans information in 5 columns (m.z,
-#' RT, int, peakID and Scan). PeakID columns links both data frames: extracted
-#' peaks and raw data. The Scan column indicates the scan number (order) to which
-#' each row of the rawScans data frame belong.
+#' @return a msobject that contains metadata of the mzXML file, raw data and
+#' extracted peaks.
 #'
-#' @details This function executes 2 steps: 1) peak-picking using enviPick
-#' package and 2) it searches isotopes using an adaptation of the CAMERA
-#' algorithm. If mslevel = 1 and remove isotopes is set as TRUE, only ions with
-#' more than 1 isotope are kept.
+#' @details This function executes 2 steps: 1) peak-picking based on enviPick
+#' package and 2) isotope annotation.
 #'
 #' @examples
 #' \dontrun{
-#' dataProcessing("input_file.mzXML", mslevel = 1, polarity = "positive")
+#' msobject <- dataProcessing("input_file.mzXML", acquisitionmode="DIA", polarity,
+#' dmzagglom = 25, drtagglom = 500, drtclust = 60, minpeak = c(5, 3),
+#' drtgap = 5, drtminpeak = 20, drtmaxpeak = 100, recurs = 5, sb = c(3, 2),
+#' sn = 2, minint = c(1000, 100), weight = 2, dmzIso = 10, drtIso = 5)
 #' }
 #'
-#' @references https://cran.r-project.org/web/packages/enviPick/index.html
+#' @references Peak-picking algorithm has been imported from enviPick R-package:
+#' https://cran.r-project.org/web/packages/enviPick/index.html
 #'
-#' Kuhl C, Tautenhahn R, Boettcher C, Larson TR ans Neumann S (2012). "CAMERA:
-#' an integrated strategy for compound spectra extraction and annotation of
-#' liquid chromatography-mass spectrometry data sets." Analytical Chemistry, 84,
-#' pp. 283-289. htto://pubs.acs.org/doi/abs/10.1021/ac202450g.
-#'
-#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
-dataProcessing <- function(file, mslevel, polarity, dmzgap = 50, drtgap = 25,
-                           ppm = TRUE, minpeak, maxint = 1E9, dmzdens, drtdens = 20,
-                           merged = FALSE, drtsmall, drtfill = 5, drttotal = 100,
-                           recurs = 4, weight, SB, SN = 2, minint, ended = 2,
-                           removeIsotopes = TRUE, rttolIso = 2, ppmIso = 20){
-  if (!mslevel %in% c(1, 2)){
-    stop("mslevel must be 1 or 2")
+#' @author M Isabel Alcoriza-Balaguer <maialba@iislafe.es>
+dataProcessing <- function(file, acquisitionmode, polarity,
+                           dmzagglom = 10,
+                           drtagglom = 500,
+                           drtclust = 100,
+                           minpeak = c(5, 3),
+                           drtgap = 10,
+                           drtminpeak = 20,
+                           drtmaxpeak = 100,
+                           recurs = 5,
+                           sb = c(3, 2),
+                           sn = 2,
+                           minint = c(1000, 100),
+                           weight = c(2, 3),
+                           dmzIso = 10,
+                           drtIso = 5){
+  #============================================================================#
+  # check arguments
+  #============================================================================#
+  if (!file.exists(file)){
+    stop("File doesn't exist")
   }
-  if (!polarity %in% c("positive", "negative")){
-    stop("polarity must be positive or negative")
+  if (missing(acquisitionmode)){
+    stop("acquisitionmode argument is required: it must be \"DIA\" or \"DDA\"")
   }
-  if (file.exists(file)){
-    if(missing(minpeak)){
-      if (mslevel == 1){
-        minpeak <- 5
-      } else {
-        minpeak <- 3
-      }
+  if (acquisitionmode %in% c("dia", "dda", "DIA", "DDA")){
+    acquisitionmode <- toupper(acquisitionmode)
+  }
+  if (!tolower(polarity) %in% c("positive", "negative")){
+    stop("Polarity must be set to positive or negative")
+  } else {
+    polarity <- tolower(polarity)
+  }
+  if(length(dmzagglom)>1){dmzagglom1<-dmzagglom[1];dmzagglom2<-dmzagglom[2]}else{dmzagglom1<-dmzagglom2<-dmzagglom}
+  if(length(drtagglom)>1){drtagglom1<-drtagglom[1];drtagglom2<-drtagglom[2]}else{drtagglom1<-drtagglom2<-drtagglom}
+  if(length(drtclust)>1){drtclust1<-drtclust[1];drtclust2<-drtclust[2]}else{drtclust1<-drtclust2<-drtclust}
+  if(length(minpeak)>1){minpeak1<-minpeak[1];minpeak2<-minpeak[2]}else{minpeak1<-minpeak2<-minpeak}
+  if(length(drtgap)>1){drtgap1<-drtgap[1];drtgap2<-drtgap[2]}else{drtgap1<-drtgap2<-drtgap}
+  if(length(drtminpeak)>1){drtminpeak1<-drtminpeak[1];drtminpeak2<-drtminpeak[2]}else{drtminpeak1<-drtminpeak2<-drtminpeak}
+  if(length(drtmaxpeak)>1){drtmaxpeak1<-drtmaxpeak[1];drtmaxpeak2<-drtmaxpeak[2]}else{drtmaxpeak1<-drtmaxpeak2<-drtmaxpeak}
+  if(length(recurs)>1){recurs1<-recurs[1];recurs2<-recurs[2]}else{recurs1<-recurs2<-recurs}
+  if(length(sb)>1){sb1<-sb[1];sb2<-sb[2]}else{sb1<-sb2<-sb}
+  if(length(sn)>1){sn1<-sn[1];sn2<-sn[2]}else{sn1<-sn2<-sn}
+  if(length(minint)>1){minint1<-minint[1];minint2<-minint[2]}else{minint1<-minint2<-minint}
+  if(length(weight)>1){weight1<-weight[1];weight2<-weight[2]}else{weight1<-weight2<-weight}
+  if(length(dmzIso)>1){dmzIso1<-dmzIso[1];dmzIso2<-dmzIso[2]}else{dmzIso1<-dmzIso2<-dmzIso}
+  if(length(drtIso)>1){drtIso1<-drtIso[1];drtIso2<-drtIso[2]}else{drtIso1<-drtIso2<-drtIso}
+
+
+  #============================================================================#
+  # read file and filter scans by polarity if required
+  #============================================================================#
+  cat(paste(c("\n", file), collapse=""))
+  cat("\n Reading MS file...")
+  msobject <- readMSfile(file)
+  cat("OK")
+  cat("\n Checking polarity...")
+  if (polarity == "positive"){pol <- "+"}else{pol <- "-"}
+  if (length(unique(msobject$metaData$scansMetadata$polarity)) > 1){
+    msobject$MS1 <- msobject$MS1[msobject$metaData$scansMetadata$polarity ==
+                                   polarity,]
+    if ("MS2" %in% names(msobject)){
+      msobject$MS2 <- lapply(msobject$MS2, function(x) x[msobject$metaData$scansMetadata$polarity ==
+                                                           pol,])
     }
-    if(missing(dmzdens)){
-      if (mslevel == 1){
-        dmzdens <- 15
-      } else {
-        dmzdens <- 30
-      }
+    msobject$metaData$scansMetaData <-
+      msobject$metaData$scansMetaData[msobject$metaData$scansMetadata$polarity ==
+                                        pol,]
+  } else if (length(unique(msobject$metaData$scansMetadata$polarity)) == 1){
+    if (unique(msobject$metaData$scansMetadata$polarity) != pol){
+      stop(paste(c("Data was acquired in ESI",
+                   unique(msobject$metaData$scansMetadata$polarity),
+                   " mode"), collapse = ""))
     }
-    if(missing(minint)){
-      if (mslevel == 1){
-        minint <- 1000
-      } else {
-        minint <- 100
-      }
+  }
+  msobject$metaData$generalMetadata$polarity <- polarity
+  cat("OK")
+
+  #============================================================================#
+  # Peak-picking: based on enviPick algorithm
+  #============================================================================#
+  cat("\n Searching for features...")
+  ##############################################################################
+  # msLevel 1
+  if("MS1" %in% names(msobject)){
+    cat("\n   Processing MS1...")
+    for (cE in names(msobject$MS1)){
+      cat("\n     partitioning...")
+      msobject <- partitioning(msobject, dmzagglom = dmzagglom1, drtagglom = drtagglom1,
+                               minpeak = minpeak1, mslevel = "MS1", cE = cE)
+      cat("OK")
+      cat("\n     clustering...")
+      msobject <- clustering(msobject, dmzagglom = dmzagglom1, drtclust = drtclust1,
+                             minpeak = minpeak1, mslevel = "MS1", cE = cE)
+      cat("OK")
+      cat("\n     detecting peaks...")
+      msobject <- peakdetection(msobject, minpeak = minpeak1, drtminpeak = drtminpeak1,
+                          drtmaxpeak = drtmaxpeak1, drtgap = drtgap1,
+                          recurs = recurs1, weight = weight1,
+                          sb = sb1, sn = sn1, minint = minint1,
+                          ended = 2, mslevel = "MS1", cE = cE)
+      cat("OK")
+      msobject$peaklist$MS1 <- do.call(rbind, msobject$peaklist[["MS1"]])
+      rownames(msobject$peaklist$MS1) <- msobject$peaklist$MS1$peakID
+      msobject$MS1 <- do.call(rbind, msobject$MS1)
+      msobject$MS1 <- msobject$MS1[,c("mz", "rt", "int", "peak", "Scan")]
+      colnames(msobject$MS1) <- c("m.z", "RT", "int", "peakID", "Scan")
+      msobject$MS1 <- msobject$MS1[!grepl("_0$", msobject$MS1$peakID),]
     }
-    if(missing(weight)){
-      if (mslevel == 1){
-        weight <- 2
-      } else {
-        weight <- 1
+  }
+  ##############################################################################
+  # msLevel 2
+  # if acquired in DIA, MS2 is processed as msLevel 1
+  if (acquisitionmode == "DIA"){
+    msobject$metaData$acquisitionmode <- "DIA"
+    if("MS2" %in% names(msobject)){
+      cat("\n   Processing MS2...")
+      for (cE in names(msobject$MS2)){
+        cat("\n     partitioning...")
+        msobject <- partitioning(msobject, dmzagglom = dmzagglom2, drtagglom = drtagglom2,
+                                 minpeak = minpeak2, mslevel = "MS2", cE = cE)
+        cat("OK")
+        cat("\n     clustering...")
+        msobject <- clustering(msobject, dmzagglom = dmzagglom2, drtclust = drtclust2,
+                               minpeak = minpeak2, mslevel = "MS2", cE = cE)
+        cat("OK")
+        cat("\n     detecting peaks...")
+        msobject <- peakdetection(msobject, minpeak = minpeak2, drtminpeak = drtminpeak2,
+                            drtmaxpeak = drtmaxpeak2, drtgap = drtgap2,
+                            recurs = recurs2, weight = weight2,
+                            sb = sb2, sn = sn2, minint = minint2,
+                            ended = 2, mslevel = "MS2", cE = cE)
+        cat("OK")
       }
+      msobject$peaklist$MS2 <- do.call(rbind, msobject$peaklist[["MS2"]])
+      rownames(msobject$peaklist$MS2) <- msobject$peaklist$MS2$peakID
+      msobject$MS2 <- do.call(rbind, msobject$MS2)
+      msobject$MS2 <- msobject$MS2[,c("mz", "rt", "int", "peak", "Scan")]
+      colnames(msobject$MS2) <- c("m.z", "RT", "int", "peakID", "Scan")
+      msobject$MS2 <- msobject$MS2[!grepl("_0$", msobject$MS2$peakID),]
     }
-    if(missing(SB)){
-      if (mslevel == 1){
-        SB <- 3
-      } else {
-        SB <- 2
+  } else if (acquisitionmode == "DDA"){
+    ############################################################################
+    # if acquired in DDA, scans from MS2 are extracted directly
+    msobject$metaData$acquisitionmode <- "DDA"
+    if ("MS2" %in% names(msobject)){
+      cat("\n   Processing MS2...")
+      for (cE in names(msobject$MS2)){
+        msobject$MS2[[cE]]$peakID <- paste(paste("MS2_", cE, sep=""), msobject$MS2[[cE]]$Scan, sep="_")
+
+        cat("OK")
       }
+      msobject$MS2 <- do.call(rbind, msobject$MS2)
+      msobject$MS2 <- msobject$MS2[,c("mz", "rt", "int", "peakID", "Scan")]
+      colnames(msobject$MS2) <- c("m.z", "RT", "int", "peakID", "Scan")
+      msobject$MS2 <- msobject$MS2[msobject$MS2$int >= minint2,]
     }
-    if(missing(drtsmall)){
-      if (mslevel == 1){
-        drtsmall <- 100
-      } else {
-        drtsmall <- 30
-      }
-    }
-    # peakPicking
-    cat("\n Searching for features...")
-    MSlist <- enviPick::readMSdata(file, MSlevel=1)
-    MSlist <- enviPick::mzagglom(MSlist, dmzgap = dmzgap, ppm = ppm,
-                                 drtgap = drtgap, minpeak = minpeak,
-                                 maxint = maxint)
-    MSlist <- enviPick::mzclust(MSlist, dmzdens = dmzdens, ppm = ppm,
-                                drtdens = drtdens, minpeak = minpeak,
-                                merged = merged)
-    MSlist <- enviPick::mzpick(MSlist, minpeak = minpeak, drtsmall = drtsmall,
-                               drtfill = drtfill, drttotal = drttotal,
-                               recurs = recurs, weight = weight,
-                               SB = SB, SN = SN, minint = minint, maxint = maxint,
-                               ended = ended)
+  }
+  #============================================================================#
+  # Search for isotopes
+  #============================================================================#
+  cat("\n Searching for isotopes...")
+  ##############################################################################
+  # msLevel 1
+  if("MS1" %in% names(msobject)){
+    cat("\n   MS1...")
+    peaklistIso <- annotateIsotopes(peaklist = msobject$peaklist$MS1,
+                                    rawScans = msobject$MS1,
+                                    dmzIso = dmzIso1,
+                                    drtIso = drtIso1)
+    msobject$peaklist$MS1 <- peaklistIso
     cat("OK")
-    peaklist <- data.frame(MSlist$Peaklist[,c("m/z", "RT", "sum_int", "peak_ID")],
-                           stringsAsFactors = F)
-    colnames(peaklist) <- c("m.z", "RT", "int", "peakID")
-    rawScans <- data.frame(MSlist$Scans[[2]][,c("m/z", "RT", "intensity",
-                                                "peakID")], stringsAsFactors = F)
-    rawScans$Scan <- as.numeric(as.factor(rawScans$RT))
-    colnames(rawScans) <- c("m.z", "RT", "int", "peakID", "Scan")
-
-    cat("\n Annotating isotopes...")
-    peaklistIso <- annotateIsotopes(peaklist, rawScans, ppm = ppmIso,
-                                    rttol = rttolIso)
-    cat("OK")
-
-    if (removeIsotopes){
-      cat("\n Removing isotopes...")
-      if (mslevel == 1){
-        peaklistIso <- peaklistIso[peaklistIso[,"isotope"] %in% c("[M+0]"),]
-      } else {
-        peaklistIso <- peaklistIso[peaklistIso[,"isotope"] %in% c("", "[M+0]"),]
-      }
-
+  }
+  ##############################################################################
+  # msLevel 2
+  if("MS2" %in% names(msobject)){
+    if (acquisitionmode == "DIA"){
+      cat("\n   MS2...")
+      peaklistIso <- annotateIsotopes(peaklist = msobject$peaklist$MS2,
+                                      rawScans = msobject$MS2,
+                                      dmzIso = dmzIso2,
+                                      drtIso = drtIso2)
+      msobject$peaklist$MS2 <- peaklistIso
       cat("OK")
     }
-    cat("\n")
-
-    rawScans <- rawScans[rawScans[,"peakID"] %in% peaklistIso[,"peakID"],]
-
-    if (!removeIsotopes){
-    return(list(peaklist = peaklistIso, rawScans = rawScans))
-    } else {
-      return(list(peaklist = peaklistIso[,c("m.z", "RT", "int", "peakID")],
-                  rawScans = rawScans))
-    }
-  } else {
-    stop("The file doesn't exist!")
   }
+  cat("\n")
+  return(msobject)
 }

@@ -4,7 +4,7 @@
 \alias{annotateIsotopes}
 \title{Annotate isotopes}
 \usage{
-annotateIsotopes(peaklist, rawScans, ppm, rttol)
+annotateIsotopes(peaklist, rawScans, dmzIso, drtIso)
 }
 \arguments{
 \item{peaklist}{extracted peaks. Data.frame with 4 columns (m.z, RT, int
@@ -13,9 +13,9 @@ and peakID).}
 \item{rawScans}{raw scan data. Data.frame with 5 columns (m.z, RT, int,
 peakID and Scan).}
 
-\item{ppm}{mass tolerance in ppm.}
+\item{dmzIso}{mass tolerance in ppm.}
 
-\item{rttol}{rt windows with the same units used in peaklist.}
+\item{drtIso}{rt windows with the same units used in peaklist.}
 }
 \value{
 peaklist with 6 columns (m.z, RT, int, peakID, isotope and group).
@@ -25,6 +25,6 @@ Annotate isotopes based on mass differences, retention time and peak
 correlation if required.
 }
 \author{
-M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+M Isabel Alcoriza-Balaguer <maialba@iislafe.es>
 }
 \keyword{internal}

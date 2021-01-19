@@ -6,122 +6,90 @@
 \usage{
 dataProcessing(
   file,
-  mslevel,
+  acquisitionmode,
   polarity,
-  dmzgap = 50,
-  drtgap = 25,
-  ppm = TRUE,
-  minpeak,
-  maxint = 1e+09,
-  dmzdens,
-  drtdens = 20,
-  merged = FALSE,
-  drtsmall,
-  drtfill = 5,
-  drttotal = 100,
-  recurs = 4,
-  weight,
-  SB,
-  SN = 2,
-  minint,
-  ended = 2,
-  removeIsotopes = TRUE,
-  rttolIso = 2,
-  ppmIso = 20
+  dmzagglom = 10,
+  drtagglom = 500,
+  drtclust = 100,
+  minpeak = c(5, 3),
+  drtgap = 10,
+  drtminpeak = 20,
+  drtmaxpeak = 100,
+  recurs = 5,
+  sb = c(3, 2),
+  sn = 2,
+  minint = c(1000, 100),
+  weight = c(2, 3),
+  dmzIso = 10,
+  drtIso = 5
 )
 }
 \arguments{
 \item{file}{path of the mzXML input file.}
 
-\item{mslevel}{numeric value indicating if data belongs to level 1 (fullMS)
-or level 2 (MS/MS).}
+\item{acquisitionmode}{character value: DIA or DDA (acquisition mode).}
 
 \item{polarity}{character value: negative or positive.}
 
-\item{dmzgap}{enviPick parameter. 50 by default.}
+\item{dmzagglom}{m/z tolerance (in ppm) used for partitioning and clustering.
+10 by default.}
 
-\item{drtgap}{enviPick parameter. 25 by default.}
+\item{drtagglom}{rt window used for partitioning (in seconds). 500 by default.}
 
-\item{ppm}{logical value. TRUE if dmzdens was set in ppm and FALSE if it was
-in as an absolute value. TRUE by default.}
+\item{drtclust}{rt window used for clustering (in seconds). 100 by default.}
 
-\item{minpeak}{minimum number of measurements required within the RT window
-of drtsmall. Optional. By default, 5 when mslevel = 1 and 4 when mslevel = 2.}
+\item{minpeak}{minimum number of measurements required for a peak. By default,
+5 for MS1 and 4 for MS2.}
 
-\item{maxint}{EIC cluster with measurements above this intensity are kept,
-even if they do not fulfill minpeak. 1E9 by default.}
+\item{drtgap}{maximum RT gap length to be filled (in seconds). 5 by default.}
 
-\item{dmzdens}{maximum measurement deviation (+/-) of m/z from its mean
-within each EIC. Optional. By default, 15 when mslevel = 1 and 30 when
-mslevel = 2.}
+\item{drtminpeak}{minimum RT width of a peak (in seconds). 20 by default.
+At least minpeak within the drtminpeak window are required to
+define a peak.}
 
-\item{drtdens}{RT tolerance for clustering. Optional. 20 by default.}
+\item{drtmaxpeak}{maximum RT width of a single peak (in seconds). 100 by default.}
 
-\item{merged}{merge EIC cluster of comparable m/z. Logical. FALSE by default.}
+\item{recurs}{maximum number of peaks within one EIC. 5 by default.}
 
-\item{drtsmall}{peak definition - RT window of a peak. Optional. By default,
-100 when mslevel = 1 and 30 when mslevel = 2.}
+\item{sb}{signal-to-base ratio. By default, 3 for MS1 and 2 for MS2.}
 
-\item{drtfill}{maximum RT gap length to be filled. 5 by default.}
+\item{sn}{signal-to-noise ratio. 2 by default.}
 
-\item{drttotal}{maximum RT length of a single peak. 100 by default.}
-
-\item{recurs}{maximum number of peaks within one EIC. 3 by default.}
+\item{minint}{minimum intensity of a peak. By default, 1000 for MS1 and
+100 for MS2.}
 
 \item{weight}{weight for assigning measurements to a peak. Optional.
-By default, 1 when mslevel = 1 and 2 when mslevel = 2.}
+By default, 2 for MS1 and 3 for MS2.}
 
-\item{SB}{signal-to-base ratio. Optional. By default, 3 when mslevel = 1
-and 2 when mslevel = 2.}
+\item{dmzIso}{numeric. Mass tolerance for isotope matching. 10 by default.}
 
-\item{SN}{signal-to-noise ratio. 2 by default.}
-
-\item{minint}{minimum intensity of a peakr. Optional. By default, 1000 when
-mslevel = 1 and 100 when mslevel = 2.}
-
-\item{ended}{within the peak detection recursion set by argument recurs,
-how often can a peak detection fail to end the recursion?. 2 by default.}
-
-\item{removeIsotopes}{logical. If TRUE, only isotopes identified as M+0, are
-kept when mslevel = 1, and M+0 or unknown when mslevel = 2. TRUE by default.
-If FALSE, an additional column is added to the peak list to inform about
-isotopes.}
-
-\item{rttolIso}{numeric. Time windows for isotope matching.}
-
-\item{ppmIso}{numeric. Mass tolerance for isotope matching.}
+\item{drtIso}{numeric. Time windows for isotope matching. 5 by default.}
 }
 \value{
-List with two data frames: peaklist, with 4 columns (m.z, RT, int,
-and peakID) and rawScan, with all the scans information in 5 columns (m.z,
-RT, int, peakID and Scan). PeakID columns links both data frames: extracted
-peaks and raw data. The Scan column indicates the scan number (order) to which
-each row of the rawScans data frame belong.
+a msobject that contains metadata of the mzXML file, raw data and
+extracted peaks.
 }
 \description{
 Process mzXML files: peak-picking using enviPick and deisotoping
 using an adaptation of the CAMERA algorithm.
 }
 \details{
-This function executes 2 steps: 1) peak-picking using enviPick
-package and 2) it searches isotopes using an adaptation of the CAMERA
-algorithm. If mslevel = 1 and remove isotopes is set as TRUE, only ions with
-more than 1 isotope are kept.
+This function executes 2 steps: 1) peak-picking based on enviPick
+package and 2) isotope annotation.
 }
 \examples{
 \dontrun{
-dataProcessing("input_file.mzXML", mslevel = 1, polarity = "positive")
+msobject <- dataProcessing("input_file.mzXML", acquisitionmode="DIA", polarity,
+dmzagglom = 25, drtagglom = 500, drtclust = 60, minpeak = c(5, 3),
+drtgap = 5, drtminpeak = 20, drtmaxpeak = 100, recurs = 5, sb = c(3, 2),
+sn = 2, minint = c(1000, 100), weight = 2, dmzIso = 10, drtIso = 5)
 }
 
 }
 \references{
+Peak-picking algorithm has been imported from enviPick R-package:
 https://cran.r-project.org/web/packages/enviPick/index.html
-
-Kuhl C, Tautenhahn R, Boettcher C, Larson TR ans Neumann S (2012). "CAMERA:
-an integrated strategy for compound spectra extraction and annotation of
-liquid chromatography-mass spectrometry data sets." Analytical Chemistry, 84,
-pp. 283-289. htto://pubs.acs.org/doi/abs/10.1021/ac202450g.
 }
 \author{
-M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+M Isabel Alcoriza-Balaguer <maialba@iislafe.es>
 }
