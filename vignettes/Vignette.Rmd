@@ -1,42 +1,45 @@
 ---
 title: "LipidMS workflow"
-author: "M Isabel Alcoriza"
-date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{vignette.Rmd}
+  %\VignetteIndexEntry{Vignette}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include = FALSE}
+```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-  fig.cap = TRUE
+  comment = "#>"
 )
 ```
 
 ## LipidMS Overview
 
-LipidMS v2.0.0 is an R-package aimed to confidently identify lipid species in 
-untargeted LC-MS for DIA or DDA data analysis. It combines a set of fragmentation 
-and intensity rules with a parent and fragment co-elution score (PFCS, only 
-applied for DIA analysis), which is calculated in predefined retention time 
-windows. Depending on the MS evidence reached by the annotations: i) subclass 
-level, e.g., PG(34:1); ii) fatty acyl level, e.g., PG(16:0_18:1); and iii) fatty 
-acyl position level, e.g., PG(16:0/18:1). As a general rule, parent ions will be found when no collision energy is applied, while fragment ions will be found when it is. Each lipid class has characteristic ionization and fragmentation properties that 
-allow to filter informative fragments among all fragment ions to reconstruct the parent's structure. Next figure summarizes the basics of LipidMS.
+LipidMS v2.0.0 is an R-package aimed to confidently identify lipid species in untargeted LC-MS for DIA or DDA data analysis. It combines a set of fragmentation and intensity rules and a parent-to-fragment co-elution score (PFCS, only applied for DIA analysis) calculated in predefined retention time windows. Depending on the MS evidence reached by the annotations, lipids can be identified at three different levels: i) subclasslevel, e.g., PG(34:1); ii) fatty acyl level, e.g., PG(16:0_18:1); and iii) fatty acyl position level, e.g., PG(16:0/18:1). As a general rule, parent ions will be found when no collision energy is applied, while fragment ions will be found when it is. Each lipid class has characteristic ionization and fragmentation properties that allow to filter informative fragments among all fragment ions to reconstruct the parent's structure. Next figure summarizes the basis of LipidMS:
 
+![LipidMS abstract](abstract2.png){width=100%}
 
-<img src="abstract2.png" width="650">
+\break
+
+## Installation
+
+```{r, echo=T, eval=F}
+# Install LipidMS and LipidMSdata2
+install.packages("LipidMS", dependencies = c("Depends", "Imports"))
+devtools::install_github("maialba3/LipidMSdata2")
+
+# load LipidMS library
+library(LipidMS)
+
+# load example datasets
+library(LipidMSdata2)
+```
 
 
 ## Files conversion
 
-To start the MS analysis raw files need to be converted into mzXML format (you 
-can use any software such as MSConvert from proteowizard) and then, LipidMS can 
-be run. Unlike previous versions, LipidMS v2.0 can read mzXML files directly 
+To start the MS analysis raw files need to be converted into mzXML format (you can use any software such as MSConvert from proteowizard) and then, LipidMS can be run. Unlike previous versions, LipidMS v2.0 can read mzXML files directly 
 converted from raw files with no additional steps.
 
 ## Data Processing
@@ -47,7 +50,7 @@ Once all files have been obtained, peak picking have to be performed using  the 
 # load LipidMS library
 library(LipidMS)
 
-# get mzXML files
+# get mzXML files from your working directory
 files <- dir()[grepl(".mzXML", dir())]
 
 # set the processing parameters
@@ -106,20 +109,33 @@ predefined rules.
 
 If predefined fragmentation rules are convenient for your analysis, the easiest 
 way to run the annotation step is to use idPOS or idNEG for ESI+ or ESI- data, 
-respectively. This two functions will run all class-specific functions for the
+respectively. These two functions will run all class-specific functions for the
 given polarity. The output will be an annotated msobject with two data frames: 
 the results table, which contains information for each annotated lipid, and the 
 annotatedPeaklist table, which links the original MS1 data and the results table, 
 and provides information for each feature. 
 
 ```{r, echo=T, eval=F}
+# Use the example datasets (msobjects)
+devtools::install_github("maialba3/LipidMSdata2")
+library(LipidMSdata2)
+
 # set annotation parameters
 dmzprecursor <- 5
 dmzproducts <- 10
 rttol <- 5
 coelcutoff <- 0.8
 
-# If polarity is positive
+# Annotate lipids
+annotated_msobject <- idPOS(LipidMSdata2::msobjectDIApos,
+                            ppm_precursor = dmzprecursor,
+                            ppm_products = dmzproducts,
+                            rttol = rttol,
+                            coelCutoff = coelcutoff)
+
+
+# Try with your own data
+## If polarity is positive
 if (polarity == "positive"){
   for (m in 1:length(msobjects)){
     msobjects[[m]] <- idPOS(msobjects[[m]],
@@ -130,7 +146,7 @@ if (polarity == "positive"){
   }
 }
 
-# If polarity is negative
+## If polarity is negative
 if (polarity == "negative"){
   for (m in 1:length(msobjects)){
     msobjects[[m]] <- idNEG(msobjects[[m]],
@@ -140,6 +156,7 @@ if (polarity == "negative"){
                             coelCutoff = coelcutoff)
   }
 }
+
 ```
 
 Then, you can use `msobjects[[1]]$results` and `msobject[[1]]$annotatedPeaklist` 
@@ -188,7 +205,9 @@ msobject$plots[["yourpeakIDofinterest"]]
 
 # save all plot to a pdf file
 pdf("plotresults.pdf")
-msobject$plots
+for (p in 1:length(msobject$plots)){
+    print(msobject$plots[[p]])
+  }
 dev.off()
 ```
 
@@ -204,7 +223,7 @@ LipidMSapp()
 ```
 
 
-## High customization of LipidMS
+## Highly customizable functions of LipidMS
 
 ### Data bases
 
@@ -343,7 +362,4 @@ define the position (i.e. sphingolipid species), just leave an empty vector.
 
 If you have any further questions, please do not hesitate to contact us at:
 maribel_alcoriza@iislafe.es or maribel_alcoriza@hotmail.com
-
-
-
 

@@ -159,7 +159,7 @@ dataProcessing <- function(file, acquisitionmode, polarity,
   # msLevel 2
   # if acquired in DIA, MS2 is processed as msLevel 1
   if (acquisitionmode == "DIA"){
-    msobject$metaData$acquisitionmode <- "DIA"
+    msobject$metaData$generalMetadata$acquisitionmode <- "DIA"
     if("MS2" %in% names(msobject)){
       cat("\n   Processing MS2...")
       for (cE in names(msobject$MS2)){
@@ -189,7 +189,7 @@ dataProcessing <- function(file, acquisitionmode, polarity,
   } else if (acquisitionmode == "DDA"){
     ############################################################################
     # if acquired in DDA, scans from MS2 are extracted directly
-    msobject$metaData$acquisitionmode <- "DDA"
+    msobject$metaData$generalMetadata$acquisitionmode <- "DDA"
     if ("MS2" %in% names(msobject)){
       cat("\n   Processing MS2...")
       for (cE in names(msobject$MS2)){

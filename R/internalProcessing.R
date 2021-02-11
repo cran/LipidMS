@@ -90,6 +90,9 @@ readMSfile <- function(file){
 #' @return msobject
 #'
 #' @keywords internal
+#' 
+#' @references Peak-picking algorithm has been imported from enviPick R-package:
+#' https://cran.r-project.org/web/packages/enviPick/index.html
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 partitioning <- function(msobject,
@@ -155,6 +158,9 @@ partitioning <- function(msobject,
 #' @return msobject
 #'
 #' @keywords internal
+#' 
+#' @references Peak-picking algorithm has been imported from enviPick R-package:
+#' https://cran.r-project.org/web/packages/enviPick/index.html
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 clustering <- function(msobject,
@@ -239,6 +245,9 @@ clustering <- function(msobject,
 #' @return msobject
 #'
 #' @keywords internal
+#' 
+#' @references Peak-picking algorithm has been imported from enviPick R-package:
+#' https://cran.r-project.org/web/packages/enviPick/index.html
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 peakdetection <- function(msobject,
@@ -271,6 +280,7 @@ peakdetection <- function(msobject,
 
   startat <- 0
   npeaks <- 0
+  areas <- c()
   roworder <- 1:nrow(msobject[[mslevel]][[cE]])
   for (k in 1:nrow(msobject$processing[[mslevel]]$clustIndex[[cE]])) {
     if (msobject$processing[[mslevel]]$clustIndex[[cE]][k, 3] >= minpeak){
@@ -297,11 +307,11 @@ peakdetection <- function(msobject,
                     as.numeric(drtmaxpeak),
                     as.integer(minpeak),
                     as.integer(recurs),
-                    as.numeric(weight),   # weight
-                    as.numeric(sb),       # sb
-                    as.numeric(sn),       # sn
-                    as.numeric(minint),   # minimum intensity
-                    as.numeric(msobject$processing[[mslevel]]$parameters$maxint),   # maximum intensity threshold
+                    as.numeric(weight),
+                    as.numeric(sb),
+                    as.numeric(sn), 
+                    as.numeric(minint),
+                    as.numeric(msobject$processing[[mslevel]]$parameters$maxint),
                     as.integer(ended),
                     as.integer(2),
                     PACKAGE = "LipidMS")
@@ -311,6 +321,8 @@ peakdetection <- function(msobject,
         npeaks <- npeaks + length(unique(out2[,10]))
         out2[,10] <- out2[,10] + startat
         out2 <- out2[out2[,10] != startat,]
+        area <- tapply(out2[,9], out2[,10], sum)
+        areas <- c(areas, area)
         peak <- as.numeric(sapply(msobject[[mslevel]][[cE]]$id[start:end], function(x) if(x %in% out2[,4]){out2[out2[,4] == x,10]} else {0}))
         msobject[[mslevel]][[cE]]$peak[start:end] <- peak
         roworder[start:end] <- roworder[start:end][order(peak, decreasing = FALSE)]
@@ -339,7 +351,6 @@ peakdetection <- function(msobject,
                       as.integer(length(msobject[[mslevel]][[cE]]$peak)),
                       PACKAGE = "LipidMS")
       colnames(index) <- c("start","end","length")
-
       # save peaks
       msobject[[mslevel]][[cE]]$peak <- peakID
       msobject$processing[[mslevel]]$peakIndex[[cE]] <- index
@@ -359,13 +370,14 @@ peakdetection <- function(msobject,
       #                     msobject[[mslevel]][[cE]]$int[start:end])
       max_int <- max(msobject[[mslevel]][[cE]]$int[start:end])
       sumint <- sum(msobject[[mslevel]][[cE]]$int[start:end])
+      area <- areas[p]
       rt <- msobject[[mslevel]][[cE]]$rt[start:end][msobject[[mslevel]][[cE]]$int[start:end] == max_int]
       minrt <- min(msobject[[mslevel]][[cE]]$rt[start:end])
       maxrt <- max(msobject[[mslevel]][[cE]]$rt[start:end])
       peakid <- p
 
       peaklist <- rbind(peaklist,
-                        data.frame(m.z = mz, RT = rt, int = sumint,
+                        data.frame(m.z = mz, RT = rt, int = area,
                                    minRT = minrt, maxRT = maxrt,
                                    peakID = p, stringsAsFactors = FALSE))
     }

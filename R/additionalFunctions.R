@@ -17,18 +17,22 @@
 #' @examples
 #' \dontrun{
 #' devtools::install_github("maialba3/LipidMSdata2")
-#'
+#' 
 #' library(LipidMS)
+#' library(LipidMSdata2)
+#'
 #' msobject <- idPOS(LipidMSdata2::msobjectDIApos)
 #' msobject <- plotLipids(msobject)
-#'
+#' 
 #' # display the first plot
 #' msobject$plots[[1]]
-#' msobject$plots[["peakID"]]
-#'
+#' msobject$plots[["yourpeakIDofinterest"]]
+#' 
 #' # save all plot to a pdf file
 #' pdf("plotresults.pdf")
-#' msobject$plots
+#' for (p in 1:length(msobject$plots)){
+#'   print(msobject$plots[[p]])
+#' }
 #' dev.off()
 #' }
 #'
@@ -78,7 +82,12 @@ plotLipids <- function(msobject, spar = 0.4){
     peaksMS1 <- ms1$peakID
     mzpeaksMS1 <- ms1$m.z # to use in case data is DDA
     namesMS1 <- paste(as.character(round(ms1$m.z, 3)), ms1$adducts, sep="_")
-
+    
+    # eics <- list()
+    # for (m in 1:length(mzpeaksMS1)){
+    #   extract eic to add it to the MS1 plot
+    # }
+    
     ############################################################################
     # MS2 peaks
     peaksMS2 <- c()
@@ -87,16 +96,16 @@ plotLipids <- function(msobject, spar = 0.4){
     class <- c()
     chains <- c()
 
-    # get index for all adducts
+    # get index for all adducts (from candidates df)
     c <- which(msobject$detailsAnnotation[[parent$Class]]$candidates$peakID %in% ms1$peakID)
 
     # extract class fragments
     if ("classfragments" %in% names(msobject$detailsAnnotation[[parent$Class]])){
       class <- do.call(rbind, msobject$detailsAnnotation[[parent$Class]]$classfragments[c])
       if (length(class) > 0){
-        if (msobject$metaData$acquisitionmode == "DIA"){
+        if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
           peaksMS2 <- c(peaksMS2, class$peakID)
-        } else if (msobject$metaData$acquisitionmode == "DDA"){
+        } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
           peaksMS2 <- c(peaksMS2, class$m.z)
           scansMS2 <- c(scansMS2, class$peakID)
         }
@@ -106,7 +115,7 @@ plotLipids <- function(msobject, spar = 0.4){
 
     # extract chain fragments
     if ("chainfragments" %in% names(msobject$detailsAnnotation[[parent$Class]])){
-      if (msobject$metaData$acquisitionmode == "DIA"){
+      if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
         for (i in c){
           ch <- c()
           if (length(msobject$detailsAnnotation[[parent$Class]]$chainfragments[[i]]) > 0){
@@ -125,7 +134,7 @@ plotLipids <- function(msobject, spar = 0.4){
           namesMS2 <- unique(namesMS2)
           peaksMS2 <- unique(peaksMS2)
         }
-      } else if (msobject$metaData$acquisitionmode == "DDA"){
+      } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
         for (i in c){
           ch <- c()
           if (length(msobject$detailsAnnotation[[parent$Class]]$chainfragments[[i]]) > 0){
@@ -147,7 +156,7 @@ plotLipids <- function(msobject, spar = 0.4){
     }
 
     # id data is DDA, extract spectrum data
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       rawMS <- c()
       for (i in c){
         f <- c()
@@ -168,7 +177,7 @@ plotLipids <- function(msobject, spar = 0.4){
                    "#C5D86D", "#969696FF", "#358359FF", "#9F4D23FF", "#D86C4FFF",
                    "#170C2EFF", "#473B75FF", "#F19C1FFF")
 
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       nplots <- 1 + length(unique(rawMS$peakID))
     } else {
       nplots <- 2
@@ -237,7 +246,7 @@ plotLipids <- function(msobject, spar = 0.4){
     # plot MS2 info
     if (length(peaksMS2) > 0){
       # if data is DIA
-      if (msobject$metaData$acquisitionmode == "DIA"){
+      if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
         ssms2 <- msobject$MS2[msobject$MS2$peakID %in% peaksMS2,]
         minrt2 <- min(ssms2$RT)
         maxrt2 <- max(ssms2$RT)
@@ -296,57 +305,47 @@ plotLipids <- function(msobject, spar = 0.4){
                legend=formatC(ints2, format = "e", digits = 2),
                col=colorsMS2[1:length(peaksMS2)], lty = 5, lwd = 2, cex=0.6)
         # if data is DDA
-      } else if (msobject$metaData$acquisitionmode == "DDA"){
+      } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
         # for each scan
         for (s in unique(rawMS$peakID)){
           # subset raw data
           ssrawMS <- rawMS[rawMS$peakID == s,]
           ssmaxrawMS <- max(ssrawMS$int)
           ssrawMS$int <- ssrawMS$int*100/max(ssrawMS$int)
-          ssrawMS$int[ssrawMS$int < 2] <- ssrawMS$int[ssrawMS$int < 2] + 2
+          ssrawMS$int[ssrawMS$int < 2] <- ssrawMS$int[ssrawMS$int < 2] + 2 # to improve visualization
           mz2 <- peaksMS2[scansMS2 == s]
           namesmz2 <- namesMS2[scansMS2 == s]
           namesmz2 <- namesmz2[order(mz2, decreasing = FALSE)]
           mz2 <- mz2[order(mz2, decreasing = FALSE)]
-          scanprec <- unlist(strsplit(s, "_"))
-          mslevel <- scanprec[1]
-          if (mslevel == "MS1"){
-            mslevel <- 1
-          } else {
-            mslevel <- 2
-          }
-          collisionenergy <- as.numeric(scanprec[2])
-          scanprec <- as.numeric(scanprec[3])
-          precursor <- msobject$metaData$scansMetadata$precursor[
-            which(msobject$metaData$scansMetadata$msLevel == mslevel &
-                    msobject$metaData$scansMetadata$collisionEnergy == collisionenergy)[scanprec]]
-
+          
           # assign colors
           ssrawMS$color <- "black"
           ssrawMS$color[ssrawMS$m.z %in% mz2] <- colorsMS2[1:sum(ssrawMS$m.z %in% mz2)]
 
-          # check if there is any molecular ion in the MS/MS spectrum
-          mz1p <- as.numeric(unlist(sapply(mzpeaksMS1, mzMatch, ssrawMS$m.z, ppm = 10)))
-          if (length(mz1p) > 0){
-            mz1p <- mz1p[seq(1, length(mz1p), 2)]
-            mz1 <- ssrawMS$m.z[mz1p]
-            namesmz1 <- paste(round(mz1, 3), "_parent", sep="")
-            pr <- c()
-            for (m1 in 1:length(mz1p)){
-              if (ssrawMS$color[mz1p[m1]] == "black"){
-                pr <- append(pr, m1)
-              }
-            }
-            if (length(pr) > 0){
-              mz1p <- mz1p[pr]
-              namesmz1 <- namesmz1[pr]
-              ssrawMS$color[mz1p] <- colorsMS1[1:length(mz1p)]
-              namesmz2 <- c(namesmz2, namesmz1)
+          # Find precursor in the MS/MS spectrum
+          scanprec <- unlist(strsplit(s, "_"))
+          collisionenergy <- as.numeric(scanprec[2])
+          scanprec <- as.numeric(scanprec[3])
+          precursor <- msobject$metaData$scansMetadata$precursor[
+            which(msobject$metaData$scansMetadata$msLevel == 2 &
+                    msobject$metaData$scansMetadata$collisionEnergy == collisionenergy)[scanprec]]
+          prec <- as.numeric(unlist(sapply(precursor, mzMatch, ssrawMS$m.z, ppm = 10)))
+          if (length(prec) > 0){
+            minppm <- which.min(prec[seq(2, length(prec), 2)])
+            prec <- prec[seq(1, length(prec), 2)][minppm]
+            mzprec <- ssrawMS$m.z[prec]
+            nameprec <- paste(round(mzprec, 3), "_precursor", sep="")
+            if (ssrawMS$color[prec] == "black"){
+              ssrawMS$color[prec] <- colorsMS1[1]
+              namesmz2 <- c(namesmz2, nameprec)
             }
           }
-
+          colors2 <- ssrawMS$color[ssrawMS$color != "black"]
+          blacks <- ssrawMS$color == "black"
+          
           #plot
-          plot(ssrawMS$m.z, ssrawMS$int, type = "h", col = scales::alpha(ssrawMS$color, 1),
+          plot(ssrawMS$m.z[blacks], ssrawMS$int[blacks], type = "h", 
+               col = scales::alpha(ssrawMS$color[blacks], 0.7),
                xlim = c(0, max(ssrawMS$m.z)+20), ylim = c(0, 132),
                lwd = 1, ylab = "Rel. Intensity", xlab = "m/z",
                main = paste("MS2: ", paste(parent$ID, as.character(round(parent$m.z, 2)),
@@ -354,12 +353,14 @@ plotLipids <- function(msobject, spar = 0.4){
                             paste("\nPrecursor: ", round(precursor, 3), sep = ""),
                             sep = ""),
                las = 1, cex.axis = 0.7, cex.lab = 1, cex.main = 1, lty = 1, yaxt = "n" )
+          lines(ssrawMS$m.z[!blacks], ssrawMS$int[!blacks], type = "h", 
+               col = scales::alpha(ssrawMS$color[!blacks], 1))
           graphics::axis(2,at=seq(2, 122, 20), labels = seq(0, 120, 20))
           graphics::legend("topright", legend=namesmz2,
-                 col=colorsMS2[1:length(namesmz2)], lty = 1, lwd = 2, cex=0.6)
+                 col=colors2, lty = 1, lwd = 2, cex=0.6)
 
           # clean
-          ssrawMSclean <- ssrawMS[ssrawMS$color != "black",]
+          ssrawMSclean <- ssrawMS[!blacks,]
           plot(ssrawMSclean$m.z, ssrawMSclean$int, type = "h",
                col = scales::alpha(ssrawMSclean$color, 1),
                xlim = c(0, max(ssrawMS$m.z)+20), ylim = c(0, 132),
@@ -371,7 +372,7 @@ plotLipids <- function(msobject, spar = 0.4){
                las = 1, cex.axis = 0.7, cex.lab = 1, cex.main = 1, lty = 1, yaxt = "n" )
           graphics::axis(2,at=seq(2, 102, 20), labels = seq(0, 100, 20))
           graphics::legend("topright", legend=namesmz2,
-                 col=colorsMS2[1:length(namesmz2)], lty = 1, lwd = 2, cex=0.6)
+                 col=colors2, lty = 1, lwd = 2, cex=0.6)
         }
       }
     }

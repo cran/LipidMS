@@ -23,10 +23,10 @@
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification); and the annotatedPeaklist element shows the original 
+#' MS1 peaklist with the annotations on it.
 #'
 #' @examples
 #' \dontrun{
@@ -43,7 +43,7 @@ idPOS <- function(msobject,
                   rttol = 5,
                   coelCutoff = 0.8,
                   lipidClasses = c("MG", "LPC", "LPE", "PC", "PE", "PG", "Sph",
-                                   "SphP", "Cer", "SM", "Car", "CE", "DG", "TG"),
+                                   "SphP", "Cer", "SM", "Carnitines", "CE", "DG", "TG"),
                   dbs){
 
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -57,9 +57,9 @@ idPOS <- function(msobject,
     cat("OK")
   }
   if (!all(lipidClasses %in% c("MG", "LPC", "LPE", "PC", "PE", "PG", "Sph", "SphP",
-                               "Cer", "SM", "Car", "CE", "DG", "TG"))){
-    stop("Lipid classes allowed for negative annotation are: MG, LPC, LPE, PC,
-          PE, PG, Sph, SphP, Cer, SM, Car, CE, DG, TG")
+                               "Cer", "SM", "Carnitines", "CE", "DG", "TG"))){
+    stop("Lipid classes allowed for positive annotation are: MG, LPC, LPE, PC,
+          PE, PG, Sph, SphP, Cer, SM, Carnitines, CE, DG, TG")
   }
   if (missing(dbs)){
     dbs <- assignDB()
@@ -141,7 +141,7 @@ idPOS <- function(msobject,
     cat("OK")
 
   }
-  if ("Car" %in% lipidClasses){
+  if ("Carnitines" %in% lipidClasses){
     cat("\n  Searching for Carnitines...")
     msobject <-  idCarpos(msobject = msobject, ppm_precursor= ppm_precursor,
                           ppm_products = ppm_products, rttol = rttol,
@@ -171,8 +171,9 @@ idPOS <- function(msobject,
   }
   cat("\n Preparing output...")
   if (nrow(msobject$results) > 0){
-    annotatedPeaklist <- crossTables(msobject$peaklist$MS1, msobject$results,
-                                     ppm = ppm_precursor, rttol = rttol,
+    annotatedPeaklist <- crossTables(msobject,
+                                     ppm = ppm_precursor, 
+                                     rttol = rttol,
                                      dbs = dbs)
   } else {
     annotatedPeaklist <- "No results were found"
@@ -217,10 +218,9 @@ idPOS <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idMGpos} function involves 2 steps. 1) FullMS-based
 #' identification of candidate MG as M+H-H2O, M+NH4 and M+Na. 2) Search of
@@ -231,8 +231,8 @@ idPOS <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
 #' case, just MS-only or Subclass level (if any class fragment is defined) are
-#' possible) and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' possible) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -270,7 +270,7 @@ idMGpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -303,14 +303,14 @@ idMGpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -354,7 +354,8 @@ idMGpos <- function(msobject,
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb = list(),
                            intrules  = c(), intConf = list(), nchains = 0,
-                           class="MG")
+                           class="MG",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -365,7 +366,7 @@ idMGpos <- function(msobject,
     msobject$detailsAnnotation$MG <- list()
     msobject$detailsAnnotation$MG$candidates <- candidates
     msobject$detailsAnnotation$MG$classfragments <- classConf$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$MG$coelfrags <- coelfrags
     }
   } else {
@@ -417,10 +418,9 @@ idMGpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idLPCpos} function involves 3 steps. 1) FullMS-based
 #' identification of candidate LPC as M+H and M+Na. 2) Search of
@@ -433,8 +433,8 @@ idMGpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
 #' case, as LPC only have one chain, only Subclass and FA level are possible)
-#' and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -473,7 +473,7 @@ idLPCpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -506,14 +506,14 @@ idLPCpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -546,14 +546,14 @@ idLPCpos <- function(msobject,
                                coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -576,7 +576,8 @@ idLPCpos <- function(msobject,
 
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb,
-                           intrules  = c(), intConf, nchains = 1, class="LPC")
+                           intrules  = c(), intConf, nchains = 1, class="LPC",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -588,7 +589,7 @@ idLPCpos <- function(msobject,
     msobject$detailsAnnotation$LPC$candidates <- candidates
     msobject$detailsAnnotation$LPC$classfragments <- classConf$fragments
     msobject$detailsAnnotation$LPC$chainfragments <- chainsComb$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$LPC$coelfrags <- coelfrags
     }
   } else {
@@ -640,10 +641,9 @@ idLPCpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idLPEpos} function involves 3 steps. 1) FullMS-based
 #' identification of candidate LPE as M+H and M+Na. 2) Search of
@@ -656,8 +656,8 @@ idLPCpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
 #' case, as LPE only have one chain, only Subclass and FA level are possible)
-#' and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -696,7 +696,7 @@ idLPEpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -729,14 +729,14 @@ idLPEpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -769,14 +769,14 @@ idLPEpos <- function(msobject,
                                coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -799,7 +799,8 @@ idLPEpos <- function(msobject,
 
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb,
-                           intrules  = c(), intConf, nchains = 1, class="LPE")
+                           intrules  = c(), intConf, nchains = 1, class="LPE",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -811,7 +812,7 @@ idLPEpos <- function(msobject,
     msobject$detailsAnnotation$LPE$candidates <- candidates
     msobject$detailsAnnotation$LPE$classfragments <- classConf$fragments
     msobject$detailsAnnotation$LPE$chainfragments <- chainsComb$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$LPE$coelfrags <- coelfrags
     }
   } else {
@@ -873,10 +874,9 @@ idLPEpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idPCpos} function involves 5 steps. 1) FullMS-based
 #' identification of candidate PC as M+H and M+Na. 2) Search of PC class
@@ -894,8 +894,8 @@ idLPEpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
-#' level) and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -938,7 +938,7 @@ idPCpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -971,14 +971,14 @@ idPCpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -1010,14 +1010,14 @@ idPCpos <- function(msobject,
                                rawData = rawData, coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -1041,7 +1041,8 @@ idPCpos <- function(msobject,
 
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
-                           intConf, nchains = 2, class="PC")
+                           intConf, nchains = 2, class="PC",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -1053,7 +1054,7 @@ idPCpos <- function(msobject,
     msobject$detailsAnnotation$PC$candidates <- candidates
     msobject$detailsAnnotation$PC$classfragments <- classConf$fragments
     msobject$detailsAnnotation$PC$chainfragments <- chainsComb$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$PC$coelfrags <- coelfrags
     }
   } else {
@@ -1115,10 +1116,9 @@ idPCpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idPEpos} function involves 5 steps. 1) FullMS-based
 #' identification of candidate PE as M+H and M+Na. 2) Search of PE class
@@ -1137,8 +1137,8 @@ idPCpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
-#' level) and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -1181,7 +1181,7 @@ idPEpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -1214,14 +1214,14 @@ idPEpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -1253,14 +1253,14 @@ idPEpos <- function(msobject,
                                rawData = rawData, coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -1284,7 +1284,8 @@ idPEpos <- function(msobject,
 
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
-                           intConf, nchains = 2, class="PE")
+                           intConf, nchains = 2, class="PE",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -1296,7 +1297,7 @@ idPEpos <- function(msobject,
     msobject$detailsAnnotation$PE$candidates <- candidates
     msobject$detailsAnnotation$PE$classfragments <- classConf$fragments
     msobject$detailsAnnotation$PE$chainfragments <- chainsComb$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$PE$coelfrags <- coelfrags
     }
   } else {
@@ -1358,10 +1359,9 @@ idPEpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idPGpos} function involves 5 steps. 1) FullMS-based
 #' identification of candidate PG as M+H, M+NH4 and M+Na. 2) Search of PG class
@@ -1378,8 +1378,8 @@ idPEpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
-#' level) and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -1422,7 +1422,7 @@ idPGpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -1455,14 +1455,14 @@ idPGpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -1494,14 +1494,14 @@ idPGpos <- function(msobject,
                                rawData = rawData, coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -1525,7 +1525,8 @@ idPGpos <- function(msobject,
 
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
-                           intConf, nchains = 2, class="PG")
+                           intConf, nchains = 2, class="PG",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -1537,7 +1538,7 @@ idPGpos <- function(msobject,
     msobject$detailsAnnotation$PG$candidates <- candidates
     msobject$detailsAnnotation$PG$classfragments <- classConf$fragments
     msobject$detailsAnnotation$PG$chainfragments <- chainsComb$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$PG$coelfrags <- coelfrags
     }
   } else {
@@ -1587,10 +1588,9 @@ idPGpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idSphpos} function involves 2 steps. 1) FullMS-based
 #' identification of candidate Sph as M+H. 2) Search of Sph class fragments:
@@ -1601,8 +1601,8 @@ idPGpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
 #' case, as Sph only have one chain, only Subclass and FA level are possible)
-#' and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -1640,7 +1640,7 @@ idSphpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -1673,14 +1673,14 @@ idSphpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -1713,14 +1713,14 @@ idSphpos <- function(msobject,
                                coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -1732,7 +1732,8 @@ idSphpos <- function(msobject,
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb = list(),
                            intrules  = c(), intConf = list(), nchains = 0,
-                           class="Sph")
+                           class="Sph",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -1743,7 +1744,7 @@ idSphpos <- function(msobject,
     msobject$detailsAnnotation$Sph <- list()
     msobject$detailsAnnotation$Sph$candidates <- candidates
     msobject$detailsAnnotation$Sph$classfragments <- classConf$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$Sph$coelfrags <- coelfrags
     }
   } else {
@@ -1793,10 +1794,9 @@ idSphpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idSphPpos} function involves 2 steps. 1) FullMS-based
 #' identification of candidate SphP as M+H. 2) Search of SphP class fragments:
@@ -1807,8 +1807,8 @@ idSphpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
 #' case, as SphP only have one chain, only Subclass and FA level are possible).
-#' and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -1846,7 +1846,7 @@ idSphPpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -1879,14 +1879,14 @@ idSphPpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -1919,14 +1919,14 @@ idSphPpos <- function(msobject,
                                coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -1939,7 +1939,8 @@ idSphPpos <- function(msobject,
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb = list(),
                            intrules  = c(), intConf = list(), nchains = 0,
-                           class="SphP")
+                           class="SphP",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -1950,7 +1951,7 @@ idSphPpos <- function(msobject,
     msobject$detailsAnnotation$SphP <- list()
     msobject$detailsAnnotation$SphP$candidates <- candidates
     msobject$detailsAnnotation$SphP$classfragments <- classConf$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$SphP$coelfrags <- coelfrags
     }
   } else {
@@ -2012,10 +2013,9 @@ idSphPpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idCerpos} function involves 5 steps. 1) FullMS-based
 #' identification of candidate Cer as M+H, M+H-H2O and M+Na. 2) Search of Cer
@@ -2032,8 +2032,8 @@ idSphPpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
-#' level) and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -2076,7 +2076,7 @@ idCerpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -2109,14 +2109,14 @@ idCerpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -2149,14 +2149,14 @@ idCerpos <- function(msobject,
                                rawData = rawData, coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -2180,7 +2180,8 @@ idCerpos <- function(msobject,
 
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
-                           intConf, nchains = 2, class="Cer")
+                           intConf, nchains = 2, class="Cer",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -2192,7 +2193,7 @@ idCerpos <- function(msobject,
     msobject$detailsAnnotation$Cer$candidates <- candidates
     msobject$detailsAnnotation$Cer$classfragments <- classConf$fragments
     msobject$detailsAnnotation$Cer$chainfragments <- chainsComb$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$Cer$coelfrags <- coelfrags
     }
   } else {
@@ -2254,10 +2255,9 @@ idCerpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idSMpos} function involves 5 steps. 1) FullMS-based
 #' identification of candidate SM as M+H and M+Na. 2) Search of SM class
@@ -2275,8 +2275,8 @@ idCerpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
-#' level) and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -2319,7 +2319,7 @@ idSMpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -2352,14 +2352,14 @@ idSMpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -2391,14 +2391,14 @@ idSMpos <- function(msobject,
                                rawData = rawData, coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -2422,7 +2422,8 @@ idSMpos <- function(msobject,
 
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
-                           intConf, nchains = 2, class="SM")
+                           intConf, nchains = 2, class="SM",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -2434,7 +2435,7 @@ idSMpos <- function(msobject,
     msobject$detailsAnnotation$SM$candidates <- candidates
     msobject$detailsAnnotation$SM$classfragments <- classConf$fragments
     msobject$detailsAnnotation$SM$chainfragments <- chainsComb$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$SM$coelfrags <- coelfrags
     }
   } else {
@@ -2486,10 +2487,9 @@ idSMpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idCarpos} function involves 3 steps. 1) FullMS-based
 #' identification of candidate carnitines as M+H and M+Na. 2) Search of
@@ -2502,8 +2502,8 @@ idSMpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
 #' case, as Carnitines only have one chain, only Subclass and FA level are
-#' possible) and PFCS (parent-fragment coelution score mean of all fragments
-#' used for the identification).
+#' possible) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -2542,7 +2542,7 @@ idCarpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -2575,14 +2575,14 @@ idCarpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -2595,9 +2595,9 @@ idCarpos <- function(msobject,
     }
   }
   if ("detailsAnnotation" %in% names(msobject)){
-    if("Car" %in% names(msobject$detailsAnnotation)){
+    if("Carnitine" %in% names(msobject$detailsAnnotation)){
       cat("\nPrevious Carnitine annotations removed")
-      msobject$detailsAnnotation$Car <- list()
+      msobject$detailsAnnotation$Carnitine <- list()
     }
   }
   ##############################################################################
@@ -2615,14 +2615,14 @@ idCarpos <- function(msobject,
                                coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -2645,7 +2645,8 @@ idCarpos <- function(msobject,
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb,
                            intrules  = c(), intConf, nchains = 1,
-                           class="Carnitine")
+                           class="Carnitine",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -2653,12 +2654,12 @@ idCarpos <- function(msobject,
     } else {
       msobject$results <- res
     }
-    msobject$detailsAnnotation$Car <- list()
-    msobject$detailsAnnotation$Car$candidates <- candidates
-    msobject$detailsAnnotation$Car$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$Car$chainfragments <- chainsComb$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$Car$coelfrags <- coelfrags
+    msobject$detailsAnnotation$Carnitine <- list()
+    msobject$detailsAnnotation$Carnitine$candidates <- candidates
+    msobject$detailsAnnotation$Carnitine$classfragments <- classConf$fragments
+    msobject$detailsAnnotation$Carnitine$chainfragments <- chainsComb$fragments
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      msobject$detailsAnnotation$Carnitine$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
@@ -2667,7 +2668,7 @@ idCarpos <- function(msobject,
     } else {
       msobject$results <- res
     }
-    msobject$detailsAnnotation$Car <- list()
+    msobject$detailsAnnotation$Carnitine <- list()
   }
   return(msobject)
 }
@@ -2709,10 +2710,9 @@ idCarpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idCEpos} function involves 3 steps. 1) FullMS-based
 #' identification of candidate CE as 2M+NH4, 2M+Na, M+NH4 and M+Na. 2) Search of
@@ -2725,8 +2725,8 @@ idCarpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
 #' case, as CE only have one chain, only Subclass and FA level are possible)
-#' and PFCS (parent-fragment coelution score mean of all fragments used for the
-#' identification).
+#' and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -2765,7 +2765,7 @@ idCEpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -2798,14 +2798,14 @@ idCEpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -2838,14 +2838,14 @@ idCEpos <- function(msobject,
                                coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -2869,7 +2869,8 @@ idCEpos <- function(msobject,
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb,
                            intrules = c(),
-                           intConf, nchains = 1, class="CE")
+                           intConf, nchains = 1, class="CE",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -2881,7 +2882,7 @@ idCEpos <- function(msobject,
     msobject$detailsAnnotation$CE$candidates <- candidates
     msobject$detailsAnnotation$CE$classfragments <- classConf$fragments
     msobject$detailsAnnotation$CE$chainfragments <- chainsComb$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$CE$coelfrags <- coelfrags
     }
   } else {
@@ -2943,10 +2944,9 @@ idCEpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idDGpos} function involves 5 steps. 1) FullMS-based
 #' identification of candidate DG as M+H-H2O, M+NH4 and M+Na. 2) Search of DG
@@ -2962,8 +2962,8 @@ idCEpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
-#' level) and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -3006,7 +3006,7 @@ idDGpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -3039,14 +3039,14 @@ idDGpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -3078,14 +3078,14 @@ idDGpos <- function(msobject,
                                rawData = rawData, coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -3109,7 +3109,8 @@ idDGpos <- function(msobject,
 
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
-                           intConf, nchains = 2, class="DG")
+                           intConf, nchains = 2, class="DG",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -3121,7 +3122,7 @@ idDGpos <- function(msobject,
     msobject$detailsAnnotation$DG$candidates <- candidates
     msobject$detailsAnnotation$DG$classfragments <- classConf$fragments
     msobject$detailsAnnotation$DG$chainfragments <- chainsComb$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       msobject$detailsAnnotation$DG$coelfrags <- coelfrags
     }
   } else {
@@ -3189,10 +3190,9 @@ idDGpos <- function(msobject,
 #' and double bounds), FA composition (specific chains composition if it has
 #' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
-#' positions, or FA position level), peakID, and PFCS (parent-fragment coelution
-#' score mean of all fragments used for the identification); and the
-#' annotatedPeaklist element shows the original MS1 peaklist with the annotations
-#' on it.
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
 #'
 #' @details \code{idTGpos} function involves 5 steps. 1) FullMS-based
 #' identification of candidate TG as M+NH4 and M+Na. 2) Search of TG class
@@ -3209,8 +3209,8 @@ idDGpos <- function(msobject,
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
 #' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
-#' level) and PFCS (parent-fragment coelution score mean of all fragments used
-#' for the identification).
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
 #' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
@@ -3256,7 +3256,7 @@ idTGpos <- function(msobject,
   if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
     stop("Wrong msobject format")
   }
-  if (!msobject$metaData$acquisitionmode %in% c("DIA", "DDA")){
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
     stop("Acquisition mode must be DIA or DDA")
   }
   if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
@@ -3289,14 +3289,14 @@ idTGpos <- function(msobject,
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
              !colnames(MS1) %in% c("isotope", "group")]
   # Peaklist MS2: remove isotopes
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
   } else {
     MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
   }
   rawData <- rbind(msobject$MS1, msobject$MS2)
   # if acquisition mode is DDA, extract precursors
-  if (msobject$metaData$acquisitionmode == "DDA"){
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
                                                   c("retentionTime", "precursor", "Scan")]
@@ -3328,14 +3328,14 @@ idTGpos <- function(msobject,
                                rawData = rawData, coelCutoff = coelCutoff)
 
   if (nrow(candidates) > 0){
-    if (msobject$metaData$acquisitionmode == "DIA"){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
       if (nrow(rawData) == 0){
         coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
       }
       # isolation of coeluting fragments
       coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
                                   coelCutoff = coelCutoff)
-    } else if (msobject$metaData$acquisitionmode == "DDA"){
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       coelCutoff <- 0
       coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
     }
@@ -3362,7 +3362,8 @@ idTGpos <- function(msobject,
 
     # prepare output
     res <- organizeResults(candidates, clfrags, classConf, chainsComb,
-                           intrules, intConf, nchains = 3, class="TG")
+                           intrules, intConf, nchains = 3, class="TG",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
     if ("results" %in% names(msobject)){
@@ -3374,8 +3375,8 @@ idTGpos <- function(msobject,
     msobject$detailsAnnotation$TG$candidates <- candidates
     msobject$detailsAnnotation$TG$classfragments <- classConf$fragments
     msobject$detailsAnnotation$TG$chainfragments <- chainsComb$fragments
-    if (msobject$metaData$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$DG$coelfrags <- coelfrags
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      msobject$detailsAnnotation$TG$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()

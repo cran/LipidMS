@@ -1,15 +1,25 @@
-## ----setup, include = FALSE---------------------------------------------------
+## ---- include = FALSE---------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-  fig.cap = TRUE
+  comment = "#>"
 )
+
+## ---- echo=T, eval=F----------------------------------------------------------
+#  # Install LipidMS and LipidMSdata2
+#  install.packages("LipidMS", dependencies = c("Depends", "Imports"))
+#  devtools::install_github("maialba3/LipidMSdata2")
+#  
+#  # load LipidMS library
+#  library(LipidMS)
+#  
+#  # load example datasets
+#  library(LipidMSdata2)
 
 ## ---- echo=T, eval=F----------------------------------------------------------
 #  # load LipidMS library
 #  library(LipidMS)
 #  
-#  # get mzXML files
+#  # get mzXML files from your working directory
 #  files <- dir()[grepl(".mzXML", dir())]
 #  
 #  # set the processing parameters
@@ -53,13 +63,26 @@ knitr::opts_chunk$set(
 #  }
 
 ## ---- echo=T, eval=F----------------------------------------------------------
+#  # Use the example datasets (msobjects)
+#  devtools::install_github("maialba3/LipidMSdata2")
+#  library(LipidMSdata2)
+#  
 #  # set annotation parameters
 #  dmzprecursor <- 5
 #  dmzproducts <- 10
 #  rttol <- 5
 #  coelcutoff <- 0.8
 #  
-#  # If polarity is positive
+#  # Annotate lipids
+#  annotated_msobject <- idPOS(LipidMSdata2::msobjectDIApos,
+#                              ppm_precursor = dmzprecursor,
+#                              ppm_products = dmzproducts,
+#                              rttol = rttol,
+#                              coelCutoff = coelcutoff)
+#  
+#  
+#  # Try with your own data
+#  ## If polarity is positive
 #  if (polarity == "positive"){
 #    for (m in 1:length(msobjects)){
 #      msobjects[[m]] <- idPOS(msobjects[[m]],
@@ -70,7 +93,7 @@ knitr::opts_chunk$set(
 #    }
 #  }
 #  
-#  # If polarity is negative
+#  ## If polarity is negative
 #  if (polarity == "negative"){
 #    for (m in 1:length(msobjects)){
 #      msobjects[[m]] <- idNEG(msobjects[[m]],
@@ -80,6 +103,7 @@ knitr::opts_chunk$set(
 #                              coelCutoff = coelcutoff)
 #    }
 #  }
+#  
 
 ## ---- echo=T, eval=F----------------------------------------------------------
 #  # example code for idPEpos function
@@ -107,7 +131,9 @@ knitr::opts_chunk$set(
 #  
 #  # save all plot to a pdf file
 #  pdf("plotresults.pdf")
-#  msobject$plots
+#  for (p in 1:length(msobject$plots)){
+#      print(msobject$plots[[p]])
+#    }
 #  dev.off()
 
 ## ---- echo=T, eval=F----------------------------------------------------------

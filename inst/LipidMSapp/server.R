@@ -1,6 +1,36 @@
 options(shiny.maxRequestSize=500*1024^2)
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
+  observeEvent(input$JumpTo2, {
+    updateTabsetPanel(session, "inTabset",
+                      selected = "tab2")
+  })
+  
+  observeEvent(input$GoBackTo1, {
+    updateTabsetPanel(session, "inTabset",
+                      selected = "tab1")
+  })
+  
+  observeEvent(input$JumpTo3, {
+    updateTabsetPanel(session, "inTabset",
+                      selected = "tab3")
+  })
+  
+  observeEvent(input$GoBackTo2, {
+    updateTabsetPanel(session, "inTabset",
+                      selected = "tab2")
+  })
+  
+  observeEvent(input$JumpTo4, {
+    updateTabsetPanel(session, "inTabset",
+                      selected = "tab4")
+  })
+  
+  observeEvent(input$GoBackTo3, {
+    updateTabsetPanel(session, "inTabset",
+                      selected = "tab3")
+  })
+  
   observeEvent(input$do,
                {output$txt_result <- renderText({"Job completed"})})
   observeEvent(input$do, {
@@ -94,7 +124,7 @@ shinyServer(function(input, output) {
         # loop through the msobjects
         for (i in 1:length(annotated_msobjects)){
           fileName <- paste(gsub(".mzXML", "" , input$file1$name[i]), "_plots.pdf", sep="")
-          if (annotated_msobjects[[i]]$metaData$acquisitionmode == "DIA"){
+          if (annotated_msobjects[[i]]$metaData$generalMetadata$acquisitionmode == "DIA"){
             height <- 7
           } else {
             height <- 8
