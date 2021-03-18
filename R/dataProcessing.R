@@ -195,8 +195,9 @@ dataProcessing <- function(file, acquisitionmode, polarity,
       for (cE in names(msobject$MS2)){
         msobject$MS2[[cE]]$peakID <- paste(paste("MS2_", cE, sep=""), msobject$MS2[[cE]]$Scan, sep="_")
 
-        cat("OK")
+        
       }
+      cat("OK")
       msobject$MS2 <- do.call(rbind, msobject$MS2)
       msobject$MS2 <- msobject$MS2[,c("mz", "rt", "int", "peakID", "Scan")]
       colnames(msobject$MS2) <- c("m.z", "RT", "int", "peakID", "Scan")

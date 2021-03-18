@@ -1,13 +1,13 @@
-8fa67331ec97b451c986042f33de6dde *DESCRIPTION
+bda6fbb895b3745ec77947d26f8e6e55 *DESCRIPTION
 96c591d2f438b21698f55ebfaba80c4e *NAMESPACE
-a40f9a19e8eec2e09331528c51f59487 *R/LipidMS.R
+7638ef448dc478d33c72f7cdffb09090 *R/LipidMS.R
 7fa9a594cec3e1dbfc8be7eba5167705 *R/LipidMSapp.R
 f156540ebb71cb353788c2cc69180b20 *R/additionalFunctions.R
-8deb5586dd443afd5037e6bc98906a04 *R/dataProcessing.R
+ade43fbd9ee478ea3c47dac742c86459 *R/dataProcessing.R
 93d87c087c930794a6d4dd339e7fe6fc *R/idFunctionsNeg.R
 257974bebf1cf3e0777b9bdcef8426bc *R/idFunctionsPos.R
 ae5ca7fee2b8bde2b8d186a6e763e3cf *R/internal.R
-e2b5f36773451c107ede3a217acdded8 *R/internalProcessing.R
+d5615a3821c0000e6f04257f67ec472d *R/internalProcessing.R
 0796d57bb2e6716f822d0bd6e120cf81 *R/internaldbs.R
 031ea9af5beebad657159ea7fa4f0637 *R/subfunctionsIdentification.R
 e157bfbb3fac65bfce04884df484f95a *README.md
