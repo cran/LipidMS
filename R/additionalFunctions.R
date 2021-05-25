@@ -1,59 +1,96 @@
 # plotLipids
-#' Plot informative peaks for lipids annotation
+#' Plot informative peaks for lipid annotation
 #'
-#' Plot informative peaks for each lipid annotated using idPOS and idNEG (or
+#' Plot informative peaks for each lipid annotated with idPOS and idNEG (or
 #' similar functions).
 #'
 #' @param msobject annotated msobject.
-#' @param spar smoothing parameter. Numeric value between 0 and 1.
+#' @param span smoothing parameter. Numeric value between 0 and 1.
+#' @param ppm mz tolerance for EIC. If set to 0, the EIC will not be shown.
 #'
 #' @return msobject with a plots element which contains a list of plots.
-#' Plots on the left side represent raw values while plots on the left side are
+#' Plots on the left side represent raw values while plots on the left are
 #' smoothed or clean scans (MS2 in DDA).
 #'
 #' @details Peak intensities are relative to the maximum intensity of each peak
 #' to ease visualization.
+#' 
+#' Grey lines show the the extracted ion chromatograms for the peaks.
 #'
 #' @examples
 #' \dontrun{
 #' devtools::install_github("maialba3/LipidMSdata2")
 #' 
 #' library(LipidMS)
-#' library(LipidMSdata2)
 #'
-#' msobject <- idPOS(LipidMSdata2::msobjectDIApos)
+#' # for msobjects
+#' #####################
+#' msobject <- idPOS(msobject)
 #' msobject <- plotLipids(msobject)
 #' 
 #' # display the first plot
-#' msobject$plots[[1]]
-#' msobject$plots[["yourpeakIDofinterest"]]
+#' msobject$annotation$plots[[1]]
+#' msobject$annotation$plots[["yourpeakIDofinterest"]]
 #' 
-#' # save all plot to a pdf file
+#' # save plots to a pdf file
 #' pdf("plotresults.pdf")
-#' for (p in 1:length(msobject$plots)){
-#'   print(msobject$plots[[p]])
+#' for (p in 1:length(msobject$annotation$plots)){
+#'   print(msobject$annotation$plots[[p]])
 #' }
 #' dev.off()
+#' 
+#' 
+#' 
+#' # for msobjects
+#' #####################
+#' msbatch <- annotatemsbatch(msbatch)
+#' 
+#' # lipids plots
+#' for (m in 1:length(msbatch$msobjects)){
+#'   if (msbatch$msobjects[[m]]$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+#'     msbatch$msobjects[[m]] <- plotLipids(msbatch$msobjects[[m]])
+#'   }
+#' }
+#' 
+#' # save plots to a pdf file
+#' for (s in 1:length(msbatch$msobjects)){
+#'   if (msbatch$msobjects[[s]]$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+#'     print(s)
+#'     if (msbatch$msobjects[[s]]$metaData$generalMetadata$acquisitionmode == "DIA"){
+#'       height <- 7
+#'     } else {
+#'       height <- 9
+#'     }
+#'     pdf(file = gsub(".mzXML", "_plots.pdf", msbatch$msobjects[[s]]$metaData$generalMetadata$file), 
+#'         width = 8, height = height)
+#'     for ( pl in 1:length(msbatch$msobjects[[s]]$annotation$plots)){
+#'       print(msbatch$msobjects[[s]]$annotation$plots[[pl]])
+#'     }
+#'     dev.off()
+#'   }
+#' }
+#' 
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
-plotLipids <- function(msobject, spar = 0.4){
+plotLipids <- function(msobject, span = 0.4, ppm = 10){
 
   ##############################################################################
   # Check arguments and inputs
-  if (!"results" %in% names(msobject)){
+  if (!"results" %in% names(msobject$annotation)){
     stop("No results to be plotted")
   }
-  if (spar < 0 | spar > 1){
-    spar <- 0.4
-    warning("spar parameter set to 0.4")
+  if (span < 0 | span > 1){
+    span <- 0.4
+    warning("span parameter set to 0.4")
   }
-  if ("plots" %in% names(msobject)){
+  if ("plots" %in% names(msobject$annotation)){
     cat("\n Removing previous plots...")
-    msobject$plots <- NULL
+    msobject$annotation$plots <- NULL
+    cat("OK")
   }
-  results <- msobject$results
-  msobject$plots <- list()
+  results <- msobject$annotation$results
+  msobject$annotation$plots <- list()
   ##############################################################################
   # For each lipid in the results data frame, extract peaks
   while (nrow(results) > 0){
@@ -71,55 +108,63 @@ plotLipids <- function(msobject, spar = 0.4){
     adducts <- unlist(strsplit(parent$Adducts, ";"))
     ms1 <- c()
     for (a in adducts){
-      ss <- msobject$detailsAnnotation[[parent$Class]]$candidates
+      ss <- msobject$annotation$detailsAnnotation[[parent$Class]]$candidates
       ss <- ss[grepl(gsub("+", "\\+", as.character(paste("^", a, sep="")), fixed = TRUE),
-                     msobject$detailsAnnotation[[parent$Class]]$candidates$adducts),]
+                     msobject$annotation$detailsAnnotation[[parent$Class]]$candidates$adducts),]
       ss <- ss[ss$cb == parent$CDB,]
       ss <- ss[order(abs(ss$RT - parent$RT), decreasing = FALSE),]
       ms1 <- rbind(ms1, ss[1,])
     }
     ms1$adducts <- as.character(sapply(ms1$adducts, function(x) unlist(strsplit(x, ";"))[[1]]))
     peaksMS1 <- ms1$peakID
-    mzpeaksMS1 <- ms1$m.z # to use in case data is DDA
-    namesMS1 <- paste(as.character(round(ms1$m.z, 3)), ms1$adducts, sep="_")
+    mzpeaksMS1 <- ms1$mz # to use in case data is DDA
+    namesMS1 <- paste(as.character(round(ms1$mz, 3)), ms1$adducts, sep="_")
     
-    # eics <- list()
-    # for (m in 1:length(mzpeaksMS1)){
-    #   extract eic to add it to the MS1 plot
-    # }
+    # extract EIC for each MS1 peak
+    eic <- list()
+    for (m in 1:length(mzpeaksMS1)){
+        eic[[m]] <- msobject$rawData$MS1[abs(msobject$rawData$MS1$mz - mzpeaksMS1[m])*1e6/mzpeaksMS1[m] <= ppm,, drop = FALSE]
+        if (nrow(eic[[m]]) > 0){
+          eic[[m]] <- eic[[m]][order(eic[[m]]$RT), c("RT", "int")]
+        } else {
+          eic[[m]] <- data.frame()
+      }
+    }
     
     ############################################################################
     # MS2 peaks
     peaksMS2 <- c()
     scansMS2 <- c() # to use in case data is DDA
     namesMS2 <- c()
+    mzpeaksMS2 <- c() # to use in case data is DIA
     class <- c()
     chains <- c()
 
     # get index for all adducts (from candidates df)
-    c <- which(msobject$detailsAnnotation[[parent$Class]]$candidates$peakID %in% ms1$peakID)
+    c <- which(msobject$annotation$detailsAnnotation[[parent$Class]]$candidates$peakID %in% ms1$peakID)
 
     # extract class fragments
-    if ("classfragments" %in% names(msobject$detailsAnnotation[[parent$Class]])){
-      class <- do.call(rbind, msobject$detailsAnnotation[[parent$Class]]$classfragments[c])
+    if ("classfragments" %in% names(msobject$annotation$detailsAnnotation[[parent$Class]])){
+      class <- do.call(rbind, msobject$annotation$detailsAnnotation[[parent$Class]]$classfragments[c])
       if (length(class) > 0){
         if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
           peaksMS2 <- c(peaksMS2, class$peakID)
+          mzpeaksMS2 <- c(mzpeaksMS2, class$mz)
         } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-          peaksMS2 <- c(peaksMS2, class$m.z)
+          peaksMS2 <- c(peaksMS2, class$mz)
           scansMS2 <- c(scansMS2, class$peakID)
         }
-        namesMS2 <- c(namesMS2, paste(as.character(round(class$m.z, 3)), "class fragment", sep="_"))
+        namesMS2 <- c(namesMS2, paste(as.character(round(class$mz, 3)), "class fragment", sep="_"))
       }
     }
 
     # extract chain fragments
-    if ("chainfragments" %in% names(msobject$detailsAnnotation[[parent$Class]])){
+    if ("chainfragments" %in% names(msobject$annotation$detailsAnnotation[[parent$Class]])){
       if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
         for (i in c){
           ch <- c()
-          if (length(msobject$detailsAnnotation[[parent$Class]]$chainfragments[[i]]) > 0){
-            ch <- do.call(rbind, msobject$detailsAnnotation[[parent$Class]]$chainfragments[[i]])
+          if (length(msobject$annotation$detailsAnnotation[[parent$Class]]$chainfragments[[i]]) > 0){
+            ch <- do.call(rbind, msobject$annotation$detailsAnnotation[[parent$Class]]$chainfragments[[i]])
             if (length(ch) > 0){
               chains <- rbind(chains, ch)
               ch <- c()
@@ -128,17 +173,14 @@ plotLipids <- function(msobject, spar = 0.4){
         }
         if (length(chains) > 0){
           peaksMS2 <- c(peaksMS2, chains$peakID)
-          namesMS2 <- c(namesMS2, paste(as.character(round(chains$m.z, 3)), chains$db, chains$cb, chains$adduct, sep="_"))
-          namesMS2 <- namesMS2[peaksMS2 != ""]
-          peaksMS2 <- peaksMS2[peaksMS2 != ""]
-          namesMS2 <- unique(namesMS2)
-          peaksMS2 <- unique(peaksMS2)
+          namesMS2 <- c(namesMS2, paste(as.character(round(chains$mz, 3)), chains$db, chains$cb, chains$adduct, sep="_"))
+          mzpeaksMS2 <- c(mzpeaksMS2, chains$mz)
         }
       } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
         for (i in c){
           ch <- c()
-          if (length(msobject$detailsAnnotation[[parent$Class]]$chainfragments[[i]]) > 0){
-            ch <- do.call(rbind, msobject$detailsAnnotation[[parent$Class]]$chainfragments[[i]])
+          if (length(msobject$annotation$detailsAnnotation[[parent$Class]]$chainfragments[[i]]) > 0){
+            ch <- do.call(rbind, msobject$annotation$detailsAnnotation[[parent$Class]]$chainfragments[[i]])
             if (length(ch) > 0){
               chains <- rbind(chains, ch)
               ch <- c()
@@ -147,21 +189,52 @@ plotLipids <- function(msobject, spar = 0.4){
         }
         if (length(chains) > 0){
           chains <- unique(chains)
-          chains <- chains[chains$m.z != 0,]
-          peaksMS2 <- c(peaksMS2, chains$m.z)
+          chains <- chains[chains$mz != 0,]
+          peaksMS2 <- c(peaksMS2, chains$mz)
           scansMS2 <- c(scansMS2, chains$peakID)
-          namesMS2 <- c(namesMS2, paste(as.character(round(chains$m.z, 3)), chains$db, chains$cb, chains$adduct, sep="_"))
+          namesMS2 <- c(namesMS2, paste(as.character(round(chains$mz, 3)), chains$db, chains$cb, chains$adduct, sep="_"))
         }
       }
     }
-
-    # id data is DDA, extract spectrum data
+    
+    # remove duplicates
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
+      mzpeaksMS2 <- mzpeaksMS2[peaksMS2 != ""]
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      scansMS2 <- scansMS2[peaksMS2 != ""]
+    }
+    namesMS2 <- namesMS2[peaksMS2 != ""]
+    peaksMS2 <- peaksMS2[peaksMS2 != ""]
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
+      mzpeaksMS2 <- mzpeaksMS2[!duplicated(peaksMS2)]
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      scansMS2 <- scansMS2[!duplicated(peaksMS2)]
+    }
+    namesMS2 <- namesMS2[!duplicated(peaksMS2)]
+    peaksMS2 <- peaksMS2[!duplicated(peaksMS2)]
+    
+    # if data is DIA, extract EIC for each MS2 peak
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
+      eic2 <- list()
+      if (length(mzpeaksMS2) > 0){
+        for (m in 1:length(mzpeaksMS2)){
+          eic2[[m]] <- msobject$rawData$MS2[abs(msobject$rawData$MS2$mz - mzpeaksMS2[m])*1e6/mzpeaksMS2[m] <= ppm,, drop = FALSE]
+          if (nrow(eic2[[m]]) > 0){
+            eic2[[m]] <- eic2[[m]][order(eic2[[m]]$RT), c("RT", "int")]
+          } else {
+            eic2[[m]] <- data.frame()
+          }
+        }
+      }
+    }
+    
+    # if data is DDA, extract spectrum data
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
       rawMS <- c()
       for (i in c){
         f <- c()
-        if (length(msobject$detailsAnnotation[[parent$Class]]$coelfrags[[i]]) > 0){
-          f <- msobject$detailsAnnotation[[parent$Class]]$coelfrags[[i]]
+        if (length(msobject$annotation$detailsAnnotation[[parent$Class]]$coelfrags[[i]]) > 0){
+          f <- msobject$annotation$detailsAnnotation[[parent$Class]]$coelfrags[[i]]
           if (length(f) > 0){
             rawMS <- rbind(rawMS, f)
             f <- c()
@@ -187,24 +260,31 @@ plotLipids <- function(msobject, spar = 0.4){
     graphics::par(mfrow=c(nplots, 2), mar = c(3,4,4,1), mgp=c(2,1,0), bg = "white")
     # plot MS1 info
     if (length(peaksMS1) > 0){
-      ssms1 <- msobject$MS1[msobject$MS1$peakID %in% peaksMS1,]
+      ssms1 <- msobject$rawData$MS1[msobject$rawData$MS1$peakID %in% peaksMS1,]
       minrt1 <- min(ssms1$RT)
       maxrt1 <- max(ssms1$RT)
       ints <- c()
       for (p in 1:length(peaksMS1)){
-        toplot <- msobject$MS1[msobject$MS1$peakID == peaksMS1[p],]
+        toplot <- msobject$rawData$MS1[msobject$rawData$MS1$peakID == peaksMS1[p],]
         toplot <- toplot[order(toplot$RT, decreasing = FALSE),]
-        ints <- append(ints, max(toplot$int))
-        toplot$int <- toplot$int*100/max(toplot$int)
+        maxint <- max(toplot$int, na.rm=TRUE)
+        ints <- append(ints, maxint)
+        toplot$int <- toplot$int*100/maxint
         if (p == 1){
           plot(toplot$RT, toplot$int, type = "l", col = scales::alpha(colorsMS1[p], 0.8),
-               xlim = c(minrt1-5, maxrt1+5), ylim = c(0, 110),
+               xlim = c(minrt1-5, maxrt1+10), ylim = c(0, 110),
                lwd = 2.5, ylab = "Rel. Intensity", xlab = "RT (sec)",
-               main = paste("MS1: ", paste(parent$ID, as.character(round(parent$m.z, 2)),
+               main = paste("MS1: ", paste(parent$ID, as.character(round(parent$mz, 2)),
                                            as.character(round(parent$RT, 1)), sep="_"), sep = ""),
                las = 1, cex.axis = 0.7, cex.lab = 1, cex.main = 1)
+          eic[[1]] <- eic[[1]][eic[[1]]$RT <= maxrt1+10 & eic[[1]]$RT >= minrt1-5,]
+          graphics::lines(x=eic[[1]]$RT, y=eic[[1]]$int*100/maxint, 
+                          col = scales::alpha("grey", 0.4), lwd = 2.5)
         } else {
           graphics::lines(toplot$RT, toplot$int, col = scales::alpha(colorsMS1[p], 0.8), lwd = 2.5)
+          eic[[p]] <- eic[[p]][eic[[p]]$RT <= maxrt1+10 & eic[[p]]$RT >= minrt1-5,]
+          graphics::lines(eic[[p]]$RT, eic[[p]]$int*100/maxint, 
+                          col = scales::alpha("grey", 0.4), lwd = 2.5)
         }
       }
       graphics::legend("topright", legend=namesMS1,
@@ -215,25 +295,42 @@ plotLipids <- function(msobject, spar = 0.4){
 
       # smoothed
       for (p in 1:length(peaksMS1)){
-        toplot <- msobject$MS1[msobject$MS1$peakID == peaksMS1[p],]
+        toplot <- msobject$rawData$MS1[msobject$rawData$MS1$peakID == peaksMS1[p],]
         toplot <- toplot[order(toplot$RT, decreasing = FALSE),]
-        pred <- tryCatch({stats::predict(stats::smooth.spline(toplot$RT, toplot$int, spar = spar),
+        pred <- tryCatch({stats::predict(stats::smooth.spline(toplot$RT, toplot$int, spar = span),
                                   x = toplot$RT)},
                          error = function(e) {return(list(x = toplot$RT,
                                                           y = toplot$int))})
         toplot$RT <- pred$x
         toplot$int <- pred$y
-        toplot$int <- toplot$int*100/max(toplot$int)
+        maxint <- max(toplot$int, na.rm=TRUE)
+        toplot$int <- toplot$int*100/maxint
         if (p == 1){
           plot(toplot$RT, toplot$int, type = "l", col = scales::alpha(colorsMS1[p], 0.8),
-               xlim = c(minrt1-5, maxrt1+5), ylim = c(0, 110),
+               xlim = c(minrt1-5, maxrt1+10), ylim = c(0, 110),
                lwd = 2.5, ylab = "Rel. Intensity", xlab = "RT (sec)",
-               main = paste("MS1: ", paste(parent$ID, as.character(round(parent$m.z, 2)),
+               main = paste("MS1: ", paste(parent$ID, as.character(round(parent$mz, 2)),
                                            as.character(round(parent$RT, 1)), sep="_"), sep = ""),
                las = 1, cex.axis = 0.7, cex.lab = 1, cex.main = 1, lty = 5)
+          smt <- tryCatch({stats::predict(stats::smooth.spline(eic[[1]]$RT, 
+                                                               eic[[1]]$int, 
+                                                               spar = span),
+                                          x = eic[[1]]$RT)},
+                          error = function(e) {return(list(x = eic[[1]]$RT,
+                                                           y = eic[[1]]$int))})
+          graphics::lines(x=smt$x, y=smt$y*100/maxint, 
+                          col = scales::alpha("grey", 0.4), lwd = 2.5, lty = 5)
         } else {
           graphics::lines(toplot$RT, toplot$int, col = scales::alpha(colorsMS1[p], 0.8), lwd = 2.5,
                 lty = 5)
+          smt <- tryCatch({stats::predict(stats::smooth.spline(eic[[p]]$RT, 
+                                                               eic[[p]]$int, 
+                                                               spar = span),
+                                          x = eic[[p]]$RT)},
+                          error = function(e) {return(list(x = eic[[p]]$RT,
+                                                           y = eic[[p]]$int))})
+          graphics::lines(x=smt$x, y=smt$y*100/maxint, 
+                          col = scales::alpha("grey", 0.4), lwd = 2.5, lty = 5)
         }
       }
       graphics::legend("topright", legend=namesMS1,
@@ -247,26 +344,32 @@ plotLipids <- function(msobject, spar = 0.4){
     if (length(peaksMS2) > 0){
       # if data is DIA
       if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
-        ssms2 <- msobject$MS2[msobject$MS2$peakID %in% peaksMS2,]
+        ssms2 <- msobject$rawData$MS2[msobject$rawData$MS2$peakID %in% peaksMS2,]
         minrt2 <- min(ssms2$RT)
         maxrt2 <- max(ssms2$RT)
         maxint2 <- max(ssms2$int)
         ints2 <- c()
         for (p in 1:length(peaksMS2)){
-          toplot <- msobject$MS2[msobject$MS2$peakID == peaksMS2[p],]
+          toplot <- msobject$rawData$MS2[msobject$rawData$MS2$peakID == peaksMS2[p],]
           toplot <- toplot[order(toplot$RT, decreasing = FALSE),]
-          ints2 <- append(ints2, max(toplot$int))
-          toplot$int <- toplot$int/max(toplot$int)
-          toplot$int <- toplot$int*100/max(toplot$int)
+          maxint <- max(toplot$int, na.rm=TRUE)
+          ints2 <- append(ints2, maxint)
+          toplot$int <- toplot$int*100/maxint
           if (p == 1){
             plot(toplot$RT, toplot$int, type = "l", col = scales::alpha(colorsMS2[p], 0.8),
-                 xlim = c(minrt1-5, maxrt1+5), ylim = c(0, 110),
+                 xlim = c(minrt1-5, maxrt1+10), ylim = c(0, 110),
                  lwd = 2.5, ylab = "Rel. Intensity", xlab = "RT (sec)",
-                 main = paste("MS2: ", paste(parent$ID, as.character(round(parent$m.z, 2)),
+                 main = paste("MS2: ", paste(parent$ID, as.character(round(parent$mz, 2)),
                                              as.character(round(parent$RT, 1)), sep="_"), sep = ""),
                  las = 1, cex.axis = 0.7, cex.lab = 1, cex.main = 1)
+            eic2[[1]] <- eic2[[1]][eic2[[1]]$RT <= maxrt1+10 & eic2[[1]]$RT >= minrt1-5,]
+            graphics::lines(x=eic2[[1]]$RT, y=eic2[[1]]$int*100/maxint, 
+                            col = scales::alpha("grey", 0.4), lwd = 2.5)
           } else {
             graphics::lines(toplot$RT, toplot$int, col = scales::alpha(colorsMS2[p], 0.8), lwd = 2.5)
+            eic2[[p]] <- eic2[[p]][eic2[[p]]$RT <= maxrt1+10 & eic2[[p]]$RT >= minrt1-5,]
+            graphics::lines(x=eic2[[p]]$RT, y=eic2[[p]]$int*100/maxint, 
+                            col = scales::alpha("grey", 0.4), lwd = 2.5)
           }
         }
         graphics::legend("topright", legend=namesMS2,
@@ -277,26 +380,42 @@ plotLipids <- function(msobject, spar = 0.4){
 
         # smoothed
         for (p in 1:length(peaksMS2)){
-          toplot <- msobject$MS2[msobject$MS2$peakID == peaksMS2[p],]
+          toplot <- msobject$rawData$MS2[msobject$rawData$MS2$peakID == peaksMS2[p],]
           toplot <- toplot[order(toplot$RT, decreasing = FALSE),]
-          toplot$int <- toplot$int/max(toplot$int)
-          pred <- tryCatch({stats::predict(stats::smooth.spline(toplot$RT, toplot$int, spar = spar),
+          maxint <- max(toplot$int, na.rm=TRUE)
+          pred <- tryCatch({stats::predict(stats::smooth.spline(toplot$RT, toplot$int, spar = span),
                                     x = toplot$RT)},
                            error = function(e) {return(list(x = toplot$RT,
                                                             y = toplot$int))})
           toplot$RT <- pred$x
           toplot$int <- pred$y
-          toplot$int <- toplot$int*100/max(toplot$int)
+          toplot$int <- toplot$int*100/maxint
           if (p == 1){
             plot(toplot$RT, toplot$int, type = "l", col = scales::alpha(colorsMS2[p], 0.8),
-                 xlim = c(minrt1-5, maxrt1+5), ylim = c(0, 110),
+                 xlim = c(minrt1-5, maxrt1+10), ylim = c(0, 110),
                  lwd = 2.5, ylab = "Rel. Intensity", xlab = "RT (sec)",
-                 main = paste("MS2: ", paste(parent$ID, as.character(round(parent$m.z, 2)),
+                 main = paste("MS2: ", paste(parent$ID, as.character(round(parent$mz, 2)),
                                              as.character(round(parent$RT, 1)), sep="_"), sep = ""),
                  las = 1, cex.axis = 0.7, cex.lab = 1, cex.main = 1, lty = 5)
+            smt <- tryCatch({stats::predict(stats::smooth.spline(eic2[[1]]$RT, 
+                                                                 eic2[[1]]$int, 
+                                                                 spar = span),
+                                            x = eic2[[1]]$RT)},
+                            error = function(e) {return(list(x = eic2[[1]]$RT,
+                                                             y = eic2[[1]]$int))})
+            graphics::lines(x=smt$x, y=smt$y*100/maxint, 
+                            col = scales::alpha("grey", 0.4), lwd = 2.5, lty = 5)
           } else {
             graphics::lines(toplot$RT, toplot$int, col = scales::alpha(colorsMS2[p], 0.8), lwd = 2.5,
                   lty = 5)
+            smt <- tryCatch({stats::predict(stats::smooth.spline(eic2[[p]]$RT, 
+                                                                 eic2[[p]]$int, 
+                                                                 spar = span),
+                                            x = eic2[[p]]$RT)},
+                            error = function(e) {return(list(x = eic2[[p]]$RT,
+                                                             y = eic2[[p]]$int))})
+            graphics::lines(x=smt$x, y=smt$y*100/maxint,  
+                            col = scales::alpha("grey", 0.4), lwd = 2.5, lty = 5)
           }
         }
         graphics::legend("topright", legend=namesMS2,
@@ -320,7 +439,7 @@ plotLipids <- function(msobject, spar = 0.4){
           
           # assign colors
           ssrawMS$color <- "black"
-          ssrawMS$color[ssrawMS$m.z %in% mz2] <- colorsMS2[1:sum(ssrawMS$m.z %in% mz2)]
+          ssrawMS$color[ssrawMS$mz %in% mz2] <- colorsMS2[1:sum(ssrawMS$mz %in% mz2)]
 
           # Find precursor in the MS/MS spectrum
           scanprec <- unlist(strsplit(s, "_"))
@@ -329,11 +448,11 @@ plotLipids <- function(msobject, spar = 0.4){
           precursor <- msobject$metaData$scansMetadata$precursor[
             which(msobject$metaData$scansMetadata$msLevel == 2 &
                     msobject$metaData$scansMetadata$collisionEnergy == collisionenergy)[scanprec]]
-          prec <- as.numeric(unlist(sapply(precursor, mzMatch, ssrawMS$m.z, ppm = 10)))
+          prec <- as.numeric(unlist(sapply(precursor, mzMatch, ssrawMS$mz, ppm = 10)))
           if (length(prec) > 0){
             minppm <- which.min(prec[seq(2, length(prec), 2)])
             prec <- prec[seq(1, length(prec), 2)][minppm]
-            mzprec <- ssrawMS$m.z[prec]
+            mzprec <- ssrawMS$mz[prec]
             nameprec <- paste(round(mzprec, 3), "_precursor", sep="")
             if (ssrawMS$color[prec] == "black"){
               ssrawMS$color[prec] <- colorsMS1[1]
@@ -344,16 +463,16 @@ plotLipids <- function(msobject, spar = 0.4){
           blacks <- ssrawMS$color == "black"
           
           #plot
-          plot(ssrawMS$m.z[blacks], ssrawMS$int[blacks], type = "h", 
+          plot(ssrawMS$mz[blacks], ssrawMS$int[blacks], type = "h", 
                col = scales::alpha(ssrawMS$color[blacks], 0.7),
-               xlim = c(0, max(ssrawMS$m.z)+20), ylim = c(0, 132),
+               xlim = c(0, max(ssrawMS$mz)+20), ylim = c(0, 132),
                lwd = 1, ylab = "Rel. Intensity", xlab = "m/z",
-               main = paste("MS2: ", paste(parent$ID, as.character(round(parent$m.z, 2)),
+               main = paste("MS2: ", paste(parent$ID, as.character(round(parent$mz, 2)),
                                            as.character(round(parent$RT, 1)), sep="_"),
                             paste("\nPrecursor: ", round(precursor, 3), sep = ""),
                             sep = ""),
                las = 1, cex.axis = 0.7, cex.lab = 1, cex.main = 1, lty = 1, yaxt = "n" )
-          lines(ssrawMS$m.z[!blacks], ssrawMS$int[!blacks], type = "h", 
+          lines(ssrawMS$mz[!blacks], ssrawMS$int[!blacks], type = "h", 
                col = scales::alpha(ssrawMS$color[!blacks], 1))
           graphics::axis(2,at=seq(2, 122, 20), labels = seq(0, 120, 20))
           graphics::legend("topright", legend=namesmz2,
@@ -361,11 +480,11 @@ plotLipids <- function(msobject, spar = 0.4){
 
           # clean
           ssrawMSclean <- ssrawMS[!blacks,]
-          plot(ssrawMSclean$m.z, ssrawMSclean$int, type = "h",
+          plot(ssrawMSclean$mz, ssrawMSclean$int, type = "h",
                col = scales::alpha(ssrawMSclean$color, 1),
-               xlim = c(0, max(ssrawMS$m.z)+20), ylim = c(0, 132),
+               xlim = c(0, max(ssrawMS$mz)+20), ylim = c(0, 132),
                lwd = 1.5, ylab = "Rel. Intensity", xlab = "m/z",
-               main = paste("MS2: ", paste(parent$ID, as.character(round(parent$m.z, 2)),
+               main = paste("MS2: ", paste(parent$ID, as.character(round(parent$mz, 2)),
                                            as.character(round(parent$RT, 1)), sep="_"),
                             paste("\nPrecursor: ", round(precursor, 3), sep = ""),
                             sep = ""),
@@ -376,11 +495,250 @@ plotLipids <- function(msobject, spar = 0.4){
         }
       }
     }
-    msobject$plots[[r]] <- grDevices::recordPlot() # save plot
+    msobject$annotation$plots[[r]] <- grDevices::recordPlot() # save plot
     invisible(grDevices::dev.off()) # close pdf NULL device
     results <- results[-toremove,]
   }
   return(msobject)
+}
+
+# plotticmsbatch
+#' TIC for all samples in a msbatch
+#'
+#' TIC for all samples in a msbatch
+#'
+#' @param msbatch msbatch
+#' @param rt numeric vector with the RT range to be plotted
+#' @param colorbygroup logical. If TRUE, samples will be coloured based on their
+#' sample group (from metadata). 
+#'
+#' @return plot
+#'
+#' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
+plotticmsbatch <- function(msbatch, rt, colorbygroup = TRUE){
+  if (missing(rt)){
+    maxs <- unlist(lapply(msbatch$msobjects, function(x) x$metaData$generalMetadata$endTime))
+    rt <- c(0, max(maxs))
+  }
+  maxint <- max(unlist(lapply(msbatch$msobjects, function(x) x$metaData$scansMetadata$totIonCurrent))) 
+  
+  # set color palette
+  palette <- c("#42858C", "#FE9300", "#870E75", "#3E71A8", 
+               "#7F8E39", "#5F3659", "#E5C616",
+               "#16A08CFF", "#FE6900", "#628395", "#C5D86D", "#969696FF",
+               "#358359FF", "#9F4D23FF", "#D86C4FFF", "#170C2EFF",
+               "#473B75FF", "#F19C1FFF",
+               "#117733", "#DDCC77", "#CC6677", "#88CCEE",
+               "#44AA99", "#332288", "#AA4499", "#999933",
+               "#882255", "#661100", "#6699CC", "#888888")
+  if (length(msbatch$msobjects) > length(palette)){
+    set.seed(19580811)
+    colors <- grDevices::colors()[grep('gr(a|e)y|white|light', grDevices::colors(), invert = T)]
+    colors <- sample(colors, size = (length(msbatch$msobjects) - length(palette)))
+    palette <- c(palette, colors)
+  }
+  if (colorbygroup){
+    samplescolor <- as.factor(msbatch$metaData$sampletype)
+    legendnames <- levels(as.factor(msbatch$metaData$sampletype))
+  } else {
+    samplescolor <- 1:length(msbatch$msobjects)
+    legendnames <- msbatch$metaData$sample
+  }
+  
+  # plot tics (if there is MS1 and MS2, use just MS1)
+  whichmslevel <- lapply(msbatch$msobjects, function(x) 
+    unique(x$metaData$scansMetadata$msLevel))
+  x <- msbatch$msobjects[[1]]$metaData$scansMetadata$RT
+  y <- msbatch$msobjects[[1]]$metaData$scansMetadata$totIonCurrent
+  if (all(c(1, 2) %in% whichmslevel[[1]])){
+    x <- x[which(msbatch$msobjects[[1]]$metaData$scansMetadata$msLevel == 1)]
+    y <- y[msbatch$msobjects[[1]]$metaData$scansMetadata$msLevel == 1]
+  }
+  plot(x = x, y = y,
+       xlim = rt, ylim = c(0, maxint+maxint*0.1), 
+       type = "l", col = scales::alpha(palette[samplescolor[1]], 0.7),
+       main = "Total Ion Chromatograms", xlab = "RT (sec)", ylab = "Intensity")
+  
+  for (i in 2:length(msbatch$msobjects)){
+    x <- msbatch$msobjects[[i]]$metaData$scansMetadata$RT
+    y <- msbatch$msobjects[[i]]$metaData$scansMetadata$totIonCurrent
+    if (all(c(1, 2) %in% whichmslevel[[i]])){
+      x <- x[msbatch$msobjects[[i]]$metaData$scansMetadata$msLevel == 1]
+      y <- y[msbatch$msobjects[[i]]$metaData$scansMetadata$msLevel == 1]
+    }
+    lines(x = x, y = y,
+          type = "l", col = scales::alpha(palette[samplescolor[i]], 0.7))
+  }
+  legend("topright", legend = legendnames, 
+         col = scales::alpha(palette, 0.7), lty = 1, lwd = 2, cex = 0.5)
+}
+
+# ploteicmsbatch
+#' EIC for all samples in a msbatch
+#'
+#' EIC for all samples in a msbatch
+#'
+#' @param msbatch msbatch
+#' @param mz mz of interest
+#' @param ppm mass tolerance in ppm
+#' @param rt numeric vector with the RT range to be plotted
+#' @param colorbygroup logical. If TRUE, samples will be coloured based on their
+#' sample group (from metadata).
+#'
+#' @return plot
+#'
+#' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
+ploteicmsbatch <- function(msbatch, mz, ppm, rt, colorbygroup = TRUE){
+  if (missing(rt)){
+    maxs <- unlist(lapply(msbatch$msobjects, function(x) x$metaData$generalMetadata$endTime))
+    rt <- c(0, max(maxs))
+  }
+  # extract eics
+  eic <- list()
+  for (s in 1:length(msbatch$msobjects)){
+    e <- msbatch$msobjects[[s]]$rawData$MS1[abs(msbatch$msobjects[[s]]$rawData$MS1$mz - mz)*1e6/mz < ppm,, drop = FALSE]
+    e <- e[e$RT >= rt[1] & e$RT <= rt[2],]
+    if (nrow(e) > 0){
+      eic[[s]] <- e[order(e$RT), c("RT", "int")]
+    } else {
+      eic[[s]] <- data.frame()
+    }
+    
+  }
+  maxint <- max(unlist(lapply(eic, function(x) if(nrow(x) > 0){max(x$int, na.rm = TRUE)} else {0})), na.rm = TRUE) 
+  
+  # set color palette
+  palette <- c("#42858C", "#FE9300", "#870E75", "#3E71A8", 
+               "#7F8E39", "#5F3659", "#E5C616",
+               "#16A08CFF", "#FE6900", "#628395", "#C5D86D", "#969696FF",
+               "#358359FF", "#9F4D23FF", "#D86C4FFF", "#170C2EFF",
+               "#473B75FF", "#F19C1FFF",
+               "#117733", "#DDCC77", "#CC6677", "#88CCEE",
+               "#44AA99", "#332288", "#AA4499", "#999933",
+               "#882255", "#661100", "#6699CC", "#888888")
+  if (length(msbatch$msobjects) > length(palette)){
+    set.seed(19580811)
+    colors <- grDevices::colors()[grep('gr(a|e)y|white|light', grDevices::colors(), invert = T)]
+    colors <- sample(colors, size = (length(msbatch$msobjects) - length(palette)))
+    palette <- c(palette, colors)
+  }
+  if (colorbygroup){
+    samplescolor <- as.factor(msbatch$metaData$sampletype)
+    legendnames <- levels(as.factor(msbatch$metaData$sampletype))
+  } else {
+    samplescolor <- 1:length(msbatch$msobjects)
+    legendnames <- msbatch$metaData$sample
+  }
+  
+  # plot eics
+  startat <- 1
+  start <- FALSE
+  while (!start){
+    if (nrow(eic[[startat]]) > 0){
+      smt <- tryCatch({stats::predict(stats::smooth.spline(eic[[startat]]$RT, 
+                                                           eic[[startat]]$int),
+                                      x = eic[[startat]]$RT)},
+                      error = function(e) {return(list(x = eic[[startat]]$RT,
+                                                       y = eic[[startat]]$int))})
+      plot(smt$x, smt$y, xlim = rt, 
+           ylim = c(0, maxint+maxint*0.1), type = "l", lwd = 2,
+           col = scales::alpha(palette[samplescolor[startat]], 0.7), 
+           main = paste("EIC: ", mz, sep=""), 
+           xlab = "RT (sec)", ylab = "Intensity")
+      start <- TRUE
+    } else if (nrow(eic[[startat]]) == 0 & startat < length(msbatch$msobjects)) {
+      startat <- startat + 1
+    } else {
+      cat("No peaks found")
+      plot(0, xlim = rt, ylim = c(0, 100), type = "l", lwd = 2,
+           col = scales::alpha(palette[samplescolor[1]], 0.7), 
+           main = paste("EIC: ", mz, sep=""), 
+           xlab = "RT (sec)", ylab = "Intensity")
+      legend("topright", legend = msbatch$metaData$sample, 
+             col = scales::alpha(palette, 0.7), lty = 1, lwd = 2, cex = 0.5)
+      break
+    }
+  }
+  if (length(eic) > startat){
+    if (start){
+      for (i in (startat+1):length(msbatch$msobjects)){
+        if (nrow(eic[[i]] > 0)){
+          smt <- tryCatch({stats::predict(stats::smooth.spline(eic[[i]]$RT, 
+                                                               eic[[i]]$int),
+                                          x = eic[[i]]$RT)},
+                          error = function(e) {return(list(x = eic[[i]]$RT,
+                                                           y = eic[[i]]$int))})
+          lines(smt$x, smt$y, xlim = rt, type = "l", lwd = 2, 
+                col = scales::alpha(palette[samplescolor[i]], 0.7), 
+                main = paste("EIC: ", mz, sep=""), 
+                xlab = "RT (sec)", ylab = "Intensity")
+        }
+      }
+      legend("topright", legend = legendnames, 
+             col = scales::alpha(palette, 0.7), lty = 1, lwd = 2, cex = 0.5)
+    }
+  }
+}
+
+# rtdevplot
+#' Plot retention time deviation
+#'
+#' Plot retention time deviation of an aligned msbatch
+#'
+#' @param msbatch aligned msbatch.
+#' @param colorbygroup logical. If TRUE, samples will be coloured based on their
+#' sample group (from metadata).
+#'
+#' @return plot
+#'
+#' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
+rtdevplot <- function(msbatch, colorbygroup = TRUE){
+  # set color palette
+  palette <- c("#42858C", "#FE9300", "#870E75", "#3E71A8", 
+               "#7F8E39", "#5F3659", "#E5C616",
+               "#16A08CFF", "#FE6900", "#628395", "#C5D86D", "#969696FF",
+               "#358359FF", "#9F4D23FF", "#D86C4FFF", "#170C2EFF",
+               "#473B75FF", "#F19C1FFF",
+               "#117733", "#DDCC77", "#CC6677", "#88CCEE",
+               "#44AA99", "#332288", "#AA4499", "#999933",
+               "#882255", "#661100", "#6699CC", "#888888")
+  if (length(msbatch$msobjects) > length(palette)){
+    set.seed(19580811)
+    colors <- grDevices::colors()[grep('gr(a|e)y|white|light', grDevices::colors(), invert = T)]
+    colors <- sample(colors, size = (length(msbatch$msobjects) - length(palette)))
+    palette <- c(palette, colors)
+  }
+  if (colorbygroup){
+    samplescolor <- as.factor(msbatch$metaData$sampletype)
+    legendnames <- levels(as.factor(msbatch$metaData$sampletype))
+  } else {
+    samplescolor <- 1:length(msbatch$msobjects)
+    legendnames <- msbatch$metaData$sample
+  }
+  
+  maxdev <- max(unlist(lapply(msbatch$alignment$rtdevcorrected, function(x) x$RTdev)))
+  mindev <- min(unlist(lapply(msbatch$alignment$rtdevcorrected, function(x) x$RTdev)))
+  xmax <- max(unlist(lapply(msbatch$msobjects, function(x) x$metaData$generalMetadata$endTime)))
+  
+  # remove zeros at the start and the end of the rtdev vector
+  x <- msbatch$alignment$rtdevcorrected[[1]]$RT
+  y <- msbatch$alignment$rtdevcorrected[[1]]$RTdev
+  x <- x[cumsum(y) & rev(cumsum(rev(y)))]
+  y <- y[cumsum(y) & rev(cumsum(rev(y)))]
+  plot(x = x, y = y, 
+       xlim = c(0, xmax+xmax/10), ylim = c(mindev-1, maxdev+1), type = "l", 
+       col = scales::alpha(palette[samplescolor[1]], 0.7), lwd = 2, 
+       main = "Retention time deviation", xlab = "RT (sec)", ylab = "RT dev (sec)")
+  lines(x = x, y = rep(0, length(x)), col = "darkgrey", lwd = 1, lty = 2)
+  for (s in 2:length(msbatch$msobjects)){
+    x <- msbatch$alignment$rtdevcorrected[[s]]$RT
+    y <- msbatch$alignment$rtdevcorrected[[s]]$RTdev
+    x <- x[cumsum(y) & rev(cumsum(rev(y)))]
+    y <- y[cumsum(y) & rev(cumsum(rev(y)))]
+    lines(x = x, y = y, col = scales::alpha(palette[samplescolor[s]], 0.7))
+  }
+  legend("topright", legend = legendnames, 
+         col = scales::alpha(palette, 0.7), lty = 1, lwd = 2, cex = 0.5)
 }
 
 # createLipidDB
@@ -414,7 +772,7 @@ plotLipids <- function(msobject, spar = 0.4){
 createLipidDB <- function(lipid, chains, chains2){
   customizedDataSets <- list()
   if (sum(lipid == "Cer" || lipid == "CerP" || lipid == "GlcCer" ||
-          lipid == "SM") == 1){
+          lipid == "SM" || lipid == "AcylCer") == 1){
     db <- dbSphingolipids(chains = chains, chains2 = chains2, lipid = lipid)
     db <- data.frame(formula=db$formula, total=db$total,
                      Mass=as.numeric(db$Mass), ID = paste(lipid, "(", db$total, ")", sep=""),
@@ -433,6 +791,10 @@ createLipidDB <- function(lipid, chains, chains2){
     }
     if (lipid == "SM"){
       customizedDataSets[["smdb"]] <- data.frame(formula=db$formula,
+                                                 total=db$total, Mass=as.numeric(db$Mass), stringsAsFactors = F)
+    }
+    if (lipid == "AcylCer"){
+      customizedDataSets[["acylcerdb"]] <- data.frame(formula=db$formula,
                                                  total=db$total, Mass=as.numeric(db$Mass), stringsAsFactors = F)
     }
   } else if (sum(lipid == "FA" || lipid == "HFA" || lipid == "Carnitine" ||
@@ -617,21 +979,26 @@ createLipidDB <- function(lipid, chains, chains2){
     customizedDataSets[["cldb"]] <- data.frame(formula=db$formula, total=db$total,
                                                Mass=as.numeric(db$Mass), stringsAsFactors = F)
   } else if (lipid == "all"){
-    ceramides <- dbSphingolipids(chains = chains, chains2 = chains2,
-                                 lipid = "Cer")
+    ceramides <- dbSphingolipids(chains = chains, chains2 = chains2, lipid = "Cer")
     ceramides <- data.frame(formula=ceramides$formula, total=ceramides$total,
                             Mass=as.numeric(ceramides$Mass), ID = paste("Cer(", ceramides$total,
                                                                         ")", sep=""), stringsAsFactors = F)
-    ceramidesP <- dbSphingolipids(chains = chains, chains2 = chains2,
-                                  lipid = "CerP")
+    
+    ceramidesP <- dbSphingolipids(chains = chains, chains2 = chains2, lipid = "CerP")
     ceramidesP <- data.frame(formula=ceramidesP$formula, total=ceramidesP$total,
                              Mass=as.numeric(ceramidesP$Mass), ID = paste("CerP(", ceramidesP$total,
                                                                           ")", sep=""), stringsAsFactors = F)
-    glccer <- dbSphingolipids(chains = chains, chains2 = chains2,
-                              lipid = "GlcCer")
+    
+    acylcer <- dbSphingolipids(chains = chains, chains2 = chains2, lipid = "AcylCer")
+    acylcer <- data.frame(formula=acylcer$formula, total=acylcer$total, 
+                          Mass=as.numeric(acylcer$Mass), ID = paste("AcylCer(", acylcer$total,
+                                                                    ")", sep=""), stringsAsFactors = F)
+    
+    glccer <- dbSphingolipids(chains = chains, chains2 = chains2, lipid = "GlcCer")
     glccer <- data.frame(formula=glccer$formula, total=glccer$total,
                          Mass=as.numeric(glccer$Mass), ID = paste("GlcCer(", glccer$total,
                                                                   ")", sep=""), stringsAsFactors = F)
+    
     sm <- dbSphingolipids(chains = chains, chains2 = chains2, lipid = "SM")
     sm <- data.frame(formula=sm$formula, total=sm$total,
                      Mass=as.numeric(sm$Mass), ID = paste("SM(", sm$total,
@@ -787,6 +1154,7 @@ createLipidDB <- function(lipid, chains, chains2){
                           stringsAsFactors = F)
     customizedDataSets[["cerdb"]] <- ceramides
     customizedDataSets[["cerPdb"]] <- ceramidesP
+    customizedDataSets[["acylcerdb"]] <- acylcer
     customizedDataSets[["glccerdb"]] <- glccer
     customizedDataSets[["smdb"]] <- sm
     customizedDataSets[["fadb"]] <- fa
@@ -844,23 +1212,34 @@ createLipidDB <- function(lipid, chains, chains2){
 assignDB <- function(){
   dbs <- list()
   dbs[["cerdb"]] <- LipidMS::cerdb
+  dbs[["cerPdb"]] <- LipidMS::cerPdb
+  dbs[["acylcerdb"]] <- LipidMS::acylcerdb
   dbs[["smdb"]] <- LipidMS::smdb
   dbs[["fadb"]] <- LipidMS::fadb
   dbs[["hfadb"]] <- LipidMS::hfadb
   dbs[["carnitinedb"]] <- LipidMS::carnitinesdb
   dbs[["lysopadb"]] <- LipidMS::lysopadb
+  dbs[["lysopaodb"]] <- LipidMS::lysopaodb
   dbs[["lysopedb"]] <- LipidMS::lysopedb
+  dbs[["lysopeodb"]] <- LipidMS::lysopeodb
+  dbs[["lysopepdb"]] <- LipidMS::lysopepdb
   dbs[["lysopgdb"]] <- LipidMS::lysopgdb
   dbs[["lysopidb"]] <- LipidMS::lysopidb
   dbs[["lysopsdb"]] <- LipidMS::lysopsdb
   dbs[["lysopcdb"]] <- LipidMS::lysopcdb
+  dbs[["lysopcodb"]] <- LipidMS::lysopcodb
+  dbs[["lysopcpdb"]] <- LipidMS::lysopcpdb
   dbs[["mgdb"]] <- LipidMS::mgdb
   dbs[["CEdb"]] <- LipidMS::CEdb
   dbs[["sphdb"]] <- LipidMS::sphdb
   dbs[["sphPdb"]] <- LipidMS::sphPdb
   dbs[["fahfadb"]] <- LipidMS::fahfadb
   dbs[["pcdb"]] <- LipidMS::pcdb
+  dbs[["pcodb"]] <- LipidMS::pcodb
+  dbs[["pcpdb"]] <- LipidMS::pcpdb
   dbs[["pedb"]] <- LipidMS::pedb
+  dbs[["peodb"]] <- LipidMS::peodb
+  dbs[["pepdb"]] <- LipidMS::pepdb
   dbs[["pgdb"]] <- LipidMS::pgdb
   dbs[["pidb"]] <- LipidMS::pidb
   dbs[["psdb"]] <- LipidMS::psdb
@@ -878,14 +1257,17 @@ assignDB <- function(){
 # getInclusionList
 #' Obtain an inclusion list from the annotation results
 #'
-#' Obtain an inclusion list from the annotation results.
+#' Obtain an inclusion list for the identified lipids.
 #'
-#' @param results data frame. Output of identification functions.
-#' @param adductsTable data frame with the adducts allowed and their mass
-#' difference.
+#' @param df data frame. Output of identification functions (results table from
+#' an msobject or feature table from an msbatch).
+#' @param dbs list of data bases required for annotation. By default, dbs
+#' contains the required data frames based on the default fragmentation rules.
+#' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+#' and \link{assignDB}.
 #'
 #' @return Data frame with 6 columns: formula, RT, neutral mass, m/z, adduct
-#' and the compound name.
+#' and the LipidMSid.
 #'
 #' @examples
 #' \dontrun{
@@ -897,8 +1279,50 @@ assignDB <- function(){
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
-getInclusionList <- function(results, adductsTable = LipidMS::adductsTable){
-  Form_Mn <- apply(results, 1, getFormula)
+getInclusionList <- function(df, dbs){
+  
+  if (missing(dbs)){
+    dbs <- assignDB()
+  }
+  adductsTable = dbs$adductsTable
+  
+  if(!any(c("LipidMSid", "ID") %in% colnames(df))){
+    stop("df must be annotated (i.e. results table from an msobject or feature table from an msbatch)")
+  }
+  
+  results <- data.frame(mz = df$mz, RT = df$RT, Adduct = df$Adduct)
+  if ("LipidMSid" %in% colnames(df)){
+    results$LipidMSid <- unlist(sapply(df$LipidMSid, function(x){
+      id <- unlist(strsplit(x, "[\\|;]"))[1]
+      if (is.na(id)){id <- ""}
+      return(id)
+    }))
+    results <- results[results$LipidMSid != "",]
+    comp <- do.call(rbind, sapply(results$LipidMSid, function(x){
+      y <- chains(x)[c("class", "chains", "chains1", "chains2", "chains3", "chains4")]
+      names(y) <- c("class", "chains", "chains1", "chains2", "chains3", "chains4")
+      if (is.na(y["chains"])){
+        ch <- y[3:6]
+        n <- sum(!is.na(ch))
+        ch <- paste(ch[1:n], sep="", collapse=" ")
+        y["chains"] <- sumChains(ch, n)
+      }
+      return(y)
+    }, simplify = FALSE))
+    results$Class <- comp[,"class"]
+    results$CDB <- comp[,"chains"]
+  } else {
+    results$Adduct <- unlist(sapply(df$Adduct, function(x){
+      adduct <- unlist(strsplit(x, "\\;"))[1]
+      if (is.na(adduct)){adduct <- ""}
+      return(adduct)
+    }))
+    results$LipidMSid <- df$ID
+    results$Class <- df$Class
+    results$CDB <- df$CDB
+  }
+  
+  Form_Mn <- apply(results, 1, getFormula, dbs = dbs)
   if (class(Form_Mn) == "matrix"){
     new <- list()
     for (i in 1:ncol(Form_Mn)){
@@ -923,7 +1347,7 @@ getInclusionList <- function(results, adductsTable = LipidMS::adductsTable){
       mzs[[i]] <- append(mzs[[i]], mz)
     }
   }
-  Name <- results$ID
+  Name <- results$LipidMSid
   inclusionList <- vector()
   for (i in 1:nrow(results)){
     for (a in 1:length(adducts[[i]])){
@@ -933,40 +1357,116 @@ getInclusionList <- function(results, adductsTable = LipidMS::adductsTable){
                                         Name[i], stringsAsFactors = F))
     }
   }
-  colnames(inclusionList) <- c("Formula", "RT", "Mn", "m.z", "Adduct", "Name")
+  colnames(inclusionList) <- c("Formula", "RT", "Mn", "mz", "Adduct", "LipidMSid")
   inclusionList <- unique(inclusionList)
   return(inclusionList)
 }
 
 # searchIsotopes
-#' Target isotopes search
+#' Targeted isotopes search
 #'
-#' This function uses annotation results of an unlabelled sample to search
-#' for labelled compounds in a labelled sample.
+#' This function uses annotation results of deisotoped data to search
+#' for isotopes in raw data.
 #'
-#' @param msobject a msobject generated by any of the identification functions.
+#' @param msobject msobject.
 #' @param label isotope employed for the experiment. It can be "13C" or "D".
 #' @param adductsTable adducts table employed for lipids annotation.
-#' @param rttol rt window in seconds.
 #' @param ppm mass error tolerance.
-#' @param coelCutoff coelution score threshold between isotopes. By default, 0.8.
+#' @param coelCutoff coelution score threshold between isotopes. By default, 0.7.
+#' @param results target list to search isotopes. If missing, all results from the
+#' msobject are searched. It is used by \link{searchIsotopesmsbatch}.
+#' @param dbs list of data bases required for annotation. By default, dbs
+#' contains the required data frames based on the default fragmentation rules.
+#' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+#' and \link{assignDB}.
 #'
 #' @return List with the isotopes for each compound in the results data frame.
+#' 
+#' @examples
+#' \dontrun{
+#' msobject <- idPOS(LipidMSdata2::msobjectDIApos)
+#' searchIsotopes(msobject, label = "13C")
+#' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 searchIsotopes <- function(msobject,
                            label,
                            adductsTable = LipidMS::adductsTable,
-                           rttol = 10,
                            ppm = 10,
-                           coelCutoff = 0.8){
-
-  results <- msobject$results
-  MS1 <- msobject$peaklist$MS1
-
-  Form_Mn <- apply(results, 1, getFormula)
+                           coelCutoff = 0.7,
+                           results, 
+                           dbs){
+  
+  if (missing(dbs)){
+    dbs <- assignDB()
+  }
+  
+  ############################################################################
+  # Target and raw data
+  if(missing(results)){
+    # List of target compounds
+    results <- data.frame(mz = msobject$annotation$annotatedPeaklist$mz, 
+                          RT = msobject$annotation$annotatedPeaklist$RT,
+                          iniRT = msobject$annotation$annotatedPeaklist$minRT,
+                          endRT = msobject$annotation$annotatedPeaklist$maxRT)
+    results$LipidMSid <- unlist(sapply(msobject$annotation$annotatedPeaklist$LipidMSid, function(x){
+      id <- unlist(strsplit(x, "[\\|;]"))[1]
+      if (is.na(id)){id <- ""}
+      return(id)
+    }))
+    results$Adduct <- unlist(sapply(msobject$annotation$annotatedPeaklist$Adduct, function(x){
+      adduct <- unlist(strsplit(x, "[\\|;]"))[1]
+      if (is.na(adduct)){adduct <- ""}
+      return(adduct)
+    }))
+    results <- results[results$LipidMSid != "",]
+    comp <- do.call(rbind, sapply(results$LipidMSid, function(x){
+      y <- chains(x)[c("class", "chains", "chains1", "chains2", "chains3", "chains4")]
+      names(y) <- c("class", "chains", "chains1", "chains2", "chains3", "chains4")
+      if (is.na(y["chains"])){
+        ch <- y[3:6]
+        n <- sum(!is.na(ch))
+        ch <- paste(ch[1:n], sep="", collapse=" ")
+        y["chains"] <- sumChains(ch, n)
+      }
+      return(y)
+    }, simplify = FALSE))
+    results$Class <- comp[,"class"]
+    results$CDB <- comp[,"chains"]
+    results <- cbind(results, msobject$annotation$annotatedPeaklist[msobject$annotation$annotatedPeaklist$LipidMSid != "", 
+                                               colnames(msobject$annotation$annotatedPeaklist) %in% 
+                                                 make.names(msobject$metaData$generalMetadata$file)])
+  }
+  MS1 <- msobject$rawData$MS1
+  
+  ############################################################################
+  # Make an index for raw MS data to speed up the function
+  drt <- max(MS1$RT) - min(MS1$RT)
+  mz <- MS1$mz
+  ord <- order(mz)
+  mz <- mz[ord]
+  rt <- MS1$RT[ord]
+  int <- MS1$int[ord]
+  scan <- MS1$Scan[ord]
+  part <- .Call("agglom", mz, rt, as.integer(1),
+                ppm*2, drt,
+                PACKAGE = "LipidMS")
+  part <- part[order(part, decreasing = FALSE)]
+  maxit <- max(part)
+  index <- .Call("indexed", as.integer(part), int, 0, max(int),
+                 as.integer(maxit), PACKAGE = "LipidMS")
+  index <- cbind(index, mz[index[,1]])
+  inimz <- index[,4]
+  
+  ############################################################################
+  # Extract formula and mass of the target compounds
+  results$Adduct <- unlist(sapply(results$Adduct, function(x){
+    unlist(strsplit(x, "\\;"))[1]
+  }))
+  Form_Mn <- apply(results, 1, getFormula, dbs = dbs)
   formula <- unlist(lapply(Form_Mn, "[[", "Formula"))
   results$Formula <- formula
+  results$Mn <- unlist(lapply(Form_Mn, "[[", "Mn"))
   comp <- do.call(rbind, sapply(results$Formula, function(x) {
     c <- CHNOSZ::makeup(x)
     c <- c[c("C", "H", "N", "O", "P")]
@@ -983,53 +1483,169 @@ searchIsotopes <- function(msobject,
     massdiff <- 1.006277
     label <- "H"
   }
+  
+  ############################################################################
+  # Search isotopes
   isotopes <- apply(results, 1, function(x){
-    mz <- as.numeric(x["m.z"])
-    rt <- as.numeric(x["RT"])
+    ##########################################################################
+    # get rt limits
+    minRT <- as.numeric(x["iniRT"])
+    maxRT <- as.numeric(x["endRT"])
+    exactmz <- adductsTable$n[adductsTable$adduct == x["Adduct"]] * 
+      (as.numeric(x["Mn"]) + adductsTable$mdiff[adductsTable$adduct == x["Adduct"]]) / 
+      abs(adductsTable$charge[adductsTable$adduct == x["Adduct"]])
     top <- as.numeric(x[label])
-    intensities <- vector()
-    mzs <- vector()
-    rts <- vector()
+    intensities <- c()
+    mzs <- c()
+    rts <- c()
+    subsetPrev <- data.frame()
     for (i in 0:top){
-      if (nrow(MS1[abs(MS1$RT - rt) < rttol,]) > 0){
-        subsetMS1 <- MS1[abs(MS1$RT - rt) < rttol,]
-        m <- mzMatch(mz+i*massdiff, subsetMS1[abs(subsetMS1$RT - rt) <
-                                                rttol, "m.z"], ppm)
-        if (length(m) > 0){
-          m <- m[seq(1, length(m), 2)]
-          sel <- subsetMS1[m,]
-          sel$coelScore <- coelutionScore(as.character(x["peakID"]), sel$peakID, msobject$MS1)
-          sel <- sel[sel$coelScore >= coelCutoff,]
-          if (nrow(sel) > 0){
-            int <- sel[order(abs(sel$RT - rt)),"int"][1]
-            RT <- sel[order(abs(sel$RT - rt)),"RT"][1]
-            MZ <- sel[order(abs(sel$RT - rt)),"m.z"][1]
+      ##########################################################################
+      # get mz limits
+      minmz <- exactmz - exactmz*ppm/1e6 + i*massdiff
+      maxmz <- exactmz + exactmz*ppm/1e6 + i*massdiff
+      m <- which(inimz < maxmz)
+      if (length(m) > 0){
+        m <- m[length(m)]
+        start <- index[m, 1]
+        end <- index[m, 2]
+        subset <- (start:end)[mz[start:end] >= minmz & mz[start:end] <= maxmz & 
+                                rt[start:end] >= minRT & rt[start:end] <= maxRT]
+      }
+      if (length(subset) > 0){
+        subsetMS1 <- MS1[ord[subset],]
+        if (nrow(subsetMS1) > 0){
+          subsetMS1 <- subsetMS1[order(subsetMS1$RT),]
+          if (nrow(subsetPrev) > 0){
+            merged <- merge(subsetPrev, subsetMS1, by = "Scan")
+            if (nrow(merged) > 2){
+              coelScore <- cor(merged$int.x, merged$int.y)
+              if (!is.na(coelScore) & coelScore >= coelCutoff){
+                subsetPrev <- subsetMS1
+                intensities <- c(intensities, sum(subsetMS1$int))
+                mzs <- c(mzs, mean(subsetMS1$mz))
+                rts <- c(rts, subsetMS1$RT[which.max(subsetMS1$int)])
+              } else {
+                intensities <- c(intensities, 0)
+                mzs <- c(mzs, exactmz + i*massdiff)
+                rts <- c(rts, as.numeric(x["RT"]))
+              }
+            } else {
+              intensities <- c(intensities, 0)
+              mzs <- c(mzs, exactmz + i*massdiff)
+              rts <- c(rts, as.numeric(x["RT"]))
+            } 
           } else {
-            int <- 0
-            RT <- rt
-            MZ <- mz+i*massdiff
+            subsetPrev <- subsetMS1
+            intensities <- c(intensities, sum(subsetMS1$int))
+            mzs <- c(mzs, mean(subsetMS1$mz))
+            rts <- c(rts, subsetMS1$RT[which.max(subsetMS1$int)])
           }
         } else {
-          int <- 0
-          RT <- rt
-          MZ <- mz+i*massdiff
+          intensities <- c(intensities, 0)
+          mzs <- c(mzs, exactmz + i*massdiff)
+          rts <- c(rts, as.numeric(x["RT"]))
         }
       } else {
-        int <- 0
-        RT <- rt
-        MZ <- mz+i*massdiff
+        intensities <- c(intensities, 0)
+        mzs <- c(mzs, exactmz + i*massdiff)
+        rts <- c(rts, as.numeric(x["RT"]))
       }
-      intensities <- append(intensities, int)
-      mzs <- append(mzs, MZ)
-      rts <- append(rts, RT)
     }
-    adduct <- unlist(strsplit(as.character(x["Adducts"]), ";"))[1]
-    return(data.frame(Name = paste(x["ID"], " [M+", 0:top, "]",
-                                   sep = ""),
-                      Adduct = rep(adduct, length(mzs)),
-                      Formula = rep(x["Formula"], length(mzs)),
-                      m.z = mzs, RT = rts,  int = intensities,
-                      stringsAsFactors = F))
+    return(data.frame(LipidMSid = x["LipidMSid"],
+                      Isotope = paste("[M+", 0:top, "]", sep = ""),
+                      Adduct = x["Adduct"],
+                      Formula = x["Formula"],
+                      mz = mzs, 
+                      RT = rts,  
+                      int = intensities,
+                      stringsAsFactors = F, row.names = 1:length(intensities)))
   })
+  isotopes <- data.frame(do.call(rbind, isotopes))
+  rownames(isotopes) <- 1:nrow(isotopes)
+  return(isotopes)
+}
+
+# searchIsotopesmsbatch
+#' Targeted isotopes search for msbatch
+#'
+#' This function uses annotation results of deisotoped data to search
+#' for isotopes in raw data.
+#'
+#' @param msbatch annotated msbatch.
+#' @param label isotope employed for the experiment. It can be "13C" or "D".
+#' @param adductsTable adducts table employed for lipids annotation.
+#' @param ppm mass error tolerance.
+#' @param coelCutoff coelution score threshold between isotopes. By default, 0.7.
+#'
+#' @return List with the isotopes for each compound in the results data frame.
+#' 
+#' @examples
+#' \dontrun{
+#' msbatch <- batchProcessing(metadata = "metadata.csv", polarity = "positive")
+#' msbatch <- alignmsbatch(msbatch)
+#' msbatch <- groupmsbatch(msbatch)
+#' msbatch <- annotatemsbatch(msbatch)
+#' searchIsotopesmsbatch(msbatch, label = "13C")
+#' }
+#'
+#' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
+searchIsotopesmsbatch <- function(msbatch,
+                           label,
+                           adductsTable = LipidMS::adductsTable,
+                           ppm = 10,
+                           coelCutoff = 0.7){
+  
+  # List of target compounds
+  results <- data.frame(mz = msbatch$features$mz, 
+                        RT = msbatch$features$RT,
+                        iniRT = msbatch$features$iniRT,
+                        endRT = msbatch$features$endRT)
+  results$LipidMSid <- unlist(sapply(msbatch$features$LipidMSid, function(x){
+    id <- unlist(strsplit(x, "[\\|;]"))[1]
+    if (is.na(id)){id <- ""}
+    return(id)
+  }))
+  results$Adduct <- unlist(sapply(msbatch$features$Adduct, function(x){
+    adduct <- unlist(strsplit(x, "[\\|;]"))[1]
+    if (is.na(adduct)){adduct <- ""}
+    return(adduct)
+  }))
+  results <- results[results$LipidMSid != "",]
+  comp <- do.call(rbind, sapply(results$LipidMSid, function(x){
+    y <- chains(x)[c("class", "chains", "chains1", "chains2", "chains3", "chains4")]
+    names(y) <- c("class", "chains", "chains1", "chains2", "chains3", "chains4")
+    if (is.na(y["chains"])){
+      ch <- y[3:6]
+      n <- sum(!is.na(ch))
+      ch <- paste(ch[1:n], sep="", collapse=" ")
+      y["chains"] <- sumChains(ch, n)
+    }
+    return(y)
+  }, simplify = FALSE))
+  results$Class <- comp[,"class"]
+  results$CDB <- comp[,"chains"]
+  results <- cbind(results, msbatch$features[msbatch$features$LipidMSid != "", 
+                                             colnames(msbatch$features) %in% 
+                                               make.names(msbatch$metaData$sample)])
+  
+  # for each msobject in the msbatch
+  for (m in 1:length(msbatch$msobjects)){
+    results$int <- results[,colnames(results) == make.names(msbatch$metaData$sample[m])]
+    iso <- searchIsotopes(msbatch$msobjects[[m]],
+                          label = label,
+                          adductsTable = adductsTable,
+                          ppm = ppm,
+                          coelCutoff = coelCutoff,
+                          results = results)
+    if (m == 1){
+      isotopes <- iso
+    } else {
+      isotopes <- cbind(isotopes, iso$int)
+    }
+  }
+  colnames(isotopes) <- c("LipidMSid", "Isotope", "Adduct", "Formula", "mz", "RT",
+                          msbatch$metaData$sample)
+  
   return(isotopes)
 }

@@ -19,9 +19,9 @@
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -30,10 +30,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idNEG(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idNEG(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
@@ -43,17 +40,18 @@ idNEG <- function(msobject,
                   rttol = 5,
                   coelCutoff = 0.8,
                   lipidClasses = c("FA", "FAHFA", "LPC", "LPE", "LPG", "LPI",
-                                   "LPS", "PC", "PE", "PG", "PI", "PS", "Sph",
-                                   "SphP", "Cer", "CL", "BA"),
+                                   "LPS", "PC", "PCo", "PCp", "PE", "PEo", "PEp", 
+                                   "PG", "PI", "PS", "Sph", "SphP", "Cer", "CerP", 
+                                   "AcylCer", "CL", "BA"),
                   dbs){
 
   if (msobject$metaData$generalMetadata$polarity != "negative"){
     stop("Data wasn't acquired in negative mode")
   }
-  if ("results" %in% names(msobject)){
+  if ("results" %in% names(msobject$annotation)){
     cat("\n Removing previous results...")
-    msobject$results <- NULL
-    msobject$detailsAnnotation <- NULL
+    msobject$annotation$results <- NULL
+    msobject$annotation$detailsAnnotation <- NULL
     msobject$annotatedPeaklist <- NULL
     cat("OK")
   }
@@ -61,10 +59,12 @@ idNEG <- function(msobject,
     dbs <- assignDB()
   }
   if (!all(lipidClasses %in% c("FA", "FAHFA", "LPC", "LPE", "LPG", "LPI",
-                               "LPS", "PC", "PE", "PG", "PI", "PS", "Sph",
-                               "SphP", "Cer", "CL", "BA"))){
+                               "LPS", "PC", "PCo", "PCp", "PE", "PEo", "PEp", 
+                               "PG", "PI", "PS", "Sph", "SphP", "Cer", "CerP", 
+                               "AcylCer", "CL", "BA"))){
     stop("Lipid classes allowed for negative annotation are: FA, FAHFA, LPC, LPE,
-         LPG, LPI, LPS, PC, PE, PG, PI, PS, Sph, SphP, Cer, CL and BA")
+         LPG, LPI, LPS, PC, PCo, PCp, PE, PEo, PEp, PG, PI, PS, Sph, SphP, Cer, 
+         CerP, AcylCer, CL and BA")
   }
 
   cat("\n Starting annotation...")
@@ -124,11 +124,39 @@ idNEG <- function(msobject,
                          coelCutoff = coelCutoff, dbs = dbs)
     cat("OK")
   }
+  if ("PCo" %in% lipidClasses){
+    cat("\n  Searching for PCo...")
+    msobject <-  idPConeg(msobject = msobject, ppm_precursor= ppm_precursor,
+                         ppm_products = ppm_products, rttol = rttol,
+                         coelCutoff = coelCutoff, dbs = dbs)
+    cat("OK")
+  }
+  if ("PCp" %in% lipidClasses){
+    cat("\n  Searching for PCp...")
+    msobject <-  idPCpneg(msobject = msobject, ppm_precursor= ppm_precursor,
+                          ppm_products = ppm_products, rttol = rttol,
+                          coelCutoff = coelCutoff, dbs = dbs)
+    cat("OK")
+  }
   if ("PE" %in% lipidClasses){
     cat("\n  Searching for PE...")
     msobject <-  idPEneg(msobject = msobject, ppm_precursor= ppm_precursor,
                          ppm_products = ppm_products, rttol = rttol,
                          coelCutoff = coelCutoff, dbs = dbs)
+    cat("OK")
+  }
+  if ("PEo" %in% lipidClasses){
+    cat("\n  Searching for PEo...")
+    msobject <-  idPEoneg(msobject = msobject, ppm_precursor= ppm_precursor,
+                          ppm_products = ppm_products, rttol = rttol,
+                          coelCutoff = coelCutoff, dbs = dbs)
+    cat("OK")
+  }
+  if ("PEp" %in% lipidClasses){
+    cat("\n  Searching for PEp...")
+    msobject <-  idPEpneg(msobject = msobject, ppm_precursor= ppm_precursor,
+                          ppm_products = ppm_products, rttol = rttol,
+                          coelCutoff = coelCutoff, dbs = dbs)
     cat("OK")
   }
   if ("PG" %in% lipidClasses){
@@ -173,6 +201,20 @@ idNEG <- function(msobject,
                           coelCutoff = coelCutoff, dbs = dbs)
     cat("OK")
   }
+  if ("CerP" %in% lipidClasses){
+    cat("\n  Searching for CerP...")
+    msobject <-  idCerPneg(msobject = msobject, ppm_precursor= ppm_precursor,
+                          ppm_products = ppm_products, rttol = rttol,
+                          coelCutoff = coelCutoff, dbs = dbs)
+    cat("OK")
+  }
+  if ("AcylCer" %in% lipidClasses){
+    cat("\n  Searching for AcylCer...")
+    msobject <-  idAcylCerneg(msobject = msobject, ppm_precursor= ppm_precursor,
+                           ppm_products = ppm_products, rttol = rttol,
+                           coelCutoff = coelCutoff, dbs = dbs)
+    cat("OK")
+  }
   if ("CL" %in% lipidClasses){
     cat("\n  Searching for CL...")
     msobject <-  idCLneg(msobject = msobject, ppm_precursor= ppm_precursor,
@@ -189,15 +231,10 @@ idNEG <- function(msobject,
   }
 
   cat("\n Preparing output...")
-  if (nrow(msobject$results) > 0){
-    annotatedPeaklist <- crossTables(msobject,
-                                     ppm = ppm_precursor, 
-                                     rttol = rttol,
-                                     dbs = dbs)
-  } else {
-    annotatedPeaklist <- "No results were found"
-  }
-  msobject$annotatedPeaklist <- annotatedPeaklist
+  msobject <- crossTables(msobject,
+                          ppm = ppm_precursor, 
+                          rttol = rttol,
+                          dbs = dbs)
   cat("OK\n")
   return(msobject)
 }
@@ -233,9 +270,9 @@ idNEG <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -246,10 +283,10 @@ idNEG <- function(msobject,
 #' fragments: neutral loss of H2O coeluting with the precursor ion or the
 #' molecular ion.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (in this
 #' case, just MS-only or Subclass level (if any class fragment is defined) are
 #' possible) and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -261,10 +298,7 @@ idNEG <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idFAneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idFAneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
@@ -287,7 +321,10 @@ idFAneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -321,31 +358,31 @@ idFAneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "FA",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "FA",]
     }
   }
-  if ("lipidClasses" %in% names(msobject)){
-    if("FA" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("FA" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious FA annotations removed")
-      msobject$detailsAnnotation$FA <- list()
+      msobject$annotation$detailsAnnotation$FA <- list()
     }
   }
   ##############################################################################
@@ -386,25 +423,25 @@ idFAneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$FA <- list()
-    msobject$detailsAnnotation$FA$candidates <- candidates
-    msobject$detailsAnnotation$FA$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$FA <- list()
+    msobject$annotation$detailsAnnotation$FA$candidates <- candidates
+    msobject$annotation$detailsAnnotation$FA$classfragments <- classConf$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$FA$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$FA$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$FA <- list()
+    msobject$annotation$detailsAnnotation$FA <- list()
   }
   return(msobject)
 }
@@ -452,9 +489,9 @@ idFAneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -469,10 +506,10 @@ idFAneg <- function(msobject,
 #' intensity rules to confirm chains position. In this case, HFA intensity has
 #' to be higher than FA.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
 #' level) and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -484,10 +521,7 @@ idFAneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idFAHFAneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idFAHFAneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -515,7 +549,10 @@ idFAHFAneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -549,31 +586,31 @@ idFAHFAneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous FAHFA annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "FAHFA",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "FAHFA",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("FAHFA" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("FAHFA" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious FAHFA annotations removed")
-      msobject$detailsAnnotation$FAHFA <- list()
+      msobject$annotation$detailsAnnotation$FAHFA <- list()
     }
   }
   ##############################################################################
@@ -625,26 +662,26 @@ idFAHFAneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$FAHFA <- list()
-    msobject$detailsAnnotation$FAHFA$candidates <- candidates
-    msobject$detailsAnnotation$FAHFA$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$FAHFA$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$FAHFA <- list()
+    msobject$annotation$detailsAnnotation$FAHFA$candidates <- candidates
+    msobject$annotation$detailsAnnotation$FAHFA$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$FAHFA$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$FAHFA$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$FAHFA$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$FAHFA <- list()
+    msobject$annotation$detailsAnnotation$FAHFA <- list()
   }
   return(msobject)
 }
@@ -682,9 +719,9 @@ idFAHFAneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -697,10 +734,10 @@ idFAHFAneg <- function(msobject,
 #' as M-H or lysoPC as M-CH3 coeluting with the precursor ion. 3) Search of
 #' specific fragments that confirm chain composition (FA as M-H).
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (in this
 #' case, as LPC only have one chain, only Subclass and FA level are possible)
 #' and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -712,10 +749,7 @@ idFAHFAneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idLPCneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idLPCneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -739,7 +773,10 @@ idLPCneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -773,31 +810,31 @@ idLPCneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous LPC annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "LPC",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "LPC",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("LPC" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("LPC" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious LPC annotations removed")
-      msobject$detailsAnnotation$LPC <- list()
+      msobject$annotation$detailsAnnotation$LPC <- list()
     }
   }
   ##############################################################################
@@ -849,26 +886,26 @@ idLPCneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$LPC <- list()
-    msobject$detailsAnnotation$LPC$candidates <- candidates
-    msobject$detailsAnnotation$LPC$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$LPC$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$LPC <- list()
+    msobject$annotation$detailsAnnotation$LPC$candidates <- candidates
+    msobject$annotation$detailsAnnotation$LPC$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$LPC$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$LPC$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$LPC$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$LPC <- list()
+    msobject$annotation$detailsAnnotation$LPC <- list()
   }
   return(msobject)
 }
@@ -906,9 +943,9 @@ idLPCneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -921,10 +958,10 @@ idLPCneg <- function(msobject,
 #' this will be excluded as it is a characteristic fragment of LPC.3) Search of
 #' specific fragments that confirm chain composition (FA as M-H).
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (in this
 #' case, as LPE only have one chain, only Subclass and FA level are possible)
 #' and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -936,10 +973,7 @@ idLPCneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idLPEneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idLPEneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -962,7 +996,10 @@ idLPEneg <- function(msobject, ppm_precursor = 5,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -996,31 +1033,31 @@ idLPEneg <- function(msobject, ppm_precursor = 5,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "LPE",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "LPE",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("LPE" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("LPE" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious LPE annotations removed")
-      msobject$detailsAnnotation$LPE <- list()
+      msobject$annotation$detailsAnnotation$LPE <- list()
     }
   }
   ##############################################################################
@@ -1072,26 +1109,26 @@ idLPEneg <- function(msobject, ppm_precursor = 5,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$LPE <- list()
-    msobject$detailsAnnotation$LPE$candidates <- candidates
-    msobject$detailsAnnotation$LPE$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$LPE$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$LPE <- list()
+    msobject$annotation$detailsAnnotation$LPE$candidates <- candidates
+    msobject$annotation$detailsAnnotation$LPE$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$LPE$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$LPE$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$LPE$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$LPE <- list()
+    msobject$annotation$detailsAnnotation$LPE <- list()
   }
   return(msobject)
 }
@@ -1129,9 +1166,9 @@ idLPEneg <- function(msobject, ppm_precursor = 5,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -1143,10 +1180,10 @@ idLPEneg <- function(msobject, ppm_precursor = 5,
 #' precursor ion. 3) Search of specific fragments that confirm chain composition
 #' (FA as M-H).
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number of carbons
+#' Results data frame shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (in this
 #' case, as LPG only have one chain, only Subclass and FA level are possible)
 #' and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -1158,10 +1195,7 @@ idLPEneg <- function(msobject, ppm_precursor = 5,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idLPGneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idLPGneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -1185,7 +1219,13 @@ idLPGneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -1219,31 +1259,31 @@ idLPGneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "LPG",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "LPG",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("LPG" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("LPG" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious LPG annotations removed")
-      msobject$detailsAnnotation$LPG <- list()
+      msobject$annotation$detailsAnnotation$LPG <- list()
     }
   }
   ##############################################################################
@@ -1295,26 +1335,26 @@ idLPGneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$LPG <- list()
-    msobject$detailsAnnotation$LPG$candidates <- candidates
-    msobject$detailsAnnotation$LPG$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$LPG$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$LPG <- list()
+    msobject$annotation$detailsAnnotation$LPG$candidates <- candidates
+    msobject$annotation$detailsAnnotation$LPG$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$LPG$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$LPG$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$LPG$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$LPG <- list()
+    msobject$annotation$detailsAnnotation$LPG <- list()
   }
   return(msobject)
 }
@@ -1352,9 +1392,9 @@ idLPGneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -1366,10 +1406,10 @@ idLPGneg <- function(msobject,
 #' with the precursor ion. 3) Search of specific fragments that confirm chain
 #' composition (FA as M-H).
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (in this
 #' case, as LPI only have one chain, only Subclass and FA level are possible)
 #' and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -1381,10 +1421,7 @@ idLPGneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idLPIneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idLPIneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -1408,7 +1445,10 @@ idLPIneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -1442,31 +1482,31 @@ idLPIneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "LPI",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "LPI",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("LPI" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("LPI" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious LPI annotations removed")
-      msobject$detailsAnnotation$LPI <- list()
+      msobject$annotation$detailsAnnotation$LPI <- list()
     }
   }
   ##############################################################################
@@ -1518,26 +1558,26 @@ idLPIneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$LPI <- list()
-    msobject$detailsAnnotation$LPI$candidates <- candidates
-    msobject$detailsAnnotation$LPI$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$LPI$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$LPI <- list()
+    msobject$annotation$detailsAnnotation$LPI$candidates <- candidates
+    msobject$annotation$detailsAnnotation$LPI$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$LPI$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$LPI$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$LPI$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$LPI <- list()
+    msobject$annotation$detailsAnnotation$LPI <- list()
   }
   return(msobject)
 }
@@ -1575,9 +1615,9 @@ idLPIneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -1588,10 +1628,10 @@ idLPIneg <- function(msobject,
 #' LPS class fragments: neutral loss of 87.032 coeluting with the precursor ion.
 #' 3) Search of specific fragments that confirm chain composition (FA as M-H).
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (in this
 #' case, as LPS only have one chain, only Subclass and FA level are possible)
 #' and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -1603,10 +1643,7 @@ idLPIneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idLPSneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idLPSneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -1630,7 +1667,10 @@ idLPSneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -1664,31 +1704,31 @@ idLPSneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "LPS",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "LPS",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("LPS" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("LPS" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious LPS annotations removed")
-      msobject$detailsAnnotation$LPS <- list()
+      msobject$annotation$detailsAnnotation$LPS <- list()
     }
   }
   ##############################################################################
@@ -1740,26 +1780,26 @@ idLPSneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$LPS <- list()
-    msobject$detailsAnnotation$LPS$candidates <- candidates
-    msobject$detailsAnnotation$LPS$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$LPS$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$LPS <- list()
+    msobject$annotation$detailsAnnotation$LPS$candidates <- candidates
+    msobject$annotation$detailsAnnotation$LPS$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$LPS$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$LPS$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$LPS$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$LPS <- list()
+    msobject$annotation$detailsAnnotation$LPS <- list()
   }
   return(msobject)
 }
@@ -1807,9 +1847,9 @@ idLPSneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -1827,10 +1867,10 @@ idLPSneg <- function(msobject,
 #' position. In this case, lysoPC from sn1 is at least 3 times more intense than
 #' lysoPC from sn2.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
 #' level) and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -1842,10 +1882,7 @@ idLPSneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idPCneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idPCneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -1873,7 +1910,10 @@ idPCneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -1907,31 +1947,31 @@ idPCneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "PC",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "PC",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("PC" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("PC" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious PC annotations removed")
-      msobject$detailsAnnotation$PC <- list()
+      msobject$annotation$detailsAnnotation$PC <- list()
     }
   }
   ##############################################################################
@@ -1987,26 +2027,518 @@ idPCneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$PC <- list()
-    msobject$detailsAnnotation$PC$candidates <- candidates
-    msobject$detailsAnnotation$PC$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$PC$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$PC <- list()
+    msobject$annotation$detailsAnnotation$PC$candidates <- candidates
+    msobject$annotation$detailsAnnotation$PC$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$PC$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$PC$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$PC$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$PC <- list()
+    msobject$annotation$detailsAnnotation$PC <- list()
+  }
+  return(msobject)
+}
+
+# idPConeg
+#' Plasmanyl Phosphocholines (PCo) annotation for ESI-
+#'
+#' PCo identification based on fragmentation patterns for LC-MS/MS DIA or DDA
+#' data acquired in negative mode.
+#'
+#' @param msobject an msobject returned by \link{dataProcessing}.
+#' @param ppm_precursor mass tolerance for precursor ions. By default, 5 ppm.
+#' @param ppm_products mass tolerance for product ions. By default, 10 ppm.
+#' @param rttol total rt window for coelution between precursor and product
+#' ions. By default, 3 seconds.
+#' @param rt rt range where the function will look for candidates. By default,
+#' it will search within all RT range in MS1.
+#' @param adducts expected adducts for PCo in ESI-. Adducts allowed can
+#' be modified in adductsTable (dbs argument).
+#' @param clfrags vector containing the expected fragments for a given lipid
+#' class. See \link{checkClass} for details.
+#' @param ftype character vector indicating the type of fragments in clfrags.
+#' It can be: "F" (fragment), "NL" (neutral loss) or "BB" (building block).
+#' See \link{checkClass} for details.
+#' @param clrequired logical vector indicating if each class fragment is
+#' required or not. If any of them is required, at least one of them must be
+#' present within the coeluting fragments. See \link{checkClass} for details.
+#' @param chainfrags_sn1 character vector containing the fragmentation rules for
+#' the chain fragments in sn1 position. See \link{chainFrags} for details.
+#' @param chainfrags_sn2 character vector containing the fragmentation rules for
+#' the chain fragments in sn2 position. See \link{chainFrags} for details. If
+#' empty, it will be estimated based on the difference between precursors and
+#' sn1 chains.
+#' @param intrules character vector specifying the fragments to compare. See
+#' \link{checkIntensityRules}.
+#' @param rates character vector with the expected rates between fragments given
+#' as a string (e.g. "3/1"). See \link{checkIntensityRules}.
+#' @param intrequired logical vector indicating if any of the rules is required.
+#' If not, at least one must be verified to confirm the structure.
+#' @param coelCutoff coelution score threshold between parent and fragment ions.
+#' Only applied if rawData info is supplied. By default, 0.8.
+#' @param dbs list of data bases required for annotation. By default, dbs
+#' contains the required data frames based on the default fragmentation rules.
+#' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+#' and \link{assignDB}.
+#'
+#' @return annotated msobject (list with several elements). The results element
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
+#' and double bounds), FA composition (specific chains composition if it has
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
+#' confidenceLevel (Subclass, FA level, where chains are known but not their
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
+#'
+#' @details \code{idPConeg} function involves 5 steps. 1) FullMS-based
+#' identification of candidate PCo as M+CH3COO, M-CH3 or M+CH3COO-CH3. To avoid
+#' incorrect annotations of PEo as PCo, candidates which are present just as M-CH3
+#' will be ignored. 2) Search of PCo class fragments: 168.0426, 224.0688 or loss
+#' of CH3 coeluting with the precursor ion. 3) Search of specific fragments that
+#' inform about chain composition in sn1 (LPCo as M-CH3 and M-CH3-H2O resulting 
+#' from the loss of the FA chain at sn2) and sn2 (FA as M-H and M-CO2-H). 
+#' 4) Look for possible chains structure based on the  combination of chain 
+#' fragments. 5) Check intensity rules to confirm chains position. In this case, 
+#' FA fragments from sn2 are at least 3 times more intense than LPCo from sn1.
+#'
+#' Results data frame shows: ID, lipid class, CDB (total number
+#' of carbons and double bounds), FA composition (specific chains composition if
+#' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
+#' FA level, where chains are known but not their positions, or FA position
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
+#'
+#' @note This function has been writen based on fragmentation patterns
+#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' from Waters and Q-exactive from Thermo), but it may need to be customized for
+#' other platforms or acquisition settings.
+#'
+#' @examples
+#' \dontrun{
+#' msobject <- idPCneg(msobject)
+#' }
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+idPConeg <- function(msobject,
+                    ppm_precursor = 5,
+                    ppm_products = 10,
+                    rttol = 3,
+                    rt,
+                    adducts = c("M+CH3COO", "M-CH3", "M+CH3COO-CH3"),
+                    clfrags = c(168.0426, 224.0688, "pco_M-CH3"),
+                    clrequired = c(F, F, F),
+                    ftype = c("F", "F", "BB"),
+                    chainfrags_sn1 = c("lysopco_M-CH3", "lysopco_M-CH3-H2O"),
+                    chainfrags_sn2 = c("fa_M-H", "fa_M-CO2-H"),
+                    intrules = c("lysopco_sn1/fa_sn2"),
+                    rates = c(1/3),
+                    intrequired = c(T),
+                    coelCutoff = 0.8,
+                    dbs){
+  ##############################################################################
+  # check arguments
+  if (msobject$metaData$generalMetadata$polarity != "negative"){
+    stop("Data wasn't acquired in negative mode")
+  }
+  if (missing(dbs)){
+    dbs <- assignDB()
+  }
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
+    stop("Wrong msobject format")
+  }
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+    stop("Acquisition mode must be DIA or DDA")
+  }
+  if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
+    stop("Some adducts can't be found at the aductsTable. Add them.")
+  }
+  if (length(clfrags) > 0){
+    if (length(clfrags) != length(clrequired) | length(clfrags) !=
+        length(ftype)){
+      stop("clfrags, clrequired and ftype should have the same length")
+    }
+    if (!all(ftype %in% c("F", "NL", "BB"))){
+      stop("ftype values allowed are: \"F\", \"NL\" or\"BB\"")
+    }
+    strfrag <- which(grepl("_", clfrags))
+    if (length(strfrag) > 0){
+      d <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 1))
+      a <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 2))
+      if (!all(a %in% dbs[["adductsTable"]]$adduct)){
+        stop("Adducts employed in clfrags also need to be at adductsTable.")
+      }
+      if (!all(paste(d, "db", sep="") %in% names(dbs))){
+        stop("All required dbs must be supplied through dbs argument.")
+      }
+    }
+  }
+  ##############################################################################
+  # extract data from msobject
+  # Peaklist MS1: remove isotopes
+  MS1 <- msobject$peaklist$MS1
+  MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
+  # Peaklist MS2: remove isotopes
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
+  } else {
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
+  }
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
+  # if acquisition mode is DDA, extract precursors
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
+                                                    msobject$metaData$scansMetadata$msLevel == 2,
+                                                  c("RT", "precursor", "Scan")]
+  }
+  ##############################################################################
+  # Remove previous ceramide annotations
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "PCo",]
+    }
+  }
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("PCo" %in% names(msobject$annotation$detailsAnnotation)){
+      cat("\nPrevious PCo annotations removed")
+      msobject$annotation$detailsAnnotation$PCo <- list()
+    }
+  }
+  ##############################################################################
+  # set rt limits
+  if (missing(rt)){
+    rt <- c(min(MS1$RT), max(MS1$RT))
+  }
+  ##############################################################################
+  # Start identification steps
+  
+  # candidates search
+  candidates <- findCandidates(MS1, dbs$pcodb, ppm = ppm_precursor, rt = rt,
+                               adducts = adducts, rttol = rttol, dbs = dbs,
+                               rawData = rawData, coelCutoff = coelCutoff)
+  # remove PCo which ony appear as M-CH3 to avoid wrong annotations of PEo
+  if(length(adducts) > 1 & "M-CH3" %in% adducts){
+    candidates <- candidates[candidates$adducts != "M-CH3",]
+  }
+  
+  if (nrow(candidates) > 0){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
+      if (nrow(rawData) == 0){
+        coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
+      }
+      # isolation of coeluting fragments
+      coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
+                                  coelCutoff = coelCutoff)
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      coelCutoff <- 0
+      coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
+    }
+    
+    # check class fragments
+    classConf <- checkClass(candidates, coelfrags, clfrags, ftype, clrequired,
+                            ppm_products, dbs)
+    
+    # search chains fragments
+    sn1 <- chainFrags(coelfrags, chainfrags_sn1, ppm_products, dbs = dbs,
+                      candidates = candidates)
+    sn2 <- chainFrags(coelfrags, chainfrags_sn2, ppm_products, candidates, sn1,
+                      dbs)
+    
+    # combine chain fragments
+    chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
+    
+    # check chains position based on intensity ratios
+    intConf <- checkIntensityRules(intrules, rates, intrequired, nchains=2,
+                                   chainsComb)
+    
+    # prepare output
+    res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
+                           intConf, nchains = 2, class="PCo",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
+    
+    # update msobject
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$PCo <- list()
+    msobject$annotation$detailsAnnotation$PCo$candidates <- candidates
+    msobject$annotation$detailsAnnotation$PCo$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$PCo$chainfragments <- chainsComb$fragments
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      msobject$annotation$detailsAnnotation$PCo$coelfrags <- coelfrags
+    }
+  } else {
+    res <- data.frame()
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$PCo <- list()
+  }
+  return(msobject)
+}
+
+# idPCpneg
+#' Plasmenyl Phosphocholines (PCp) annotation for ESI-
+#'
+#' PCp identification based on fragmentation patterns for LC-MS/MS DIA or DDA
+#' data acquired in negative mode.
+#'
+#' @param msobject an msobject returned by \link{dataProcessing}.
+#' @param ppm_precursor mass tolerance for precursor ions. By default, 5 ppm.
+#' @param ppm_products mass tolerance for product ions. By default, 10 ppm.
+#' @param rttol total rt window for coelution between precursor and product
+#' ions. By default, 3 seconds.
+#' @param rt rt range where the function will look for candidates. By default,
+#' it will search within all RT range in MS1.
+#' @param adducts expected adducts for PCp in ESI-. Adducts allowed can
+#' be modified in adductsTable (dbs argument).
+#' @param clfrags vector containing the expected fragments for a given lipid
+#' class. See \link{checkClass} for details.
+#' @param ftype character vector indicating the type of fragments in clfrags.
+#' It can be: "F" (fragment), "NL" (neutral loss) or "BB" (building block).
+#' See \link{checkClass} for details.
+#' @param clrequired logical vector indicating if each class fragment is
+#' required or not. If any of them is required, at least one of them must be
+#' present within the coeluting fragments. See \link{checkClass} for details.
+#' @param chainfrags_sn1 character vector containing the fragmentation rules for
+#' the chain fragments in sn1 position. See \link{chainFrags} for details.
+#' @param chainfrags_sn2 character vector containing the fragmentation rules for
+#' the chain fragments in sn2 position. See \link{chainFrags} for details. If
+#' empty, it will be estimated based on the difference between precursors and
+#' sn1 chains.
+#' @param intrules character vector specifying the fragments to compare. See
+#' \link{checkIntensityRules}.
+#' @param rates character vector with the expected rates between fragments given
+#' as a string (e.g. "3/1"). See \link{checkIntensityRules}.
+#' @param intrequired logical vector indicating if any of the rules is required.
+#' If not, at least one must be verified to confirm the structure.
+#' @param coelCutoff coelution score threshold between parent and fragment ions.
+#' Only applied if rawData info is supplied. By default, 0.8.
+#' @param dbs list of data bases required for annotation. By default, dbs
+#' contains the required data frames based on the default fragmentation rules.
+#' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+#' and \link{assignDB}.
+#'
+#' @return annotated msobject (list with several elements). The results element
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
+#' and double bounds), FA composition (specific chains composition if it has
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
+#' confidenceLevel (Subclass, FA level, where chains are known but not their
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
+#'
+#' @details \code{idPCpneg} function involves 5 steps. 1) FullMS-based
+#' identification of candidate PCp as M+CH3COO, M-CH3 or M+CH3COO-CH3. To avoid
+#' incorrect annotations of PEp as PCp, candidates which are present just as M-CH3
+#' will be ignored. 2) Search of PCp class fragments: 168.0426, 224.0688 or loss
+#' of CH3 coeluting with the precursor ion. 3) Search of specific fragments that
+#' inform about chain composition in sn1 (LPCp as M-CH3 and M-CH3-H2O resulting 
+#' from the loss of the FA chain at sn2) and sn2 (FA as M-H and M-CO2-H). 
+#' 4) Look for possible chains structure based on the  combination of chain 
+#' fragments. 5) Check intensity rules to confirm chains position. In this case, 
+#' FA fragments from sn2 are at least 3 times more intense than LPCp from sn1.
+#'
+#' Results data frame shows: ID, lipid class, CDB (total number
+#' of carbons and double bounds), FA composition (specific chains composition if
+#' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
+#' FA level, where chains are known but not their positions, or FA position
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
+#'
+#' @note This function has been writen based on fragmentation patterns
+#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' from Waters and Q-exactive from Thermo), but it may need to be customized for
+#' other platforms or acquisition settings.
+#'
+#' @examples
+#' \dontrun{
+#' msobject <- idPCpneg(msobject)
+#' }
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+idPCpneg <- function(msobject,
+                     ppm_precursor = 5,
+                     ppm_products = 10,
+                     rttol = 3,
+                     rt,
+                     adducts = c("M+CH3COO", "M-CH3", "M+CH3COO-CH3"),
+                     clfrags = c(168.0426, 224.0688, "pcp_M-CH3"),
+                     clrequired = c(F, F, F),
+                     ftype = c("F", "F", "BB"),
+                     chainfrags_sn1 = c("lysopcp_M-CH3", "lysopcp_M-CH3-H2O"),
+                     chainfrags_sn2 = c("fa_M-H", "fa_M-CO2-H"),
+                     intrules = c("lysopcp_sn1/fa_sn2"),
+                     rates = c(1/3),
+                     intrequired = c(T),
+                     coelCutoff = 0.8,
+                     dbs){
+  ##############################################################################
+  # check arguments
+  if (msobject$metaData$generalMetadata$polarity != "negative"){
+    stop("Data wasn't acquired in negative mode")
+  }
+  if (missing(dbs)){
+    dbs <- assignDB()
+  }
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
+    stop("Wrong msobject format")
+  }
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+    stop("Acquisition mode must be DIA or DDA")
+  }
+  if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
+    stop("Some adducts can't be found at the aductsTable. Add them.")
+  }
+  if (length(clfrags) > 0){
+    if (length(clfrags) != length(clrequired) | length(clfrags) !=
+        length(ftype)){
+      stop("clfrags, clrequired and ftype should have the same length")
+    }
+    if (!all(ftype %in% c("F", "NL", "BB"))){
+      stop("ftype values allowed are: \"F\", \"NL\" or\"BB\"")
+    }
+    strfrag <- which(grepl("_", clfrags))
+    if (length(strfrag) > 0){
+      d <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 1))
+      a <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 2))
+      if (!all(a %in% dbs[["adductsTable"]]$adduct)){
+        stop("Adducts employed in clfrags also need to be at adductsTable.")
+      }
+      if (!all(paste(d, "db", sep="") %in% names(dbs))){
+        stop("All required dbs must be supplied through dbs argument.")
+      }
+    }
+  }
+  ##############################################################################
+  # extract data from msobject
+  # Peaklist MS1: remove isotopes
+  MS1 <- msobject$peaklist$MS1
+  MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
+  # Peaklist MS2: remove isotopes
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
+  } else {
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
+  }
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
+  # if acquisition mode is DDA, extract precursors
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
+                                                    msobject$metaData$scansMetadata$msLevel == 2,
+                                                  c("RT", "precursor", "Scan")]
+  }
+  ##############################################################################
+  # Remove previous ceramide annotations
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "PCp",]
+    }
+  }
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("PCp" %in% names(msobject$annotation$detailsAnnotation)){
+      cat("\nPrevious PC annotations removed")
+      msobject$annotation$detailsAnnotation$PCp <- list()
+    }
+  }
+  ##############################################################################
+  # set rt limits
+  if (missing(rt)){
+    rt <- c(min(MS1$RT), max(MS1$RT))
+  }
+  ##############################################################################
+  # Start identification steps
+  
+  # candidates search
+  candidates <- findCandidates(MS1, dbs$pcpdb, ppm = ppm_precursor, rt = rt,
+                               adducts = adducts, rttol = rttol, dbs = dbs,
+                               rawData = rawData, coelCutoff = coelCutoff)
+  # remove PCp which ony appear as M-CH3 to avoid wrong annotations of PEp
+  if(length(adducts) > 1 & "M-CH3" %in% adducts){
+    candidates <- candidates[candidates$adducts != "M-CH3",]
+  }
+  
+  if (nrow(candidates) > 0){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
+      if (nrow(rawData) == 0){
+        coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
+      }
+      # isolation of coeluting fragments
+      coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
+                                  coelCutoff = coelCutoff)
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      coelCutoff <- 0
+      coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
+    }
+    
+    # check class fragments
+    classConf <- checkClass(candidates, coelfrags, clfrags, ftype, clrequired,
+                            ppm_products, dbs)
+    
+    # search chains fragments
+    sn1 <- chainFrags(coelfrags, chainfrags_sn1, ppm_products, dbs = dbs,
+                      candidates = candidates)
+    sn2 <- chainFrags(coelfrags, chainfrags_sn2, ppm_products, candidates, sn1,
+                      dbs)
+    
+    # combine chain fragments
+    chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
+    
+    # check chains position based on intensity ratios
+    intConf <- checkIntensityRules(intrules, rates, intrequired, nchains=2,
+                                   chainsComb)
+    
+    # prepare output
+    res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
+                           intConf, nchains = 2, class="PCp",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
+    
+    # update msobject
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$PCp <- list()
+    msobject$annotation$detailsAnnotation$PCp$candidates <- candidates
+    msobject$annotation$detailsAnnotation$PCp$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$PCp$chainfragments <- chainsComb$fragments
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      msobject$annotation$detailsAnnotation$PCp$coelfrags <- coelfrags
+    }
+  } else {
+    res <- data.frame()
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$PCp <- list()
   }
   return(msobject)
 }
@@ -2054,9 +2586,9 @@ idPCneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -2074,10 +2606,10 @@ idPCneg <- function(msobject,
 #' intensity rules to confirm chains position. In this case, lysoPE from sn1 is
 #' at least 3 times more intense than lysoPE from sn2.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
 #' level) and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -2089,10 +2621,7 @@ idPCneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idPEneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idPEneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -2120,7 +2649,10 @@ idPEneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -2154,31 +2686,31 @@ idPEneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "PE",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "PE",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("PE" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("PE" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious PE annotations removed")
-      msobject$detailsAnnotation$PE <- list()
+      msobject$annotation$detailsAnnotation$PE <- list()
     }
   }
   ##############################################################################
@@ -2230,26 +2762,512 @@ idPEneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$PE <- list()
-    msobject$detailsAnnotation$PE$candidates <- candidates
-    msobject$detailsAnnotation$PE$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$PE$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$PE <- list()
+    msobject$annotation$detailsAnnotation$PE$candidates <- candidates
+    msobject$annotation$detailsAnnotation$PE$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$PE$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$PE$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$PE$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$PE <- list()
+    msobject$annotation$detailsAnnotation$PE <- list()
+  }
+  return(msobject)
+}
+
+# idPEoneg
+#' Plasmanyl Phosphoethanolamines (PEo) annotation for ESI-
+#'
+#' PEo identification based on fragmentation patterns for LC-MS/MS DIA or DDA
+#' data acquired in negative mode.
+#'
+#' @param msobject an msobject returned by \link{dataProcessing}.
+#' @param ppm_precursor mass tolerance for precursor ions. By default, 5 ppm.
+#' @param ppm_products mass tolerance for product ions. By default, 10 ppm.
+#' @param rttol total rt window for coelution between precursor and product
+#' ions. By default, 3 seconds.
+#' @param rt rt range where the function will look for candidates. By default,
+#' it will search within all RT range in MS1.
+#' @param adducts expected adducts for PEo in ESI-. Adducts allowed can
+#' be modified in adductsTable (dbs argument).
+#' @param clfrags vector containing the expected fragments for a given lipid
+#' class. See \link{checkClass} for details.
+#' @param ftype character vector indicating the type of fragments in clfrags.
+#' It can be: "F" (fragment), "NL" (neutral loss) or "BB" (building block).
+#' See \link{checkClass} for details.
+#' @param clrequired logical vector indicating if each class fragment is
+#' required or not. If any of them is required, at least one of them must be
+#' present within the coeluting fragments. See \link{checkClass} for details.
+#' @param chainfrags_sn1 character vector containing the fragmentation rules for
+#' the chain fragments in sn1 position. See \link{chainFrags} for details.
+#' @param chainfrags_sn2 character vector containing the fragmentation rules for
+#' the chain fragments in sn2 position. See \link{chainFrags} for details. If
+#' empty, it will be estimated based on the difference between precursors and
+#' sn1 chains.
+#' @param intrules character vector specifying the fragments to compare. See
+#' \link{checkIntensityRules}.
+#' @param rates character vector with the expected rates between fragments given
+#' as a string (e.g. "3/1"). See \link{checkIntensityRules}.
+#' @param intrequired logical vector indicating if any of the rules is required.
+#' If not, at least one must be verified to confirm the structure.
+#' @param coelCutoff coelution score threshold between parent and fragment ions.
+#' Only applied if rawData info is supplied. By default, 0.8.
+#' @param dbs list of data bases required for annotation. By default, dbs
+#' contains the required data frames based on the default fragmentation rules.
+#' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+#' and \link{assignDB}.
+#'
+#' @return annotated msobject (list with several elements). The results element
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
+#' and double bounds), FA composition (specific chains composition if it has
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
+#' confidenceLevel (Subclass, FA level, where chains are known but not their
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
+#'
+#' @details \code{idPEoneg} function involves 5 steps. 1) FullMS-based
+#' identification of candidate PEo as M-H and M+NaCH3COO. 2) Search 
+#' of PEo class fragments: 140.0115, 196.038, 214.048 ion coeluting with the 
+#' precursor ion. If a loss of CH3 group is found coeluting with any candidate, 
+#' this will be excluded as it is a characteristic fragment of PCo. 3) Search of 
+#' specific fragments that inform about chain composition in sn1 (lysoPEo as M-H 
+#' and M-H-H2O resulting from the loss of the FA chain at sn2) and sn2 (FA chain 
+#' as M-H). 4) Look for possible chains structure based on the combination of 
+#' chain fragments. 5) Check intensity rules to confirm chains position. In this 
+#' case, FA fragments from sn2 are at least 3 times more intense than LPEo from 
+#' sn1.
+#'
+#' Results data frame shows: ID, lipid class, CDB (total number
+#' of carbons and double bounds), FA composition (specific chains composition if
+#' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
+#' FA level, where chains are known but not their positions, or FA position
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
+#'
+#' @note This function has been writen based on fragmentation patterns
+#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' from Waters and Q-exactive from Thermo), but it may need to be customized for
+#' other platforms or acquisition settings.
+#'
+#' @examples
+#' \dontrun{
+#' msobject <- idPEoneg(msobject)
+#' }
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+idPEoneg <- function(msobject,
+                    ppm_precursor = 5,
+                    ppm_products = 10,
+                    rttol = 5,
+                    rt,
+                    adducts = c("M-H", "M+NaCH3COO"),
+                    clfrags = c(140.0118, 196.038, 214.048, "peo_M-CH3"),
+                    clrequired = c(F, F, F, "excluding"),
+                    ftype = c("F", "F", "F", "BB"),
+                    chainfrags_sn1 = c("lysopeo_M-H", "lysopeo_M-H-H2O"),
+                    chainfrags_sn2 = c("fa_M-H"),
+                    intrules = c("lysopeo_sn1/fa_sn2"),
+                    rates = c(1/3),
+                    intrequired = c(T),
+                    coelCutoff = 0.8,
+                    dbs){
+  ##############################################################################
+  # check arguments
+  if (msobject$metaData$generalMetadata$polarity != "negative"){
+    stop("Data wasn't acquired in negative mode")
+  }
+  if (missing(dbs)){
+    dbs <- assignDB()
+  }
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
+    stop("Wrong msobject format")
+  }
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+    stop("Acquisition mode must be DIA or DDA")
+  }
+  if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
+    stop("Some adducts can't be found at the aductsTable. Add them.")
+  }
+  if (length(clfrags) > 0){
+    if (length(clfrags) != length(clrequired) | length(clfrags) !=
+        length(ftype)){
+      stop("clfrags, clrequired and ftype should have the same length")
+    }
+    if (!all(ftype %in% c("F", "NL", "BB"))){
+      stop("ftype values allowed are: \"F\", \"NL\" or\"BB\"")
+    }
+    strfrag <- which(grepl("_", clfrags))
+    if (length(strfrag) > 0){
+      d <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 1))
+      a <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 2))
+      if (!all(a %in% dbs[["adductsTable"]]$adduct)){
+        stop("Adducts employed in clfrags also need to be at adductsTable.")
+      }
+      if (!all(paste(d, "db", sep="") %in% names(dbs))){
+        stop("All required dbs must be supplied through dbs argument.")
+      }
+    }
+  }
+  ##############################################################################
+  # extract data from msobject
+  # Peaklist MS1: remove isotopes
+  MS1 <- msobject$peaklist$MS1
+  MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
+  # Peaklist MS2: remove isotopes
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
+  } else {
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
+  }
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
+  # if acquisition mode is DDA, extract precursors
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
+                                                    msobject$metaData$scansMetadata$msLevel == 2,
+                                                  c("RT", "precursor", "Scan")]
+  }
+  ##############################################################################
+  # Remove previous ceramide annotations
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "PEo",]
+    }
+  }
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("PEo" %in% names(msobject$annotation$detailsAnnotation)){
+      cat("\nPrevious PEo annotations removed")
+      msobject$annotation$detailsAnnotation$PEo <- list()
+    }
+  }
+  ##############################################################################
+  # set rt limits
+  if (missing(rt)){
+    rt <- c(min(MS1$RT), max(MS1$RT))
+  }
+  ##############################################################################
+  # Start identification steps
+  
+  # candidates search
+  candidates <- findCandidates(MS1, dbs$peodb, ppm = ppm_precursor, rt = rt,
+                               adducts = adducts, rttol = rttol, dbs = dbs,
+                               rawData = rawData, coelCutoff = coelCutoff)
+  
+  if (nrow(candidates) > 0){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
+      if (nrow(rawData) == 0){
+        coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
+      }
+      # isolation of coeluting fragments
+      coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
+                                  coelCutoff = coelCutoff)
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      coelCutoff <- 0
+      coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
+    }
+    
+    # check class fragments
+    classConf <- checkClass(candidates, coelfrags, clfrags, ftype, clrequired,
+                            ppm_products, dbs)
+    
+    # search chains fragments
+    sn1 <- chainFrags(coelfrags, chainfrags_sn1, ppm_products, dbs = dbs,
+                      candidates = candidates)
+    sn2 <- chainFrags(coelfrags, chainfrags_sn2, ppm_products, candidates, sn1,
+                      dbs)
+    
+    # combine chain fragments
+    chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
+    
+    # check chains position based on intensity ratios
+    intConf <- checkIntensityRules(intrules, rates, intrequired, nchains=2,
+                                   chainsComb)
+    
+    # prepare output
+    res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
+                           intConf, nchains = 2, class="PEo",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
+    
+    # update msobject
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$PEo <- list()
+    msobject$annotation$detailsAnnotation$PEo$candidates <- candidates
+    msobject$annotation$detailsAnnotation$PEo$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$PEo$chainfragments <- chainsComb$fragments
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      msobject$annotation$detailsAnnotation$PEo$coelfrags <- coelfrags
+    }
+  } else {
+    res <- data.frame()
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$PEo <- list()
+  }
+  return(msobject)
+}
+
+# idPEpneg
+#' Plasmenyl Phosphoethanolamines (PEp) annotation for ESI-
+#'
+#' PEp identification based on fragmentation patterns for LC-MS/MS DIA or DDA
+#' data acquired in negative mode.
+#'
+#' @param msobject an msobject returned by \link{dataProcessing}.
+#' @param ppm_precursor mass tolerance for precursor ions. By default, 5 ppm.
+#' @param ppm_products mass tolerance for product ions. By default, 10 ppm.
+#' @param rttol total rt window for coelution between precursor and product
+#' ions. By default, 3 seconds.
+#' @param rt rt range where the function will look for candidates. By default,
+#' it will search within all RT range in MS1.
+#' @param adducts expected adducts for PEp in ESI-. Adducts allowed can
+#' be modified in adductsTable (dbs argument).
+#' @param clfrags vector containing the expected fragments for a given lipid
+#' class. See \link{checkClass} for details.
+#' @param ftype character vector indicating the type of fragments in clfrags.
+#' It can be: "F" (fragment), "NL" (neutral loss) or "BB" (building block).
+#' See \link{checkClass} for details.
+#' @param clrequired logical vector indicating if each class fragment is
+#' required or not. If any of them is required, at least one of them must be
+#' present within the coeluting fragments. See \link{checkClass} for details.
+#' @param chainfrags_sn1 character vector containing the fragmentation rules for
+#' the chain fragments in sn1 position. See \link{chainFrags} for details.
+#' @param chainfrags_sn2 character vector containing the fragmentation rules for
+#' the chain fragments in sn2 position. See \link{chainFrags} for details. If
+#' empty, it will be estimated based on the difference between precursors and
+#' sn1 chains.
+#' @param intrules character vector specifying the fragments to compare. See
+#' \link{checkIntensityRules}.
+#' @param rates character vector with the expected rates between fragments given
+#' as a string (e.g. "3/1"). See \link{checkIntensityRules}.
+#' @param intrequired logical vector indicating if any of the rules is required.
+#' If not, at least one must be verified to confirm the structure.
+#' @param coelCutoff coelution score threshold between parent and fragment ions.
+#' Only applied if rawData info is supplied. By default, 0.8.
+#' @param dbs list of data bases required for annotation. By default, dbs
+#' contains the required data frames based on the default fragmentation rules.
+#' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+#' and \link{assignDB}.
+#'
+#' @return annotated msobject (list with several elements). The results element
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
+#' and double bounds), FA composition (specific chains composition if it has
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
+#' confidenceLevel (Subclass, FA level, where chains are known but not their
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
+#'
+#' @details \code{idPEpneg} function involves 5 steps. 1) FullMS-based
+#' identification of candidate PEp as M-H and M+NaCH3COO. 2) Search 
+#' of PEp class fragments: 140.0115, 196.038, 214.048 ion coeluting with the 
+#' precursor ion. If a loss of CH3 group is found coeluting with any candidate, 
+#' this will be excluded as it is a characteristic fragment of PCp. 3) Search of 
+#' specific fragments that inform about chain composition in sn1 (lysoPEp as M-H 
+#' and M-H-H2O resulting from the loss of the FA chain at sn2) and sn2 (FA chain 
+#' as M-H). 4) Look for possible chains structure based on the combination of 
+#' chain fragments. 5) Check intensity rules to confirm chains position. In this 
+#' case, FA fragments from sn2 are at least 3 times more intense than LPEp from 
+#' sn1.
+#'
+#' Results data frame shows: ID, lipid class, CDB (total number
+#' of carbons and double bounds), FA composition (specific chains composition if
+#' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
+#' FA level, where chains are known but not their positions, or FA position
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
+#'
+#' @note This function has been writen based on fragmentation patterns
+#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' from Waters and Q-exactive from Thermo), but it may need to be customized for
+#' other platforms or acquisition settings.
+#'
+#' @examples
+#' \dontrun{
+#' msobject <- idPEoneg(msobject)
+#' }
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+idPEpneg <- function(msobject,
+                     ppm_precursor = 5,
+                     ppm_products = 10,
+                     rttol = 5,
+                     rt,
+                     adducts = c("M-H", "M+NaCH3COO"),
+                     clfrags = c(140.0118, 196.038, 214.048, "pep_M-CH3"),
+                     clrequired = c(F, F, F, "excluding"),
+                     ftype = c("F", "F", "F", "BB"),
+                     chainfrags_sn1 = c("lysopep_M-H", "lysopep_M-H-H2O"),
+                     chainfrags_sn2 = c("fa_M-H"),
+                     intrules = c("lysopep_sn1/fa_sn2"),
+                     rates = c(1/3),
+                     intrequired = c(T),
+                     coelCutoff = 0.8,
+                     dbs){
+  ##############################################################################
+  # check arguments
+  if (msobject$metaData$generalMetadata$polarity != "negative"){
+    stop("Data wasn't acquired in negative mode")
+  }
+  if (missing(dbs)){
+    dbs <- assignDB()
+  }
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
+    stop("Wrong msobject format")
+  }
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+    stop("Acquisition mode must be DIA or DDA")
+  }
+  if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
+    stop("Some adducts can't be found at the aductsTable. Add them.")
+  }
+  if (length(clfrags) > 0){
+    if (length(clfrags) != length(clrequired) | length(clfrags) !=
+        length(ftype)){
+      stop("clfrags, clrequired and ftype should have the same length")
+    }
+    if (!all(ftype %in% c("F", "NL", "BB"))){
+      stop("ftype values allowed are: \"F\", \"NL\" or\"BB\"")
+    }
+    strfrag <- which(grepl("_", clfrags))
+    if (length(strfrag) > 0){
+      d <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 1))
+      a <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 2))
+      if (!all(a %in% dbs[["adductsTable"]]$adduct)){
+        stop("Adducts employed in clfrags also need to be at adductsTable.")
+      }
+      if (!all(paste(d, "db", sep="") %in% names(dbs))){
+        stop("All required dbs must be supplied through dbs argument.")
+      }
+    }
+  }
+  ##############################################################################
+  # extract data from msobject
+  # Peaklist MS1: remove isotopes
+  MS1 <- msobject$peaklist$MS1
+  MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
+  # Peaklist MS2: remove isotopes
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
+  } else {
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
+  }
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
+  # if acquisition mode is DDA, extract precursors
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
+                                                    msobject$metaData$scansMetadata$msLevel == 2,
+                                                  c("RT", "precursor", "Scan")]
+  }
+  ##############################################################################
+  # Remove previous ceramide annotations
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "PEp",]
+    }
+  }
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("PEp" %in% names(msobject$annotation$detailsAnnotation)){
+      cat("\nPrevious PEp annotations removed")
+      msobject$annotation$detailsAnnotation$PEp <- list()
+    }
+  }
+  ##############################################################################
+  # set rt limits
+  if (missing(rt)){
+    rt <- c(min(MS1$RT), max(MS1$RT))
+  }
+  ##############################################################################
+  # Start identification steps
+  
+  # candidates search
+  candidates <- findCandidates(MS1, dbs$pepdb, ppm = ppm_precursor, rt = rt,
+                               adducts = adducts, rttol = rttol, dbs = dbs,
+                               rawData = rawData, coelCutoff = coelCutoff)
+  
+  if (nrow(candidates) > 0){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
+      if (nrow(rawData) == 0){
+        coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
+      }
+      # isolation of coeluting fragments
+      coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
+                                  coelCutoff = coelCutoff)
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      coelCutoff <- 0
+      coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
+    }
+    
+    # check class fragments
+    classConf <- checkClass(candidates, coelfrags, clfrags, ftype, clrequired,
+                            ppm_products, dbs)
+    
+    # search chains fragments
+    sn1 <- chainFrags(coelfrags, chainfrags_sn1, ppm_products, dbs = dbs,
+                      candidates = candidates)
+    sn2 <- chainFrags(coelfrags, chainfrags_sn2, ppm_products, candidates, sn1,
+                      dbs)
+    
+    # combine chain fragments
+    chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
+    
+    # check chains position based on intensity ratios
+    intConf <- checkIntensityRules(intrules, rates, intrequired, nchains=2,
+                                   chainsComb)
+    
+    # prepare output
+    res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
+                           intConf, nchains = 2, class="PEp",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
+    
+    # update msobject
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$PEp <- list()
+    msobject$annotation$detailsAnnotation$PEp$candidates <- candidates
+    msobject$annotation$detailsAnnotation$PEp$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$PEp$chainfragments <- chainsComb$fragments
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      msobject$annotation$detailsAnnotation$PEp$coelfrags <- coelfrags
+    }
+  } else {
+    res <- data.frame()
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$PEp <- list()
   }
   return(msobject)
 }
@@ -2297,9 +3315,9 @@ idPEneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -2316,10 +3334,10 @@ idPEneg <- function(msobject,
 #' confirm chains position. In this case, lysoPG from sn1 is at least 3 times
 #' more intense than lysoPG from sn2.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
 #' level) and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -2331,10 +3349,7 @@ idPEneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idPGneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idPGneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -2361,7 +3376,10 @@ idPGneg <- function(msobject, ppm_precursor = 5,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -2395,31 +3413,31 @@ idPGneg <- function(msobject, ppm_precursor = 5,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "PG",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "PG",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("PG" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("PG" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious PG annotations removed")
-      msobject$detailsAnnotation$PG <- list()
+      msobject$annotation$detailsAnnotation$PG <- list()
     }
   }
   ##############################################################################
@@ -2471,26 +3489,26 @@ idPGneg <- function(msobject, ppm_precursor = 5,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$PG <- list()
-    msobject$detailsAnnotation$PG$candidates <- candidates
-    msobject$detailsAnnotation$PG$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$PG$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$PG <- list()
+    msobject$annotation$detailsAnnotation$PG$candidates <- candidates
+    msobject$annotation$detailsAnnotation$PG$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$PG$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$PG$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$PG$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$PG <- list()
+    msobject$annotation$detailsAnnotation$PG <- list()
   }
   return(msobject)
 }
@@ -2538,9 +3556,9 @@ idPGneg <- function(msobject, ppm_precursor = 5,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -2558,10 +3576,10 @@ idPGneg <- function(msobject, ppm_precursor = 5,
 #' lysoPA from sn1 is at least 3 times more intense than lysoPI or lysoPA from
 #'  sn2.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
 #' level) and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -2573,10 +3591,7 @@ idPGneg <- function(msobject, ppm_precursor = 5,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idPIneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idPIneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -2604,7 +3619,10 @@ idPIneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -2638,31 +3656,31 @@ idPIneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "PI",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "PI",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("PI" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("PI" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious PI annotations removed")
-      msobject$detailsAnnotation$Cer <- list()
+      msobject$annotation$detailsAnnotation$Cer <- list()
     }
   }
   ##############################################################################
@@ -2714,26 +3732,26 @@ idPIneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$PI <- list()
-    msobject$detailsAnnotation$PI$candidates <- candidates
-    msobject$detailsAnnotation$PI$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$PI$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$PI <- list()
+    msobject$annotation$detailsAnnotation$PI$candidates <- candidates
+    msobject$annotation$detailsAnnotation$PI$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$PI$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$PI$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$PI$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$PI <- list()
+    msobject$annotation$detailsAnnotation$PI <- list()
   }
   return(msobject)
 }
@@ -2781,9 +3799,9 @@ idPIneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -2800,10 +3818,10 @@ idPIneg <- function(msobject,
 #' 5) Check intensity rules to confirm chains position. In this case, lysoPA
 #' from sn1 is at least 3 times more intense than lysoPA from sn2.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
 #' level) and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -2815,10 +3833,7 @@ idPIneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idPSneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idPSneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -2846,7 +3861,10 @@ idPSneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -2880,31 +3898,31 @@ idPSneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "PS",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "PS",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("PS" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("PS" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious PS annotations removed")
-      msobject$detailsAnnotation$PS <- list()
+      msobject$annotation$detailsAnnotation$PS <- list()
     }
   }
   ##############################################################################
@@ -2956,26 +3974,26 @@ idPSneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$PS <- list()
-    msobject$detailsAnnotation$PS$candidates <- candidates
-    msobject$detailsAnnotation$PS$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$PS$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$PS <- list()
+    msobject$annotation$detailsAnnotation$PS$candidates <- candidates
+    msobject$annotation$detailsAnnotation$PS$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$PS$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$PS$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$PS$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$PS <- list()
+    msobject$annotation$detailsAnnotation$PS <- list()
   }
   return(msobject)
 }
@@ -3011,9 +4029,9 @@ idPSneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -3023,10 +4041,10 @@ idPSneg <- function(msobject,
 #' identification of candidate Sph as M-H. 2) Search of Sph class fragments:
 #' neutral loss of 1 or 2 H2O molecules.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (in this
 #' case, as Sph only have one chain, only Subclass and FA level are possible)
 #' and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -3038,10 +4056,7 @@ idPSneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idSphneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idSphneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -3063,7 +4078,10 @@ idSphneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -3097,31 +4115,31 @@ idSphneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "Sph",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "Sph",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("Sph" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("Sph" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious Sph annotations removed")
-      msobject$detailsAnnotation$Sph <- list()
+      msobject$annotation$detailsAnnotation$Sph <- list()
     }
   }
   ##############################################################################
@@ -3162,25 +4180,25 @@ idSphneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$Sph <- list()
-    msobject$detailsAnnotation$Sph$candidates <- candidates
-    msobject$detailsAnnotation$Sph$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$Sph <- list()
+    msobject$annotation$detailsAnnotation$Sph$candidates <- candidates
+    msobject$annotation$detailsAnnotation$Sph$classfragments <- classConf$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$Sph$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$Sph$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$Sph <- list()
+    msobject$annotation$detailsAnnotation$Sph <- list()
   }
   return(msobject)
 }
@@ -3216,9 +4234,9 @@ idSphneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -3228,10 +4246,10 @@ idSphneg <- function(msobject,
 #' identification of candidate SphP as M-H. 2) Search of SphP class fragments:
 #' 78.9585, 96.969 or neutral loss of 1 H2O molecule.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (in this
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (in this
 #' case, as SphP only have one chain, only Subclass and FA level are possible)
 #' and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -3243,10 +4261,7 @@ idSphneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idSphPneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idSphPneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -3269,7 +4284,10 @@ idSphPneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -3303,31 +4321,31 @@ idSphPneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "SphP",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "SphP",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("SphP" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("SphP" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious SphP annotations removed")
-      msobject$detailsAnnotation$SphP <- list()
+      msobject$annotation$detailsAnnotation$SphP <- list()
     }
   }
   ##############################################################################
@@ -3368,25 +4386,25 @@ idSphPneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$SphP <- list()
-    msobject$detailsAnnotation$SphP$candidates <- candidates
-    msobject$detailsAnnotation$SphP$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$SphP <- list()
+    msobject$annotation$detailsAnnotation$SphP$candidates <- candidates
+    msobject$annotation$detailsAnnotation$SphP$classfragments <- classConf$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$SphP$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$SphP$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$SphP <- list()
+    msobject$annotation$detailsAnnotation$SphP <- list()
   }
   return(msobject)
 }
@@ -3434,9 +4452,9 @@ idSphPneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -3447,16 +4465,16 @@ idSphPneg <- function(msobject,
 #' fragments: there are no class fragment by default. 3) Search of specific
 #' fragments that inform about the sphingoid base (Sph as M-H-2H2O resulting
 #' from the loss of the FA chain or loss of part of the sphingoid base) and the
-#' FA chain (FA as M-H but with a N intead of an O, what means a mass difference
+#' FA chain (FA as M-H but with a N instead of an O, what means a mass difference
 #' of 1.9918 from the exact mass of the FA). 4) Look for possible chains
 #' structure based on the combination of chain fragments. 5) Check intensity
 #' rules to confirm chains position. In this case, there are no intensity rules
 #' by default.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
 #' level) and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -3468,10 +4486,7 @@ idSphPneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idCerneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idCerneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -3499,7 +4514,10 @@ idCerneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -3533,31 +4551,31 @@ idCerneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "Cer",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "Cer",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("Cer" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("Cer" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious Ceramide annotations removed")
-      msobject$detailsAnnotation$Cer <- list()
+      msobject$annotation$detailsAnnotation$Cer <- list()
     }
   }
   ##############################################################################
@@ -3609,26 +4627,516 @@ idCerneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$Cer <- list()
-    msobject$detailsAnnotation$Cer$candidates <- candidates
-    msobject$detailsAnnotation$Cer$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$Cer$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$Cer <- list()
+    msobject$annotation$detailsAnnotation$Cer$candidates <- candidates
+    msobject$annotation$detailsAnnotation$Cer$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$Cer$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$Cer$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$Cer$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$Cer <- list()
+    msobject$annotation$detailsAnnotation$Cer <- list()
+  }
+  return(msobject)
+}
+
+# idCerPneg
+#' Ceramides phosphate (CerP) annotation for ESI-
+#'
+#' CerP identification based on fragmentation patterns for LC-MS/MS DIA or DDA
+#' data acquired in negative mode.
+#'
+#' @param msobject an msobject returned by \link{dataProcessing}.
+#' @param ppm_precursor mass tolerance for precursor ions. By default, 5 ppm.
+#' @param ppm_products mass tolerance for product ions. By default, 10 ppm.
+#' @param rttol total rt window for coelution between precursor and product
+#' ions. By default, 3 seconds.
+#' @param rt rt range where the function will look for candidates. By default,
+#' it will search within all RT range in MS1.
+#' @param adducts expected adducts for CerP in ESI-. Adducts allowed can
+#' be modified in adductsTable (dbs argument).
+#' @param clfrags vector containing the expected fragments for a given lipid
+#' class. See \link{checkClass} for details.
+#' @param ftype character vector indicating the type of fragments in clfrags.
+#' It can be: "F" (fragment), "NL" (neutral loss) or "BB" (building block).
+#' See \link{checkClass} for details.
+#' @param clrequired logical vector indicating if each class fragment is
+#' required or not. If any of them is required, at least one of them must be
+#' present within the coeluting fragments. See \link{checkClass} for details.
+#' @param chainfrags_sn1 character vector containing the fragmentation rules for
+#' the chain fragments in sn1 position. See \link{chainFrags} for details.
+#' @param chainfrags_sn2 character vector containing the fragmentation rules for
+#' the chain fragments in sn2 position. See \link{chainFrags} for details. If
+#' empty, it will be estimated based on the difference between precursors and
+#' sn1 chains.
+#' @param intrules character vector specifying the fragments to compare. See
+#' \link{checkIntensityRules}.
+#' @param rates character vector with the expected ratesbetween fragments given
+#' as a string (e.g. "3/1"). See \link{checkIntensityRules}.
+#' @param intrequired logical vector indicating if any of the rules is required.
+#' If not, at least one must be verified to confirm the structure.
+#' @param coelCutoff coelution score threshold between parent and fragment ions.
+#' Only applied if rawData info is supplied. By default, 0.8.
+#' @param dbs list of data bases required for annotation. By default, dbs
+#' contains the required data frames based on the default fragmentation rules.
+#' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+#' and \link{assignDB}.
+#'
+#' @return annotated msobject (list with several elements). The results element
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
+#' and double bounds), FA composition (specific chains composition if it has
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
+#' confidenceLevel (Subclass, FA level, where chains are known but not their
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
+#'
+#' @details \code{idCerPneg} function involves 5 steps. 1) FullMS-based
+#' identification of candidate CerP as M-H. 2) Search of CerP class
+#' fragments: 78.9585 and 96.9691. 3) Search of specific fragments that inform 
+#' about the sphingoid base (SphP as M-H resulting from the loss of the FA chain) 
+#' and the FA chain (FA as M-H but with a N instead of an O, what results in a 
+#' mass difference of 1.9918 from the exact mass of the FA, or the difference 
+#' between precursor and sn1 chain fragments). 4) Look for possible chains
+#' structure based on the combination of chain fragments. 5) Check intensity
+#' rules to confirm chains position. In this case, there are no intensity rules
+#' by default.
+#'
+#' Results data frame shows: ID, lipid class, CDB (total number
+#' of carbons and double bounds), FA composition (specific chains composition if
+#' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
+#' FA level, where chains are known but not their positions, or FA position
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
+#'
+#' @note This function has been writen based on fragmentation patterns
+#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' from Waters and Q-exactive from Thermo), but it may need to be customized for
+#' other platforms or acquisition settings.
+#'
+#' @examples
+#' \dontrun{
+#' msobject <- idCerPneg(msobject)
+#' }
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+idCerPneg <- function(msobject,
+                     ppm_precursor = 5,
+                     ppm_products = 10,
+                     rttol = 3,
+                     rt,
+                     adducts = c("M-H"),
+                     clfrags = c(78.9585, 96.9691),
+                     clrequired = c(F, F),
+                     ftype = c("F", "F"),
+                     chainfrags_sn1 = c("sphP_M-H"),
+                     chainfrags_sn2 = c("fa_Mn-1.9918", ""),
+                     intrules = c(),
+                     rates = c(),
+                     intrequired = c(),
+                     coelCutoff = 0.8,
+                     dbs){
+  ##############################################################################
+  # check arguments
+  if (msobject$metaData$generalMetadata$polarity != "negative"){
+    stop("Data wasn't acquired in negative mode")
+  }
+  if (missing(dbs)){
+    dbs <- assignDB()
+  }
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
+    stop("Wrong msobject format")
+  }
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+    stop("Acquisition mode must be DIA or DDA")
+  }
+  if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
+    stop("Some adducts can't be found at the aductsTable. Add them.")
+  }
+  if (length(clfrags) > 0){
+    if (length(clfrags) != length(clrequired) | length(clfrags) !=
+        length(ftype)){
+      stop("clfrags, clrequired and ftype should have the same length")
+    }
+    if (!all(ftype %in% c("F", "NL", "BB"))){
+      stop("ftype values allowed are: \"F\", \"NL\" or\"BB\"")
+    }
+    strfrag <- which(grepl("_", clfrags))
+    if (length(strfrag) > 0){
+      d <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 1))
+      a <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 2))
+      if (!all(a %in% dbs[["adductsTable"]]$adduct)){
+        stop("Adducts employed in clfrags also need to be at adductsTable.")
+      }
+      if (!all(paste(d, "db", sep="") %in% names(dbs))){
+        stop("All required dbs must be supplied through dbs argument.")
+      }
+    }
+  }
+  ##############################################################################
+  # extract data from msobject
+  # Peaklist MS1: remove isotopes
+  MS1 <- msobject$peaklist$MS1
+  MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
+  # Peaklist MS2: remove isotopes
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
+  } else {
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
+  }
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
+  # if acquisition mode is DDA, extract precursors
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
+                                                    msobject$metaData$scansMetadata$msLevel == 2,
+                                                  c("RT", "precursor", "Scan")]
+  }
+  ##############################################################################
+  # Remove previous ceramide annotations
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "CerP",]
+    }
+  }
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("CerP" %in% names(msobject$annotation$detailsAnnotation)){
+      cat("\nPrevious CeramideP annotations removed")
+      msobject$annotation$detailsAnnotation$CerP <- list()
+    }
+  }
+  ##############################################################################
+  # set rt limits
+  if (missing(rt)){
+    rt <- c(min(MS1$RT), max(MS1$RT))
+  }
+  ##############################################################################
+  # Start identification steps
+  
+  # candidates search
+  candidates <- findCandidates(MS1, dbs$cerPdb, ppm = ppm_precursor, rt = rt,
+                               adducts = adducts, rttol = rttol, dbs = dbs,
+                               rawData = rawData, coelCutoff = coelCutoff)
+  
+  if (nrow(candidates) > 0){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
+      if (nrow(rawData) == 0){
+        coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
+      }
+      # isolation of coeluting fragments
+      coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
+                                  coelCutoff = coelCutoff)
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      coelCutoff <- 0
+      coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
+    }
+    
+    # check class fragments
+    classConf <- checkClass(candidates, coelfrags, clfrags, ftype, clrequired,
+                            ppm_products, dbs)
+    
+    # search chains fragments
+    sn1 <- chainFrags(coelfrags, chainfrags_sn1, ppm_products, dbs = dbs,
+                      candidates = candidates)
+    sn2 <- chainFrags(coelfrags, chainfrags_sn2, ppm_products, candidates, sn1,
+                      dbs)
+    
+    # combine chain fragments
+    chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
+    
+    # check chains position based on intensity ratios
+    intConf <- checkIntensityRules(intrules, rates, intrequired, nchains=2,
+                                   chainsComb)
+    
+    # prepare output
+    res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
+                           intConf, nchains = 2, class="CerP",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
+    
+    # update msobject
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$CerP <- list()
+    msobject$annotation$detailsAnnotation$CerP$candidates <- candidates
+    msobject$annotation$detailsAnnotation$CerP$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$CerP$chainfragments <- chainsComb$fragments
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      msobject$annotation$detailsAnnotation$CerP$coelfrags <- coelfrags
+    }
+  } else {
+    res <- data.frame()
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$CerP <- list()
+  }
+  return(msobject)
+}
+
+# idAcylCerneg
+#' Acylceramides (AcylCer) annotation for ESI-
+#'
+#' AcylCer identification based on fragmentation patterns for LC-MS/MS DIA or DDA
+#' data acquired in negative mode.
+#'
+#' @param msobject an msobject returned by \link{dataProcessing}.
+#' @param ppm_precursor mass tolerance for precursor ions. By default, 5 ppm.
+#' @param ppm_products mass tolerance for product ions. By default, 10 ppm.
+#' @param rttol total rt window for coelution between precursor and product
+#' ions. By default, 3 seconds.
+#' @param rt rt range where the function will look for candidates. By default,
+#' it will search within all RT range in MS1.
+#' @param adducts expected adducts for AcylCer in ESI-. Adducts allowed can
+#' be modified in adductsTable (dbs argument).
+#' @param clfrags vector containing the expected fragments for a given lipid
+#' class. See \link{checkClass} for details.
+#' @param ftype character vector indicating the type of fragments in clfrags.
+#' It can be: "F" (fragment), "NL" (neutral loss) or "BB" (building block).
+#' See \link{checkClass} for details.
+#' @param clrequired logical vector indicating if each class fragment is
+#' required or not. If any of them is required, at least one of them must be
+#' present within the coeluting fragments. See \link{checkClass} for details.
+#' @param chainfrags_sn1 character vector containing the fragmentation rules for
+#' the sphingoid base. See \link{chainFrags} for details.
+#' @param chainfrags_sn2 character vector containing the fragmentation rules for
+#' the chain fragments in sn2 position. See \link{chainFrags} for details. If
+#' empty, it will be estimated based on the difference between precursors and
+#' sn1 chains.
+#' @param chainfrags_sn3 character vector containing the fragmentation rules for
+#' the acyl chain. See \link{chainFrags} for details.
+#' @param intrules character vector specifying the fragments to compare. See
+#' \link{checkIntensityRules}.
+#' @param rates character vector with the expected ratesbetween fragments given
+#' as a string (e.g. "3/1"). See \link{checkIntensityRules}.
+#' @param intrequired logical vector indicating if any of the rules is required.
+#' If not, at least one must be verified to confirm the structure.
+#' @param coelCutoff coelution score threshold between parent and fragment ions.
+#' Only applied if rawData info is supplied. By default, 0.8.
+#' @param dbs list of data bases required for annotation. By default, dbs
+#' contains the required data frames based on the default fragmentation rules.
+#' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
+#' and \link{assignDB}.
+#'
+#' @return annotated msobject (list with several elements). The results element
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
+#' and double bounds), FA composition (specific chains composition if it has
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
+#' confidenceLevel (Subclass, FA level, where chains are known but not their
+#' positions, or FA position level), peakID, and Score (parent-fragment coelution 
+#' score mean in DIA data or relative sum intensity in DDA of all fragments used 
+#' for the identification).
+#'
+#' @details \code{idAcylCerneg} function involves 5 steps. 1) FullMS-based
+#' identification of candidate AcylCer as M-H and M+CH3COO. 2) Search of AcylCer 
+#' class fragments: no class fragments by default. 3) Search of specific fragments 
+#' that inform about the acyl chain (Cer as M-H), the sphingoid base (neutral 
+#' loss of 62.0600 of the Sph) and the FA chain (FA as M-H and M-H2O but with a N 
+#' instead of an O, what results in a mass differences of 1.9918 and 19.0179 
+#' respectively). 4) Look for possible chains structure based on the combination 
+#' of chain fragments. 5) Check intensity rules to confirm chains position. In 
+#' this case, the fragment coming from the loss of the acyl chain must be at least 
+#' 5 times more intense the fragment from the sphingoid base and this one, two 
+#' times more intense than the FA chain from sn3.
+#'
+#' Results data frame shows: ID, lipid class, CDB (total number
+#' of carbons and double bounds), FA composition (specific chains composition if
+#' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
+#' FA level, where chains are known but not their positions, or FA position
+#' level) and Score (parent-fragment coelution score mean in DIA data or relative 
+#' sum intensity in DDA of all fragments used for the identification).
+#'
+#' @note This function has been writen based on fragmentation patterns
+#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' from Waters and Q-exactive from Thermo), but it may need to be customized for
+#' other platforms or acquisition settings.
+#'
+#' @examples
+#' \dontrun{
+#' msobject <- idAcylCerneg(msobject)
+#' }
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+idAcylCerneg <- function(msobject,
+                      ppm_precursor = 5,
+                      ppm_products = 10,
+                      rttol = 3,
+                      rt,
+                      adducts = c("M-H", "M+CH3COO"),
+                      clfrags = c(),
+                      clrequired = c(),
+                      ftype = c(),
+                      chainfrags_sn1 = c("cbdiff-cer_M-H"),
+                      chainfrags_sn2 = c("sph_Mn-62.06001", "sph_M-H-H2O"),
+                      chainfrags_sn3 = c("fa_Mn-1.9918", "fa_Mn-19.0179"),
+                      intrules = c("cbdiff-cer_sn1/sph_sn2", "sph_sn2/fa_sn3"),
+                      rates = c("5/1", "2/1"),
+                      intrequired = c(T, T),
+                      coelCutoff = 0.8,
+                      dbs){
+  ##############################################################################
+  # check arguments
+  if (msobject$metaData$generalMetadata$polarity != "negative"){
+    stop("Data wasn't acquired in negative mode")
+  }
+  if (missing(dbs)){
+    dbs <- assignDB()
+  }
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
+    stop("Wrong msobject format")
+  }
+  if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+    stop("Acquisition mode must be DIA or DDA")
+  }
+  if (!all(adducts %in% dbs[["adductsTable"]]$adduct)){
+    stop("Some adducts can't be found at the aductsTable. Add them.")
+  }
+  if (length(clfrags) > 0){
+    if (length(clfrags) != length(clrequired) | length(clfrags) !=
+        length(ftype)){
+      stop("clfrags, clrequired and ftype should have the same length")
+    }
+    if (!all(ftype %in% c("F", "NL", "BB"))){
+      stop("ftype values allowed are: \"F\", \"NL\" or\"BB\"")
+    }
+    strfrag <- which(grepl("_", clfrags))
+    if (length(strfrag) > 0){
+      d <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 1))
+      a <- unlist(lapply(strsplit(clfrags[strfrag], "_"), "[[", 2))
+      if (!all(a %in% dbs[["adductsTable"]]$adduct)){
+        stop("Adducts employed in clfrags also need to be at adductsTable.")
+      }
+      if (!all(paste(d, "db", sep="") %in% names(dbs))){
+        stop("All required dbs must be supplied through dbs argument.")
+      }
+    }
+  }
+  ##############################################################################
+  # extract data from msobject
+  # Peaklist MS1: remove isotopes
+  MS1 <- msobject$peaklist$MS1
+  MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
+  # Peaklist MS2: remove isotopes
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
+  } else {
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
+  }
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
+  # if acquisition mode is DDA, extract precursors
+  if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+    precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
+                                                    msobject$metaData$scansMetadata$msLevel == 2,
+                                                  c("RT", "precursor", "Scan")]
+  }
+  ##############################################################################
+  # Remove previous ceramide annotations
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "AcylCer",]
+    }
+  }
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("AcylCer" %in% names(msobject$annotation$detailsAnnotation)){
+      cat("\nPrevious AcylCer annotations removed")
+      msobject$annotation$detailsAnnotation$AcylCer <- list()
+    }
+  }
+  ##############################################################################
+  # set rt limits
+  if (missing(rt)){
+    rt <- c(min(MS1$RT), max(MS1$RT))
+  }
+  ##############################################################################
+  # Start identification steps
+  
+  # candidates search
+  candidates <- findCandidates(MS1, dbs$acylcerdb, ppm = ppm_precursor, rt = rt,
+                               adducts = adducts, rttol = rttol, dbs = dbs,
+                               rawData = rawData, coelCutoff = coelCutoff)
+  
+  if (nrow(candidates) > 0){
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DIA"){
+      if (nrow(rawData) == 0){
+        coelCutoff <- 0 # if no rawData is supplied, coelution score between precursors and fragments will be ignored
+      }
+      # isolation of coeluting fragments
+      coelfrags <- coelutingFrags(candidates, MS2, rttol, rawData,
+                                  coelCutoff = coelCutoff)
+    } else if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      coelCutoff <- 0
+      coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = ppm_products)
+    }
+    
+    # check class fragments
+    classConf <- checkClass(candidates, coelfrags, clfrags, ftype, clrequired,
+                            ppm_products, dbs)
+    
+    # search chains fragments
+    sn1 <- chainFrags(coelfrags, chainfrags_sn1, ppm_products, dbs = dbs,
+                      candidates = candidates)
+    sn2 <- chainFrags(coelfrags, chainfrags_sn2, ppm_products, candidates, sn1,
+                      dbs)
+    sn3 <- chainFrags(coelfrags, chainfrags_sn3, ppm_products, candidates, sn1,
+                      dbs)
+    
+    # combine chain fragments
+    chainsComb <- combineChains(candidates, nchains=3, sn1, sn2, sn3)
+    
+    # check chains position based on intensity ratios
+    intConf <- checkIntensityRules(intrules, rates, intrequired, nchains=2,
+                                   chainsComb)
+    
+    # prepare output
+    res <- organizeResults(candidates, clfrags, classConf, chainsComb, intrules,
+                           intConf, nchains = 3, class="AcylCer",
+                           acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
+    
+    # update msobject
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$AcylCer <- list()
+    msobject$annotation$detailsAnnotation$AcylCer$candidates <- candidates
+    msobject$annotation$detailsAnnotation$AcylCer$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$AcylCer$chainfragments <- chainsComb$fragments
+    if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
+      msobject$annotation$detailsAnnotation$AcylCer$coelfrags <- coelfrags
+    }
+  } else {
+    res <- data.frame()
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
+    } else {
+      msobject$annotation$results <- res
+    }
+    msobject$annotation$detailsAnnotation$AcylCer <- list()
   }
   return(msobject)
 }
@@ -3680,9 +5188,9 @@ idCerneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -3697,10 +5205,10 @@ idCerneg <- function(msobject,
 #' the combination of chain fragments. 5) Check intensity rules to confirm
 #' chains position. For CL there are no intensity rules by default.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (Subclass,
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (Subclass,
 #' FA level, where chains are known but not their positions, or FA position
 #' level) and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -3712,10 +5220,7 @@ idCerneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idCLneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idCLneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -3745,7 +5250,10 @@ idCLneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -3779,31 +5287,31 @@ idCLneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "CL",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "CL",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("CL" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("CL" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious CL annotations removed")
-      msobject$detailsAnnotation$CL <- list()
+      msobject$annotation$detailsAnnotation$CL <- list()
     }
   }
   ##############################################################################
@@ -3860,26 +5368,26 @@ idCLneg <- function(msobject,
 
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$CL <- list()
-    msobject$detailsAnnotation$CL$candidates <- candidates
-    msobject$detailsAnnotation$CL$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$CL$chainfragments <- chainsComb$fragments
+    msobject$annotation$detailsAnnotation$CL <- list()
+    msobject$annotation$detailsAnnotation$CL$candidates <- candidates
+    msobject$annotation$detailsAnnotation$CL$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$CL$chainfragments <- chainsComb$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$CL$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$CL$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$CL <- list()
+    msobject$annotation$detailsAnnotation$CL <- list()
   }
   return(msobject)
 }
@@ -3914,9 +5422,9 @@ idCLneg <- function(msobject,
 #' and \link{assignDB}.
 #'
 #' @return annotated msobject (list with several elements). The results element
-#' is a data frame that shows: ID, class of lipid, CDB (total number of carbons
+#' is a data frame that shows: ID, lipid class, CDB (total number of carbons
 #' and double bounds), FA composition (specific chains composition if it has
-#' been confirmed), m.z, RT (in seconds), I (intensity), Adducts, ppm (m.z error),
+#' been confirmed), mz, RT (in seconds), I (intensity), Adducts, ppm (mz error),
 #' confidenceLevel (Subclass, FA level, where chains are known but not their
 #' positions, or FA position level), peakID, and Score (parent-fragment coelution 
 #' score mean in DIA data or relative sum intensity in DDA of all fragments used 
@@ -3926,10 +5434,10 @@ idCLneg <- function(msobject,
 #' identification of candidate BA as M-H. 2) Search of BA-conjugate fragments if
 #' required. 3) Search of fragments coming from the loss of H2O.
 #'
-#' Results data frame shows: ID, class of lipid, CDB (total number
+#' Results data frame shows: ID, lipid class, CDB (total number
 #' of carbons and double bounds), FA composition (specific chains composition if
 #' it has been confirmed), mz, RT (in seconds), I (intensity, which comes
-#' directly from de input), Adducts, ppm (m.z error), confidenceLevel (MS-only
+#' directly from de input), Adducts, ppm (mz error), confidenceLevel (MS-only
 #' if no rules are defined, or Subclass level if they are supported by fragments)
 #' and Score (parent-fragment coelution score mean in DIA data or relative 
 #' sum intensity in DDA of all fragments used for the identification).
@@ -3941,10 +5449,7 @@ idCLneg <- function(msobject,
 #'
 #' @examples
 #' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idBAneg(LipidMSdata2::msobjectDIAneg)
+#' msobject <- idBAneg(msobject)
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
@@ -3966,7 +5471,10 @@ idBAneg <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-  if (!all(c("metaData", "processing", "MS1", "MS2", "peaklist") %in% names(msobject))){
+  if (!all(c("metaData", "processing", "rawData", "peaklist") %in% names(msobject))){
+    stop("Wrong msobject format")
+  }
+  if (!all(c("MS1", "MS2") %in% names(msobject$rawData))){
     stop("Wrong msobject format")
   }
   if (!msobject$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
@@ -3980,31 +5488,31 @@ idBAneg <- function(msobject,
   # Peaklist MS1: remove isotopes
   MS1 <- msobject$peaklist$MS1
   MS1 <- MS1[MS1$isotope %in% c("[M+0]"),
-             !colnames(MS1) %in% c("isotope", "group")]
+             !colnames(MS1) %in% c("isotope", "isoGroup")]
   # Peaklist MS2: remove isotopes
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-    MS2 <- msobject$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$rawData$MS2[,c("mz", "RT", "int", "peakID")]
   } else {
-    MS2 <- msobject$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+    MS2 <- msobject$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
   }
-  rawData <- rbind(msobject$MS1, msobject$MS2)
+  rawData <- rbind(msobject$rawData$MS1, msobject$rawData$MS2)
   # if acquisition mode is DDA, extract precursors
   if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
     precursors <- msobject$metaData$scansMetadata[msobject$metaData$scansMetadata$collisionEnergy > 0 &
                                                     msobject$metaData$scansMetadata$msLevel == 2,
-                                                  c("retentionTime", "precursor", "Scan")]
+                                                  c("RT", "precursor", "Scan")]
   }
   ##############################################################################
   # Remove previous ceramide annotations
-  if ("results" %in% names(msobject)){
-    if (nrow(msobject$results) > 0){
-      msobject$results <- msobject$results[msobject$results$Class != "BA",]
+  if ("results" %in% names(msobject$annotation)){
+    if (nrow(msobject$annotation$results) > 0){
+      msobject$annotation$results <- msobject$annotation$results[msobject$annotation$results$Class != "BA",]
     }
   }
-  if ("detailsAnnotation" %in% names(msobject)){
-    if("BA" %in% names(msobject$detailsAnnotation)){
+  if ("detailsAnnotation" %in% names(msobject$annotation)){
+    if("BA" %in% names(msobject$annotation$detailsAnnotation)){
       cat("\nPrevious BA annotations removed")
-      msobject$detailsAnnotation$BA <- list()
+      msobject$annotation$detailsAnnotation$BA <- list()
     }
   }
   ##############################################################################
@@ -4057,12 +5565,12 @@ idBAneg <- function(msobject,
                             "conjugate"] == ""){
           check[[c]] <- append(check[[c]], TRUE)
           conjugates[[c]] <- data.frame(0,0,0,0,0,0,0,0)
-          colnames(conjugates[[c]]) <- c("cb", "m.z", "RT", "int",
+          colnames(conjugates[[c]]) <- c("cb", "mz", "RT", "int",
                                          "peakID", "coelScore", "db", "adduct")
         } else {
           check[[c]] <- append(check[[c]], FALSE)
           conjugates[[c]] <- data.frame(0,0,0,0,0,0,0,0)
-          colnames(conjugates[[c]]) <- c("cb", "m.z", "RT", "int",
+          colnames(conjugates[[c]]) <- c("cb", "mz", "RT", "int",
                                          "peakID", "coelScore", "db", "adduct")
         }
       }
@@ -4083,7 +5591,7 @@ idBAneg <- function(msobject,
         } else {
           check[[c]] <- append(check[[c]], FALSE)
           bas[[c]] <- data.frame(0,0,0,0,0,NA,0,0)
-          colnames(bas[[c]]) <- c("cb", "m.z", "RT", "int",
+          colnames(bas[[c]]) <- c("cb", "mz", "RT", "int",
                                   "peakID", "coelScore", "db", "adduct")
         }
       }
@@ -4092,7 +5600,11 @@ idBAneg <- function(msobject,
     classConf$presence <- check
     classConf$passed <- unlist(apply(check, 1, sum)) > 0
     classConf$fragments <- Map(rbind, conjugates, bas)
+    classConf$fragments <- lapply(classConf$fragments, function(x){
+      x[x$peakID != "0",,drop = FALSE]
+    })
 
+    
     # prepare output
     if (length(bafrag) > 0 | length(conjfrag) > 0){
       clfrags <- c("fragment")
@@ -4106,26 +5618,26 @@ idBAneg <- function(msobject,
                            acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
 
     # update msobject
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$BA <- list()
-    msobject$detailsAnnotation$BA$candidates <- candidates
-    msobject$detailsAnnotation$BA$classfragments <- classConf$fragments
-    msobject$detailsAnnotation$BA$chainfragments <- bas$fragments
+    msobject$annotation$detailsAnnotation$BA <- list()
+    msobject$annotation$detailsAnnotation$BA$candidates <- candidates
+    msobject$annotation$detailsAnnotation$BA$classfragments <- classConf$fragments
+    msobject$annotation$detailsAnnotation$BA$chainfragments <- bas$fragments
     if (msobject$metaData$generalMetadata$acquisitionmode == "DDA"){
-      msobject$detailsAnnotation$BA$coelfrags <- coelfrags
+      msobject$annotation$detailsAnnotation$BA$coelfrags <- coelfrags
     }
   } else {
     res <- data.frame()
-    if ("results" %in% names(msobject)){
-      msobject$results <- rbind(msobject$results, res)
+    if ("results" %in% names(msobject$annotation)){
+      msobject$annotation$results <- rbind(msobject$annotation$results, res)
     } else {
-      msobject$results <- res
+      msobject$annotation$results <- res
     }
-    msobject$detailsAnnotation$BA <- list()
+    msobject$annotation$detailsAnnotation$BA <- list()
   }
   return(msobject)
 }

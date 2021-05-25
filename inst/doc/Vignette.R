@@ -5,40 +5,44 @@ knitr::opts_chunk$set(
 )
 
 ## ---- echo=T, eval=F----------------------------------------------------------
-#  # Install LipidMS and LipidMSdata2
+#  # Install LipidMS
 #  install.packages("LipidMS", dependencies = c("Depends", "Imports"))
-#  devtools::install_github("maialba3/LipidMSdata2")
 #  
-#  # load LipidMS library
+#  # load library
 #  library(LipidMS)
 #  
-#  # load example datasets
-#  library(LipidMSdata2)
 
 ## ---- echo=T, eval=F----------------------------------------------------------
 #  # load LipidMS library
 #  library(LipidMS)
 #  
+#  # Example data files can be downloaded from:
+#  # https://drive.google.com/drive/folders/1hSYrQBkh-rAA-oiaKqGkrNL7uWQraV75?usp=sharing
+#  
 #  # get mzXML files from your working directory
 #  files <- dir()[grepl(".mzXML", dir())]
 #  
 #  # set the processing parameters
-#  acquisitionmode <- "DIA"
+#  acquisitionmode <- c("DIA", "DDA", "MS", "MS", "MS", "DIA")
 #  polarity <- "negative"
-#  dmzagglom <- 5
-#  drtagglom <- 25
-#  drtclust <- 25
-#  minpeak <- c(4, 3)
+#  dmzagglom <- 15
+#  drtagglom <- 500
+#  drtclust <- c(100, 200)
+#  minpeak <- c(5, 4)
 #  drtgap <- 5
-#  drtminpeak <- 20
-#  drtmaxpeak <- 200
-#  recurs <- 5
-#  sb <- 2
-#  sn <- 2
+#  drtminpeak <- 15
+#  drtmaxpeak <- c(100, 200)
+#  recurs <- c(5, 10)
+#  sb <- c(3, 2)
+#  sn <- c(3, 2)
 #  minint <- c(500, 100)
 #  weight <- c(2, 3)
 #  dmzIso <- 5
 #  drtIso <- 5
+#  
+#  # for single file processing, only samples acquired in DIA or DDA will be processed
+#  files <- files[acquisitionmode %in% c("DIA", "DDA")]
+#  acquisitionmode <- acquisitionmode[acquisitionmode %in% c("DIA", "DDA")]
 #  
 #  # run the dataProcessing function to obtain the requires msobjects
 #  msobjects <- list()
@@ -63,10 +67,6 @@ knitr::opts_chunk$set(
 #  }
 
 ## ---- echo=T, eval=F----------------------------------------------------------
-#  # Use the example datasets (msobjects)
-#  devtools::install_github("maialba3/LipidMSdata2")
-#  library(LipidMSdata2)
-#  
 #  # set annotation parameters
 #  dmzprecursor <- 5
 #  dmzproducts <- 10
@@ -74,14 +74,6 @@ knitr::opts_chunk$set(
 #  coelcutoff <- 0.8
 #  
 #  # Annotate lipids
-#  annotated_msobject <- idPOS(LipidMSdata2::msobjectDIApos,
-#                              ppm_precursor = dmzprecursor,
-#                              ppm_products = dmzproducts,
-#                              rttol = rttol,
-#                              coelCutoff = coelcutoff)
-#  
-#  
-#  # Try with your own data
 #  ## If polarity is positive
 #  if (polarity == "positive"){
 #    for (m in 1:length(msobjects)){
@@ -107,7 +99,7 @@ knitr::opts_chunk$set(
 
 ## ---- echo=T, eval=F----------------------------------------------------------
 #  # example code for idPEpos function
-#  pe <- idPEpos(msobject = LipidMSdata2::msobjectDIApos,
+#  pe <- idPEpos(msobject,
 #            ppm_precursor = ppm_precursor,
 #            ppm_products = ppm_products, rttol = 6,
 #            chainfrags_sn1 = c("mg_M+H-H2O", "lysope_M+H-H2O"),
@@ -122,7 +114,7 @@ knitr::opts_chunk$set(
 #  # could be also empoyed to build customized identification functions.
 
 ## ---- echo=T, eval=F----------------------------------------------------------
-#  msobject <- idPOS(LipidMSdata2::msobjectDIApos)
+#  msobject <- idPOS(msobject)
 #  msobject <- plotLipids(msobject)
 #  
 #  # display the first plot
@@ -135,6 +127,200 @@ knitr::opts_chunk$set(
 #      print(msobject$plots[[p]])
 #    }
 #  dev.off()
+
+## ---- echo=T, eval=F----------------------------------------------------------
+#  # load LipidMS library
+#  library(LipidMS)
+#  
+#  # Example data files can be downloaded from:
+#  # https://drive.google.com/drive/folders/1hSYrQBkh-rAA-oiaKqGkrNL7uWQraV75?usp=sharing
+#  
+#  # csv file with 3 columns: sample (mzXML file names), acquisitionmode
+#  # (MS, DIA or DDA) and sampletype (QC, group1, group2, etc.)
+#  metadata <- read.csv("Matadata.csv", sep=",", dec = ".")
+#  
+#  #==============================================================================#
+#  # Set processing parameters
+#  #==============================================================================#
+#  
+#  ###################
+#  # Peak-picking
+#  polarity <- "positive" # 6550 abrir hasta 50 ppm, con el orbi dejar en 15-20 ppm
+#  dmzagglom <- 15
+#  drtagglom <- 500
+#  drtclust <- c(100, 200)
+#  minpeak <- c(8, 5)
+#  drtgap <- 5
+#  drtminpeak <- 15
+#  drtmaxpeak <- 200
+#  recurs <- c(5, 10)
+#  sb <- c(3,2)
+#  sn <- c(3,2)
+#  minint <- c(5000, 1000)
+#  weight <- c(2, 3)
+#  dmzIso <- 5
+#  drtIso <- 5
+#  
+#  #==============================================================================#
+#  # Processing
+#  #==============================================================================#
+#  
+#  ###################
+#  # Peak-picking
+#  msbatch <- batchdataProcessing(metadata = metadata,
+#                                 polarity = polarity,
+#                                 dmzagglom = dmzagglom,
+#                                 drtagglom = drtagglom,
+#                                 drtclust = drtclust,
+#                                 minpeak = minpeak,
+#                                 drtgap = drtgap,
+#                                 drtminpeak = drtminpeak,
+#                                 drtmaxpeak = drtmaxpeak,
+#                                 recurs = recurs,
+#                                 sb = sb,
+#                                 sn = sn,
+#                                 minint = minint,
+#                                 weight = weight,
+#                                 dmzIso = dmzIso,
+#                                 drtIso = drtIso,
+#                                 parallel = parallel,
+#                                 ncores = ncores)
+#  
+#  save(msbatch, file="msbatch.rda.gz", compress = TRUE)
+
+## ---- echo=T, eval=F----------------------------------------------------------
+#  #==============================================================================#
+#  # Set parameters
+#  #==============================================================================#
+#  
+#  ###################
+#  # Batch processing
+#  dmzalign <- 5
+#  drtalign <- 30
+#  span <- 0.4
+#  minsamplesfracalign <- 0.75
+#  dmzgroup <- 5
+#  drtagglomgroup <- 30
+#  drtgroup <- 15
+#  minsamplesfracgroup <- 0.25
+#  parallel <- TRUE
+#  ncores <- 2
+#  
+#  #==============================================================================#
+#  # Processing
+#  #==============================================================================#
+#  
+#  ###################
+#  # Alignment
+#  msbatch <- alignmsbatch(msbatch, dmz = dmzalign, drt = drtalign, span = span,
+#                          minsamplesfrac = minsamplesfracalign,
+#                          parallel = parallel, ncores = ncores)
+#  
+#  # rt deviation plot
+#  rtdevplot(msbatch)
+#  rtdevplot(msbatch, colorbygroup = FALSE)
+#  
+#  # tic plot
+#  plotticmsbatch(msbatch)
+#  plotticmsbatch(msbatch, colorbygroup = FALSE)
+#  
+#  ###################
+#  # Grouping
+#  msbatch <- groupmsbatch(msbatch, dmz = dmzgroup, drtagglom = drtagglomgroup,
+#                          drt = drtgroup, minsamplesfrac = minsamplesfracgroup,
+#                          parallel = parallel, ncores = ncores)
+#  
+#  
+#  #####################
+#  # Fill missing peaks
+#  msbatch <- fillpeaksmsbatch(msbatch)
+#  
+#  
+#  # Now we have a data matrix with all samples and features.
+#  View(msbatch$features)
+
+## ---- echo=T, eval=F----------------------------------------------------------
+#  #==============================================================================#
+#  # Lipid annotation
+#  #==============================================================================#
+#  
+#  ###################
+#  # Lipid Annotation
+#  msbatch <- annotatemsbatch(msbatch)
+#  
+#  
+#  # Make plots for identified lipids
+#  for (m in 1:length(msbatch$msobjects)){
+#    if (msbatch$msobjects[[m]]$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+#      msbatch$msobjects[[m]] <- plotLipids(msbatch$msobjects[[m]])
+#    }
+#  }
+#  
+#  print(msbatch$msobjects[[1]]$annotation$plots[[1]])
+#  
+
+## ---- echo=T, eval=F----------------------------------------------------------
+#  ###################
+#  # features
+#  peaklist <- msbatch$features
+#  peaklistNoIso <- peaklist[peaklist$isotope %in% c("", "[M+0]"),]
+#  
+#  View(peaklistNoIso)
+#  
+#  write.csv(peaklist, file="peaklist.csv")
+#  write.csv(peaklistNoIso, file="peaklistNoIso.csv")
+#  
+#  ###################
+#  # annotations
+#  
+#  # results
+#  for (i in 1:length(msbatch$msobjects)){
+#    if (msbatch$msobjects[[i]]$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+#      fileName <- gsub(".mzXML", "_summaryResults.csv" ,
+#                       msbatch$msobjects[[i]]$metaData$generalMetadata$file[i])
+#      write.csv(msbatch$msobjects[[i]]$annotation$results, fileName, row.names = FALSE)
+#    }
+#  }
+#  
+#  # Annotated Peaklists
+#  for (i in 1:length(msbatch$msobjects)){
+#    if (msbatch$msobjects[[i]]$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+#      fileName <- gsub(".mzXML", "_annotatedPeaklist.csv" ,
+#                       msbatch$msobjects[[i]]$metaData$generalMetadata$file[i])
+#      write.csv(msbatch$msobjects[[i]]$annotation$annotatedPeaklist, fileName, row.names = FALSE)
+#    }
+#  }
+#  
+#  ###################
+#  # plots
+#  
+#  pdf("RTdevplot.pdf")
+#  rtdevplot(msbatch)
+#  rtdevplot(msbatch, colorbygroup = FALSE)
+#  dev.off()
+#  
+#  pdf("TIC.pdf", height = 7, width = 10)
+#  plotticmsbatch(msbatch)
+#  plotticmsbatch(msbatch, colorbygroup = FALSE)
+#  dev.off()
+#  
+#  # lipid id plots
+#  for (s in 1:length(msbatch$msobjects)){
+#    if (msbatch$msobjects[[s]]$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
+#      print(s)
+#      if (msbatch$msobjects[[s]]$metaData$generalMetadata$acquisitionmode == "DIA"){
+#        height <- 7
+#      } else {
+#        height <- 9
+#      }
+#      pdf(file = gsub(".mzXML", "_plots.pdf", msbatch$msobjects[[s]]$metaData$generalMetadata$file),
+#          width = 8, height = height)
+#      for ( pl in 1:length(msbatch$msobjects[[s]]$annotation$plots)){
+#        print(msbatch$msobjects[[s]]$annotation$plots[[pl]])
+#      }
+#      dev.off()
+#    }
+#  }
 
 ## ---- echo=T, eval=F----------------------------------------------------------
 #  # To run LipidMS shiny app execute:

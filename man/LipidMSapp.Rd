@@ -11,8 +11,6 @@ Interactive UI for LipidMS
 }
 \examples{
 \dontrun{
-# example data files can be download from github.com/maialba3/LipidMSv2.0_exampleFiles
-
 library(LipidMS)
 LipidMSapp()
 }

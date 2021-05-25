@@ -4,7 +4,7 @@
 #' Search of lipid candidates from a peaklist based on a set of expected
 #' adducts.
 #'
-#' @param MS1 peaklist of the MS function. Data frame with 3 columns: m.z, RT (in seconds) and int (intensity).
+#' @param MS1 peaklist of the MS function. Data frame with 3 columns: mz, RT (in seconds) and int (intensity).
 #' @param db database (i.e. pcdb, dgdb, etc.). Data frame with at least 2 columns: Mass (exact mass) and total (total number of carbons and double bound of the FA chains, i.e. "34:1").
 #' @param ppm m/z tolerance in ppm.
 #' @param rt rt range where the function will look for candidates. By default,
@@ -21,7 +21,7 @@
 #' @param coelCutoff coelution score threshold between parent and fragment ions.
 #' Only applied if rawData info is supplied.
 #'
-#' @return Data frame with the found candidates. It contains 6 columns: m.z,
+#' @return Data frame with the found candidates. It contains 6 columns: mz,
 #' RT, int (from the peaklist data.frame), ppms, cb (total number of carbons and
 #' double bounds of the FA chains) and adducts.
 #'
@@ -40,8 +40,8 @@
 #' dbs <- assignDB()
 #'
 #' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "group")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
+#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
 #' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
 #'
 #' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
@@ -123,8 +123,8 @@ findCandidates <- function(MS1,
 #' dbs <- assignDB()
 #'
 #' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "group")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
+#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
 #' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
 #'
 #' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
@@ -156,7 +156,7 @@ coelutingFrags <- function(precursors,
   })
   coelfrags <- lapply(psubset, function(x) {
     if (nrow(x) > 0){
-      x <- x[!is.na(x$m.z),]
+      x <- x[!is.na(x$mz),]
     } else {data.frame()}
   })
   return(coelfrags)
@@ -165,7 +165,7 @@ coelutingFrags <- function(precursors,
 #' MS/MS scan extraction of a precursor in DDA
 #'
 #' This function searches for the closest precursor selected for MS2 in DDA
-#' that matches m.z tolerance and RT window of a list of candidates and extracts
+#' that matches mz tolerance and RT window of a list of candidates and extracts
 #' their fragments.
 #'
 #' @param candidates candidates data frame. Output of \link{findCandidates}.
@@ -178,6 +178,9 @@ coelutingFrags <- function(precursors,
 #' minrt-rttol/2 to maxrt+rttol/2. If the same precursor was selected several
 #' times along the peak, the closest scan to the rt at the peak maximum is
 #' selected for annotation.
+#' 
+#' Coelution score for DDA fragments represents their relative intensity within 
+#' the MS2 scan.
 #'
 #' @return List of data frames with the fragments for each candidate.
 #'
@@ -189,12 +192,12 @@ coelutingFrags <- function(precursors,
 #' dbs <- assignDB()
 #'
 #' MS1 <- LipidMSdata2::msobjectDDAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "group")]
-#' MS2 <- LipidMSdata2::msobjectDDAneg$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
+#' MS2 <- LipidMSdata2::msobjectDDAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
 #' rawData <- rbind(LipidMSdata2::msobjectDDAneg$MS1, LipidMSdata2::msobjectDDAneg$MS2)
 #' precursors <- LipidMSdata2::msobjectDDAneg$metaData$scansMetadata[
 #' LipidMSdata2::msobjectDDAneg$metaData$scansMetadata$collisionEnergy > 0 &
-#' msobjectDDAneg$metaData$scansMetadata$msLevel == 2, c("retentionTime", "precursor", "Scan")]
+#' msobjectDDAneg$metaData$scansMetadata$msLevel == 2, c("RT", "precursor", "Scan")]
 #' candidates <- findCandidates(MS1 = MS1, db = dbs$cerdb, ppm = 10,
 #' rt = c(0, 2000), adducts = c("M-H"),
 #' rttol = 10, dbs = dbs, rawData = rawData_neg$rawScans, coelCutoff = 0.8)
@@ -208,15 +211,16 @@ ddaFrags <- function(candidates,
                      rawData,
                      ppm){
   coelfrags <- apply(candidates, 1, function(x){
-    scans <- findMS2precursor(mz = as.numeric(x["m.z"]),
+    scans <- findMS2precursor(mz = as.numeric(x["mz"]),
                               minrt = as.numeric(x["minRT"]),
                               maxrt = as.numeric(x["maxRT"]),
                               precursors = precursors,
                               ppm = ppm)
     if (length(scans) > 0){
-      rts <- precursors$retentionTime[precursors$Scan %in% scans]
-      scanrt <- rts[which.min(abs(rts-as.numeric(x["RT"])))]
-      f <- rawData[rawData$RT == scanrt, c("m.z", "RT", "int", "peakID")]
+      rts <- precursors$RT[match(scans, precursors$Scan)]
+      scanrt <- scans[which.min(abs(rts-as.numeric(x["RT"])))]
+      f <- rawData[rawData$Scan == scanrt, c("mz", "RT", "int", "peakID")]
+      f <- f[grepl("MS2", f$peakID),]
       if(nrow(f) > 0){
         f$coelScore <- f$int/sum(f$int)
         return(f)
@@ -291,8 +295,8 @@ ddaFrags <- function(candidates,
 #' dbs <- assignDB()
 #'
 #' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "group")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
+#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
 #' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
 #'
 #' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
@@ -332,7 +336,7 @@ checkClass <- function(candidates,
       } else if (ftype[i] == "NL") {
         classf <- list()
         for (c in 1:nrow(candidates)){
-          f <- filtermsms(coelfrags[[c]], candidates$m.z[c]-as.numeric(clfrags[i]), ppm)
+          f <- filtermsms(coelfrags[[c]], candidates$mz[c]-as.numeric(clfrags[i]), ppm)
           classf[[c]] <- f
         }
         verified[,i] <- unlist(lapply(classf, function(x) {if(is.data.frame(x)){nrow(x) > 0}else {FALSE}}))
@@ -435,8 +439,8 @@ checkClass <- function(candidates,
 #' dbs <- assignDB()
 #'
 #' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "group")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
+#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
 #' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
 #'
 #' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
@@ -456,7 +460,7 @@ checkClass <- function(candidates,
 #' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
-chainFrags = function (coelfrags,
+chainFrags <- function (coelfrags,
                        chainfrags,
                        ppm = 10,
                        candidates,
@@ -471,7 +475,7 @@ chainFrags = function (coelfrags,
         if (nrow(f[[c]]) > 0) {
           diffs <- diffcb(candidates$cb[c], f[[c]]$cb,
                           dbs$fadb)
-          fmatch <- unique(data.frame(cb = diffs, m.z = 0, RT = f[[c]]$RT,
+          fmatch <- unique(data.frame(cb = diffs, mz = 0, RT = f[[c]]$RT,
                                       int = 0, peakID = "",
                                       coelScore = NA,
                                       db = "cbdiff", adduct = "",
@@ -501,7 +505,7 @@ chainFrags = function (coelfrags,
         rule <- unlist(strsplit(chainfrags[i], "NL-"))[2]
         db <- dbs[[paste(unlist(strsplit(rule, "_"))[1],
                          "db", sep = "")]]
-        db$Mass <- candidates$m.z[c] - db$Mass
+        db$Mass <- candidates$mz[c] - db$Mass
         ad <- adductsTable[adductsTable$adduct ==
                              unlist(strsplit(rule, "_"))[2],]
         mdiff <- ad$mdiff
@@ -553,12 +557,15 @@ chainFrags = function (coelfrags,
     new <- list()
     for (c in 1:nrow(candidates)) {
       if (nrow(matches[[c]]) > 0) {
-        fragments <- matches[[c]][grepl("cbdiff", matches[[c]]$db),
-                                  ]
+        fragments <- matches[[c]][grepl("cbdiff", matches[[c]]$db),]
         other <- matches[[c]][!grepl("cbdiff", matches[[c]]$db),]
-        db <- diffcb(candidates$cb[c], fragments$cb, dbs$fadb)
-        fragments$cb <- db
-        new[[c]] <- rbind(other, fragments[fragments$cb != "", ])
+        if (nrow(fragments) > 0){
+          db <- diffcb(candidates$cb[c], fragments$cb, dbs$fadb)
+          fragments$cb <- db
+          new[[c]] <- rbind(other, fragments[fragments$cb != "", ])
+        } else {
+          new[[c]] <- matches[[c]]
+        }
       } else {
         new[[c]] <- data.frame()
       }
@@ -595,8 +602,8 @@ chainFrags = function (coelfrags,
 #' dbs <- assignDB()
 #'
 #' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "group")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
+#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
 #' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
 #'
 #' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
@@ -837,8 +844,8 @@ combineChains <- function(candidates,
 #' dbs <- assignDB()
 #'
 #' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "group")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
+#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
 #' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
 #'
 #' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
@@ -891,6 +898,11 @@ checkIntensityRules <- function(intrules,
 #' @param intConf output of \link{checkIntensityRules}
 #' @param nchains number of chains of the targeted lipid class.
 #' @param class character value. Lipid class (i.e. PC, PE, DG, TG, etc.).
+#' @param acquisitionmode acquisition mode (DIA or DDA).
+#' 
+#' @details Coelution score for DIA data is calculated as the mean coelution 
+#' score of all fragments used for annotation, while for DDA data, it is 
+#' calculated as the sum relative intensity of those fragments in theie MS2 scan.
 #'
 #' @examples
 #' \dontrun{
@@ -900,8 +912,8 @@ checkIntensityRules <- function(intrules,
 #' dbs <- assignDB()
 #'
 #' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "group")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("m.z", "RT", "int", "peakID")]
+#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
+#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
 #' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
 #'
 #' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
@@ -923,9 +935,8 @@ checkIntensityRules <- function(intrules,
 #'
 #' res <- organizeResults(candidates, clfrags = c(227.0326, 209.022, 74.0359),
 #' classConf, chainsComb, intrules = c("lysopg_sn1/lysopg_sn1"), intConf,
-#' nchains = 2, class="PG", acquisitionmode = msobject$metaData$generalMetadata$acquisitionmode)
+#' nchains = 2, class="PG", acquisitionmode = "DIA")
 #' }
-#'
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 organizeResults <- function(candidates,
@@ -957,9 +968,9 @@ organizeResults <- function(candidates,
                                                  sep = ""),Class = class,
                                       CDB = candidates$cb[c],
                                       FAcomp = candidates$cb[c],
-                                      m.z = candidates$m.z[c],
+                                      mz = candidates$mz[c],
                                       RT = candidates$RT[c],
-                                      I = candidates$int[c],
+                                      int = candidates$int[c],
                                       Adducts = candidates$adducts[c],
                                       ppm = round(candidates$ppms[c], 3),
                                       confidenceLevel = idlevel,
@@ -973,9 +984,9 @@ organizeResults <- function(candidates,
         if (classConf$passed[c] == T || length(clfrags) == 0){
           Class <- class
           CDB <- candidates$cb[c]
-          m.z <- candidates$m.z[c]
+          mz <- candidates$mz[c]
           RT <- candidates$RT[c]
-          I <- candidates$int[c]
+          int <- candidates$int[c]
           Adducts <- candidates$adducts[c]
           ppm <- round(candidates$ppm[c], 3)
           ID <- paste(class, "(", CDB, ")", sep = "")
@@ -998,8 +1009,8 @@ organizeResults <- function(candidates,
                 score <- sum(chainsComb$fragments[[c]]$coelScore, na.rm = T)
               }
             }
-            results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, m.z, RT,
-                                                 I, Adducts, ppm, confidenceLevel,
+            results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, mz, RT,
+                                                 int, Adducts, ppm, confidenceLevel,
                                                  peakID = candidates$peakID[c],
                                                  Score = round(score, 3),
                                                  stringsAsFactors = F))
@@ -1010,8 +1021,8 @@ organizeResults <- function(candidates,
             } else {
               score <- sum(classConf$fragments[[c]]$coelScore, na.rm = T)
             }
-            results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, m.z, RT,
-                                                 I, Adducts, ppm, confidenceLevel,
+            results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, mz, RT,
+                                                 int, Adducts, ppm, confidenceLevel,
                                                  peakID = candidates$peakID[c],
                                                  Score = round(score, 3),
                                                  stringsAsFactors = F))
@@ -1023,9 +1034,9 @@ organizeResults <- function(candidates,
         if (classConf$passed[c] == T || length(clfrags) == 0){
           Class <- class
           CDB <- candidates$cb[c]
-          m.z <- candidates$m.z[c]
+          mz <- candidates$mz[c]
           RT <- candidates$RT[c]
-          I <- candidates$int[c]
+          int <- candidates$int[c]
           Adducts <- candidates$adducts[c]
           ppm <- round(candidates$ppm[c], 3)
           if (nrow(chainsComb$selected[[c]]) > 0){
@@ -1036,7 +1047,7 @@ organizeResults <- function(candidates,
                             ")", sep="")
                 confidenceLevel <- "FA position"
               } else if (intConf[[c]][comb] == F || "Unknown" %in% intrules){
-                ID <- paste(class, "(", paste(chainsComb$selected[[c]][comb,],
+                ID <- paste(class, "(", paste(sort(unlist(chainsComb$selected[[c]][comb,])),
                                               collapse="_"),
                             ")", sep="")
                 confidenceLevel <- "FA"
@@ -1059,8 +1070,8 @@ organizeResults <- function(candidates,
                 }
               }
               FAcomp <- paste(chainsComb$selected[[c]][comb,], collapse = " ")
-              results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, m.z,
-                                                   RT, I, Adducts, ppm,
+              results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, mz,
+                                                   RT, int, Adducts, ppm,
                                                    confidenceLevel,
                                                    peakID = candidates$peakID[c],
                                                    Score = round(score, 3),
@@ -1076,8 +1087,8 @@ organizeResults <- function(candidates,
               } else {
                 score <- sum(classConf$fragments[[c]]$coelScore, na.rm = T)
               }
-              results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, m.z,
-                                                   RT, I, Adducts, ppm,
+              results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, mz,
+                                                   RT, int, Adducts, ppm,
                                                    confidenceLevel,
                                                    peakID = candidates$peakID[c],
                                                    Score = round(score, 3),
@@ -1090,7 +1101,7 @@ organizeResults <- function(candidates,
         keep <- rep(NA, nrow(results))
         for (r in 1:nrow(results)){
           if (is.na(keep[r])){
-            dup <- which(results$m.z == results$m.z[r] & results$RT ==
+            dup <- which(results$mz == results$mz[r] & results$RT ==
                            results$RT[r])
             dup <- dup[dup >= r]
             if (length(dup) > 1){
@@ -1119,9 +1130,9 @@ organizeResults <- function(candidates,
         if (classConf$passed[c] == T || length(clfrags) == 0){
           Class <- class
           CDB <- candidates$cb[c]
-          m.z <- candidates$m.z[c]
+          mz <- candidates$mz[c]
           RT <- candidates$RT[c]
-          I <- candidates$int[c]
+          int <- candidates$int[c]
           Adducts <- candidates$adducts[c]
           ppm <- round(candidates$ppm[c], 3)
           if (nrow(chainsComb$selected[[c]]) > 0){
@@ -1131,7 +1142,7 @@ organizeResults <- function(candidates,
                                               collapse="/"), ")", sep="")
                 confidenceLevel <- "FA position"
               } else if (intConf[[c]][comb] == F || intrules == "Unknown"){
-                ID <- paste(class, "(", paste(chainsComb$selected[[c]][comb,],
+                ID <- paste(class, "(", paste(sort(unlist(chainsComb$selected[[c]][comb,])),
                                               collapse="_"), ")", sep="")
                 confidenceLevel <- "FA"
               }
@@ -1155,8 +1166,8 @@ organizeResults <- function(candidates,
                 }
               }
               FAcomp <- paste(chainsComb$selected[[c]][comb,], collapse = " ")
-              results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, m.z, RT,
-                                                   I, Adducts, ppm,
+              results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, mz, RT,
+                                                   int, Adducts, ppm,
                                                    confidenceLevel,
                                                    peakID = candidates$peakID[c],
                                                    Score = round(score, 3),
@@ -1172,8 +1183,8 @@ organizeResults <- function(candidates,
               } else {
                 score <- sum(classConf$fragments[[c]]$coelScore, na.rm = T)
               }
-              results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, m.z,
-                                                   RT, I, Adducts, ppm,
+              results <- rbind(results, data.frame(ID, Class, CDB, FAcomp, mz,
+                                                   RT, int, Adducts, ppm,
                                                    confidenceLevel,
                                                    peakID = candidates$peakID[c],
                                                    Score = round(score, 3),
@@ -1186,7 +1197,7 @@ organizeResults <- function(candidates,
         keep <- rep(NA, nrow(results))
         for (r in 1:nrow(results)){
           if (is.na(keep[r])){
-            dup <- which(results$m.z == results$m.z[r] & results$RT ==
+            dup <- which(results$mz == results$mz[r] & results$RT ==
                            results$RT[r])
             dup <- dup[dup >= r]
             if (length(dup) > 1){
@@ -1215,6 +1226,32 @@ organizeResults <- function(candidates,
   if (is.vector(results)){
     results <- data.frame()
   }
+  #===========================#
+  # exceptions in lipid names
+  #===========================#
+  # ceramides
+  results$ID <- gsub("^Cer\\(", "Cer\\(d", results$ID)
+  # CerP
+  results$ID <- gsub("^CerP\\(", "CerP\\(d", results$ID)
+  # SM
+  results$ID <- gsub("^SM\\(", "SM\\(d", results$ID)
+  # acylcer
+  acylcer <- grep("AcylCer", results$ID)
+  if (length(acylcer) > 0){
+    for (a in 1:length(acylcer)){
+      chains <- unlist(strsplit(results$ID[acylcer[a]], "[\\/_]"))
+      if (length(chains) == 3){
+        chains[2] <- paste("d", chains[2], sep="")
+        if (results$confidenceLevel[acylcer[a]] == "FA"){
+          results$ID[acylcer[a]] <- paste(paste(chains[1], chains[2], sep="-"), 
+                                          chains[3], sep = "_")
+        } else if (results$confidenceLevel[acylcer[a]] == "FA position"){
+          results$ID[acylcer[a]] <- paste(paste(chains[1], chains[2], sep="-"), 
+                                          chains[3], sep = "/")
+        }
+      }
+    }
+  }
   return(results)
 }
 
@@ -1231,9 +1268,10 @@ organizeResults <- function(candidates,
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
 #'
-#' @return Data frame with 6 columns: m.z, RT, int, LipidMS_id, adduct and
-#' confidence level for the annotation. When multiple IDs are proposed for the
-#' same feature, they are sorted based on the annotation level.
+#' @return msobject with an annotatedPeaklist, which is a data frame with 6 
+#' columns: mz, RT, int, LipidMSid, adduct and confidence level for the 
+#' annotation. When multiple IDs are proposed for the same feature, they are 
+#' sorted based on the annotation level and score.
 #'
 #' @examples
 #' \dontrun{
@@ -1241,7 +1279,7 @@ organizeResults <- function(candidates,
 #'
 #' library(LipidMS)
 #' msobject <- idPCneg(LipidMSdata2::msobjectDIAneg)
-#' crossTables(msobject, ppm = 10, rttol = 10)}
+#' msobject <- crossTables(msobject, ppm = 10, rttol = 10)}
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 crossTables <- function(msobject,
@@ -1250,137 +1288,159 @@ crossTables <- function(msobject,
                         dbs){
   
   MS1 <- msobject$peaklist$MS1
-  results <- msobject$results
+  results <- msobject$annotation$results
   
-  # load dbs
-  if (missing(dbs)){
-    dbs <- assignDB()
-  }
-  #reorder MS data
-  results <- results[order(results$CDB,
-                           factor(results$confidenceLevel,
-                                  levels= c("FA position", "FA",
-                                            "Subclass", "MSMS",
-                                            "MS-only")), -results$Score),]
-  adductsTable <- dbs$adductsTable
-  confLevels <- LipidMS::confLevels
-  rawPeaks <- data.frame(MS1, LipidMS_id = "", Adduct = "",
-                         confidenceLevel = "",
-                         Score = "", stringsAsFactors = F)
-  Form_Mn <- do.call(rbind, apply(results, 1, getFormula))
-  Mn <- Form_Mn[,"Mn"]
-  for (r in 1:nrow(results)){
-    adducts <- unlist(strsplit(as.character(results$Adducts)[r], ";"))
-    mzs <- vector()
-    for (a in 1:length(adducts)){
-      adinfo <- adductsTable[adductsTable$adduct == adducts[a],]
-      m.z <- (adinfo$n*Mn[r]+adinfo$mdif)/abs(adinfo$charge)
-      mzs <- append(mzs, m.z)
+  if (nrow(results) > 0){
+    # load dbs
+    if (missing(dbs)){
+      dbs <- assignDB()
     }
-    if (length(mzs) > 0){
-      for (m in 1:length(mzs)){
-        if (results$peakID[r] != "" && m == 1){
-          rows <- which(MS1$peakID == results$peakID[r])
-          matches <- c(1:length(rows))
-        } else {
-          if (sum(abs(rawPeaks$RT- as.numeric(results$RT[r])) < rttol) > 0){
-            rows <- which(abs(rawPeaks$RT - as.numeric(results$RT[r])) < rttol)
-            matches <- as.numeric(unlist(sapply(mzs[m], mzMatch,
-                                                rawPeaks$m.z[rows], ppm)))
-            matches <- matches[seq(1, length(matches), 2)]
+    adductsTable <- dbs$adductsTable
+    confLevels <- LipidMS::confLevels
+    
+    # reorder results based on the annotation degree
+    results <- results[order(factor(results$confidenceLevel,
+                                    levels= c("FA position", "FA",
+                                              "Subclass", "MSMS",
+                                              "MS-only")), -results$Score),]
+    
+    # Neutral mass for lipids in the results table
+    Form_Mn <- do.call(rbind, apply(results, 1, getFormula, dbs = dbs))
+    Mn <- Form_Mn[,"Mn"]
+    
+    # vectors to save annotations
+    lipidMSid <- rep("", nrow(MS1))
+    lipidMSadduct <- rep("", nrow(MS1))
+    lipidMSlevel <- rep("", nrow(MS1))
+    lipidMSscore <- rep("", nrow(MS1))
+    
+    # Go over results and add unique annotations to the previous vectors 
+    for (r in 1:nrow(results)){
+      adducts <- unlist(strsplit(as.character(results$Adducts)[r], ";"))
+      mzs <- vector()
+      for (a in 1:length(adducts)){
+        adinfo <- adductsTable[adductsTable$adduct == adducts[a],]
+        mz <- (adinfo$n*Mn[r]+adinfo$mdif)/abs(adinfo$charge)
+        mzs <- append(mzs, mz)
+      }
+      if (length(mzs) > 0){
+        for (m in 1:length(mzs)){
+          if (results$peakID[r] != "" && m == 1){
+            rows <- which(MS1$peakID == results$peakID[r])
+            matches <- c(1:length(rows))
           } else {
-            matches <- vector()
-          }
-        }
-        if (length(matches) > 0){
-          for (i in 1:(length(matches))){
-            if (rawPeaks$LipidMS_id[rows[matches[i]]] == ""){
-              rawPeaks$LipidMS_id[rows[matches[i]]] <-
-                as.character(results$ID[r])
-              rawPeaks$confidenceLevel[rows[matches[i]]] <-
-                as.character(results$confidenceLevel[r])
-              rawPeaks$Adduct[rows[matches[i]]] <-
-                as.character(adducts[m])
-              rawPeaks$Score[rows[matches[i]]] <-
-                as.character(results$Score[r])
-            } else if (rawPeaks$LipidMS_id[rows[matches[i]]] != "" &&
-                       !grepl(results$ID[r],
-                              rawPeaks$LipidMS_id[rows[matches[i]]], fixed = T)){
-              conf <- confLevels[confLevels$level ==
-                                   results$confidenceLevel[r], "order"]
-              conf2 <- unlist(strsplit(
-                rawPeaks$confidenceLevel[rows[matches[i]]], "\\|"))
-              conf2 <- sapply(conf2, function(x)
-                confLevels[confLevels$level == x,"order"])
-              newposition <- which(conf2 < conf)
-              if (length(newposition) == 0){
-                newposition <- 0
-              }
-              if (newposition == 0){
-                rawPeaks$LipidMS_id[rows[matches[i]]] <-
-                  paste(rawPeaks$LipidMS_id[rows[matches[i]]],
-                        as.character(results$ID[r]), sep="|")
-                rawPeaks$confidenceLevel[rows[matches[i]]] <-
-                  paste(rawPeaks$confidenceLevel[rows[matches[i]]],
-                        as.character(results$confidenceLevel[r]), sep="|")
-                rawPeaks$Adduct[rows[matches[i]]] <-
-                  paste(as.character(rawPeaks$Adduct[rows[matches[i]]]),
-                        as.character(adducts[m]), sep="|")
-                rawPeaks$Score[rows[matches[i]]] <-
-                  paste(rawPeaks$Score[rows[matches[i]]],
-                        as.character(results$Score[r]), sep="|")
-              } else if (newposition == 1){
-                rawPeaks$LipidMS_id[rows[matches[i]]] <-
-                  paste(as.character(results$ID[r]),
-                        rawPeaks$LipidMS_id[rows[matches[i]]], sep="|")
-                rawPeaks$confidenceLevel[rows[matches[i]]] <-
-                  paste(as.character(results$confidenceLevel[r]),
-                        rawPeaks$confidenceLevel[rows[matches[i]]], sep="|")
-                rawPeaks$Adduct[rows[matches[i]]] <-
-                  paste(as.character(adducts[m]),
-                        as.character(rawPeaks$Adduct[rows[matches[i]]]), sep="|")
-                rawPeaks$Score[rows[matches[i]]] <-
-                  paste(as.character(results$Score[r]),
-                        rawPeaks$Score[rows[matches[i]]], sep="|")
+            if (sum(abs(MS1$RT- as.numeric(results$RT[r])) <= rttol) > 0){
+              rows <- which(abs(MS1$RT - as.numeric(results$RT[r])) <= rttol)
+              matches <- as.numeric(unlist(sapply(mzs[m], mzMatch, MS1$mz[rows], ppm)))
+              if (length(matches) > 0){
+                matches <- matches[seq(1, length(matches), 2)]
               } else {
-                ids <- unlist(strsplit(as.character(rawPeaks$LipidMS_id[rows[matches[i]]]),
-                                       "\\|"))
-                conflev <- unlist(strsplit(as.character(rawPeaks$confidenceLevel[rows[matches[i]]]),
-                                           "\\|"))
-                adduc <- unlist(strsplit(as.character(rawPeaks$Adduct[rows[matches[i]]]),
-                                         "\\|"))
-                score <- unlist(strsplit(as.character(rawPeaks$Score[rows[matches[i]]]),
-                                         "\\|"))
-                rawPeaks$LipidMS_id[rows[matches[i]]] <-
-                  paste(paste(ids[1:(newposition-1)], collapse="|"),
-                        as.character(results$ID[r]),
-                        paste(ids[newposition:length(ids)], collapse = "|"),
-                        sep="|")
-                rawPeaks$confidenceLevel[rows[matches[i]]] <-
-                  paste(paste(conflev[1:(newposition-1)], collapse="|"),
-                        as.character(results$confidenceLevel[r]),
-                        paste(conflev[newposition:length(conflev)],
-                              collapse = "|"),
-                        sep="|")
-                rawPeaks$Adduct[rows[matches[i]]] <-
-                  paste(paste(adduc[1:(newposition-1)], collapse="|"),
-                        as.character(results$Adducts[r]),
-                        paste(adduc[newposition:length(adduc)],
-                              collapse = "|"),
-                        sep="|")
-                rawPeaks$Score[rows[matches[i]]] <-
-                  paste(paste(score[1:(newposition-1)], collapse="|"),
-                        as.character(results$Score[r]),
-                        paste(score[newposition:length(score)],
-                              collapse = "|"),
-                        sep="|")
+                matches <- vector()
+              }
+            } else {
+              matches <- vector()
+            }
+          }
+          if (length(matches) > 0){
+            for (i in 1:(length(matches))){
+              # if no id has been assigned yet
+              if (lipidMSid[rows[matches[i]]] == ""){
+                
+                lipidMSid[rows[matches[i]]] <- as.character(results$ID[r])
+                lipidMSlevel[rows[matches[i]]] <- as.character(results$confidenceLevel[r])
+                lipidMSadduct[rows[matches[i]]] <- as.character(adducts[m])
+                lipidMSscore[rows[matches[i]]] <- as.character(results$Score[r])
+                
+                add <- FALSE
+                
+                # if some id has been assigned but it is different to the new one 
+              } else if (lipidMSid[rows[matches[i]]] != "" &&
+                         !grepl(results$ID[r],
+                                lipidMSid[rows[matches[i]]], fixed = T)){
+                
+                newid <- chains(results$ID[r])
+                oldids <- sapply(unlist(strsplit(lipidMSid[rows[matches[i]]], "\\|")), 
+                                 chains, simplify = FALSE)
+                
+                if (length(newid) > 3){
+                  if (!any(unlist(lapply(oldids, function(x) 
+                    all(x[3:length(x)] %in% newid[3:length(newid)]))))){
+                    add <- TRUE
+                  }
+                } else {
+                  if (!any(unlist(lapply(oldids, function(x) 
+                    all(sumChains(x[3:length(x)], length(x)-2) %in% newid[3:length(newid)])))) | 
+                    !any(unlist(lapply(oldids, function(x) 
+                      all(x[3:length(x)] %in% sumChains(newid[3:length(newid)], length(newid)-2)))))){
+                    add <- TRUE
+                  } else {
+                    add <- FALSE
+                  }
+                }
+                if (add){
+                  
+                  # finally, if the new id has to be added, sort all ids based on
+                  # annotation level and coelution score
+                  conf <- confLevels[confLevels$level == results$confidenceLevel[r], "order"]
+                  conf2 <- unlist(strsplit(lipidMSlevel[rows[matches[i]]], "\\|"))
+                  conf2 <- sapply(conf2, function(x) confLevels[confLevels$level == x,"order"])
+                  
+                  score <- results$Score[r]
+                  score2 <- as.numeric(unlist(strsplit(lipidMSscore[rows[matches[i]]], "\\|")))
+                  
+                  ord <- order(c(conf, conf2), c(score, score2), decreasing = TRUE)
+                  
+                  if (length(ord) == 0){
+                    # if anything goes wrong add the new id in at the last position
+                    lipidMSid[rows[matches[i]]] <-
+                      paste(lipidMSid[rows[matches[i]]],
+                            as.character(results$ID[r]), sep="|")
+                    lipidMSlevel[rows[matches[i]]] <-
+                      paste(lipidMSlevel[rows[matches[i]]],
+                            as.character(results$confidenceLevel[r]), sep="|")
+                    lipidMSadduct[rows[matches[i]]] <-
+                      paste(as.character(lipidMSadduct[rows[matches[i]]]),
+                            as.character(adducts[m]), sep="|")
+                    lipidMSscore[rows[matches[i]]] <-
+                      paste(lipidMSscore[rows[matches[i]]],
+                            as.character(results$Score[r]), sep="|")
+                    
+                  } else {
+                    # else, add the new id and reorder
+                    ids <- c(results$ID[r],
+                             unlist(strsplit(as.character(lipidMSid[rows[matches[i]]]), "\\|")))
+                    conflev <- c(results$confidenceLevel[r],
+                                 unlist(strsplit(as.character(lipidMSlevel[rows[matches[i]]]), "\\|")))
+                    adduc <- c(adducts[m],
+                               unlist(strsplit(as.character(lipidMSadduct[rows[matches[i]]]), "\\|")))
+                    score <- c(results$Score[r],
+                               unlist(strsplit(as.character(lipidMSscore[rows[matches[i]]]), "\\|")))
+                    lipidMSid[rows[matches[i]]] <- paste(ids[ord], collapse="|")
+                    lipidMSlevel[rows[matches[i]]] <- paste(conflev[ord], collapse="|")
+                    lipidMSadduct[rows[matches[i]]] <- paste(adduc[ord], collapse="|")
+                    lipidMSscore[rows[matches[i]]] <- paste(score[ord], collapse="|")
+                  }
+                }
               }
             }
           }
         }
       }
     }
+    # Join info and return
+    rawPeaks <- data.frame(MS1, 
+                           LipidMSid = lipidMSid, 
+                           Adduct = lipidMSadduct,
+                           confidenceLevel = lipidMSlevel,
+                           Score = lipidMSscore)
+  } else {
+    rawPeaks <- data.frame(MS1, 
+                           LipidMSid = "", 
+                           Adduct = "",
+                           confidenceLevel = "",
+                           Score = "")
   }
-  return(rawPeaks[,!colnames(rawPeaks) %in% c("isotope", "group")])
+  msobject$annotation$annotatedPeaklist <- rawPeaks
+  
+  return(msobject)
 }
-

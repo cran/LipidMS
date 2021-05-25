@@ -14,6 +14,7 @@ extern SEXP getEIC(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP indexed(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP partID(SEXP, SEXP);
 extern SEXP pickpeak(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+/* extern SEXP clustdist(SEXP, SEXP); */
 
 static const R_CallMethodDef CallEntries[] = {
     {"agglom",   (DL_FUNC) &agglom,    5},
@@ -22,6 +23,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"indexed",  (DL_FUNC) &indexed,   5},
     {"partID",   (DL_FUNC) &partID,    2},
     {"pickpeak", (DL_FUNC) &pickpeak, 12},
+    /* {"clustdist", (DL_FUNC) &clustdist, 2}, */
     {NULL, NULL, 0}
 };
 
