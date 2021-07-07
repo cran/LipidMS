@@ -17,61 +17,6 @@
 #' 
 #' Grey lines show the the extracted ion chromatograms for the peaks.
 #'
-#' @examples
-#' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#' 
-#' library(LipidMS)
-#'
-#' # for msobjects
-#' #####################
-#' msobject <- idPOS(msobject)
-#' msobject <- plotLipids(msobject)
-#' 
-#' # display the first plot
-#' msobject$annotation$plots[[1]]
-#' msobject$annotation$plots[["yourpeakIDofinterest"]]
-#' 
-#' # save plots to a pdf file
-#' pdf("plotresults.pdf")
-#' for (p in 1:length(msobject$annotation$plots)){
-#'   print(msobject$annotation$plots[[p]])
-#' }
-#' dev.off()
-#' 
-#' 
-#' 
-#' # for msobjects
-#' #####################
-#' msbatch <- annotatemsbatch(msbatch)
-#' 
-#' # lipids plots
-#' for (m in 1:length(msbatch$msobjects)){
-#'   if (msbatch$msobjects[[m]]$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
-#'     msbatch$msobjects[[m]] <- plotLipids(msbatch$msobjects[[m]])
-#'   }
-#' }
-#' 
-#' # save plots to a pdf file
-#' for (s in 1:length(msbatch$msobjects)){
-#'   if (msbatch$msobjects[[s]]$metaData$generalMetadata$acquisitionmode %in% c("DIA", "DDA")){
-#'     print(s)
-#'     if (msbatch$msobjects[[s]]$metaData$generalMetadata$acquisitionmode == "DIA"){
-#'       height <- 7
-#'     } else {
-#'       height <- 9
-#'     }
-#'     pdf(file = gsub(".mzXML", "_plots.pdf", msbatch$msobjects[[s]]$metaData$generalMetadata$file), 
-#'         width = 8, height = height)
-#'     for ( pl in 1:length(msbatch$msobjects[[s]]$annotation$plots)){
-#'       print(msbatch$msobjects[[s]]$annotation$plots[[pl]])
-#'     }
-#'     dev.off()
-#'   }
-#' }
-#' 
-#' }
-#'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 plotLipids <- function(msobject, span = 0.4, ppm = 10){
 
@@ -635,11 +580,14 @@ ploteicmsbatch <- function(msbatch, mz, ppm, rt, colorbygroup = TRUE){
   start <- FALSE
   while (!start){
     if (nrow(eic[[startat]]) > 0){
-      smt <- tryCatch({stats::predict(stats::smooth.spline(eic[[startat]]$RT, 
-                                                           eic[[startat]]$int),
+      smt <- tryCatch({stats::predict(stats::smooth.spline(eic[[startat]]$RT,
+                                                           eic[[startat]]$int,
+                                                           spar = 0.05),
                                       x = eic[[startat]]$RT)},
                       error = function(e) {return(list(x = eic[[startat]]$RT,
                                                        y = eic[[startat]]$int))})
+      smt$y[smt$y < 0] <- 0
+      
       plot(smt$x, smt$y, xlim = rt, 
            ylim = c(0, maxint+maxint*0.1), type = "l", lwd = 2,
            col = scales::alpha(palette[samplescolor[startat]], 0.7), 
@@ -663,11 +611,14 @@ ploteicmsbatch <- function(msbatch, mz, ppm, rt, colorbygroup = TRUE){
     if (start){
       for (i in (startat+1):length(msbatch$msobjects)){
         if (nrow(eic[[i]] > 0)){
-          smt <- tryCatch({stats::predict(stats::smooth.spline(eic[[i]]$RT, 
-                                                               eic[[i]]$int),
+          smt <- tryCatch({stats::predict(stats::smooth.spline(eic[[i]]$RT,
+                                                               eic[[i]]$int,
+                                                               spar = 0.05),
                                           x = eic[[i]]$RT)},
                           error = function(e) {return(list(x = eic[[i]]$RT,
                                                            y = eic[[i]]$int))})
+          smt$y[smt$y < 0] <- 0
+          
           lines(smt$x, smt$y, xlim = rt, type = "l", lwd = 2, 
                 col = scales::alpha(palette[samplescolor[i]], 0.7), 
                 main = paste("EIC: ", mz, sep=""), 
@@ -1269,15 +1220,6 @@ assignDB <- function(){
 #' @return Data frame with 6 columns: formula, RT, neutral mass, m/z, adduct
 #' and the LipidMSid.
 #'
-#' @examples
-#' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idPOS(LipidMSdata2::msobjectDIApos)
-#' getInclusionList(msobject)
-#' }
-#'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 getInclusionList <- function(df, dbs){
   
@@ -1382,12 +1324,6 @@ getInclusionList <- function(df, dbs){
 #'
 #' @return List with the isotopes for each compound in the results data frame.
 #' 
-#' @examples
-#' \dontrun{
-#' msobject <- idPOS(LipidMSdata2::msobjectDIApos)
-#' searchIsotopes(msobject, label = "13C")
-#' }
-#'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 searchIsotopes <- function(msobject,
                            label,

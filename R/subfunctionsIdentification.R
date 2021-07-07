@@ -32,35 +32,6 @@
 #' Adducts allowed are contained in adductsTable data frame, which can be
 #' modified if required (see \link{adductsTable}).
 #'
-#' @examples
-#' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' dbs <- assignDB()
-#'
-#' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
-#' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
-#'
-#' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
-#' rt = c(0, 2000), adducts = c("M-H"), rttol = 10, dbs = dbs,
-#' rawData = rawData, coelCutoff = 0.8)
-#'
-#' # If any adduct is not in the adductsTable, it can be added:
-#'
-#' adductsTable2 <- rbind(dbs$adductsTable,
-#' data.frame(adduct = "M+X", mdiff = 44.9982, n = 1, charge = -1,
-#' stringsAsFactors = FALSE))
-#' dbs <- assignDB()
-#' dbs$adductsTable <- adductsTable2
-#'
-#' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
-#' rt = c(0, 2000), adducts = c("M-H", "M+X"), rttol = 10, dbs = dbs,
-#' rawData = rawData, coelCutoff = 0.8)
-#' }
-#'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 findCandidates <- function(MS1,
                            db,
@@ -115,26 +86,6 @@ findCandidates <- function(MS1,
 #'
 #' @return List of data frames with the coeluting fragments for each candidate.
 #'
-#' @examples
-#' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' dbs <- assignDB()
-#'
-#' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
-#' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
-#'
-#' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
-#' rt = c(0, 2000), adducts = c("M-H"), rttol = 10, dbs = dbs,
-#' rawData = rawData, coelCutoff = 0.8)
-#'
-#' coelfrags <- coelutingFrags(candidates, MSMS, rttol = 10, rawData = rawData,
-#' coelCutoff = 0.8)
-#' }
-#'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 coelutingFrags <- function(precursors,
                            products,
@@ -183,27 +134,6 @@ coelutingFrags <- function(precursors,
 #' the MS2 scan.
 #'
 #' @return List of data frames with the fragments for each candidate.
-#'
-#' @examples
-#' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' dbs <- assignDB()
-#'
-#' MS1 <- LipidMSdata2::msobjectDDAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
-#' MS2 <- LipidMSdata2::msobjectDDAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
-#' rawData <- rbind(LipidMSdata2::msobjectDDAneg$MS1, LipidMSdata2::msobjectDDAneg$MS2)
-#' precursors <- LipidMSdata2::msobjectDDAneg$metaData$scansMetadata[
-#' LipidMSdata2::msobjectDDAneg$metaData$scansMetadata$collisionEnergy > 0 &
-#' msobjectDDAneg$metaData$scansMetadata$msLevel == 2, c("RT", "precursor", "Scan")]
-#' candidates <- findCandidates(MS1 = MS1, db = dbs$cerdb, ppm = 10,
-#' rt = c(0, 2000), adducts = c("M-H"),
-#' rttol = 10, dbs = dbs, rawData = rawData_neg$rawScans, coelCutoff = 0.8)
-#'
-#' coelfrags <- ddaFrags(candidates, precursors, rawData, ppm = 10)
-#' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 ddaFrags <- function(candidates,
@@ -286,30 +216,6 @@ ddaFrags <- function(candidates,
 #' @return List with 2 elements: a matrix with logical values (presence/absense)
 #' of each expected fragment (columns) for each candidate (rows), and a logical
 #' vector with the confirmation of the lipid class for each candidate.
-#'
-#' @examples
-#' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' dbs <- assignDB()
-#'
-#' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
-#' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
-#'
-#' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
-#' rt = c(0, 2000), adducts = c("M-H"), rttol = 10, dbs = dbs,
-#' rawData = rawData, coelCutoff = 0.8)
-#' coelfrags <- coelutingFrags(candidates, MSMS, rttol = 10, rawData = rawData,
-#' coelCutoff = 0.8)
-#'
-#' classConf <- checkClass(candidates, coelfrags,
-#' clfrags = c(227.0326, 209.022, 74.0359),
-#' clrequisites = c(FALSE, FALSE, FALSE, FALSE),
-#' ftype = c("F", "F", "NL"), ppm = 10, dbs = dbs)
-#' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 checkClass <- function(candidates,
@@ -430,34 +336,6 @@ checkClass <- function(candidates,
 #' data frame and chain fragments list must be provided.
 #'
 #' @return List of data frames with the chain fragments found.
-#'
-#' @examples
-#' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' dbs <- assignDB()
-#'
-#' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
-#' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
-#'
-#' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
-#' rt = c(0, 2000), adducts = c("M-H"), rttol = 10, dbs = dbs,
-#' rawData = rawData, coelCutoff = 0.8)
-#' coelfrags <- coelutingFrags(candidates, MSMS, rttol = 10, rawData = rawData,
-#' coelCutoff = 0.8)
-#' classConf <- checkClass(candidates, coelfrags,
-#' clfrags = c(227.0326, 209.022, 74.0359),
-#' clrequisites = c(FALSE, FALSE, FALSE, FALSE),
-#' ftype = c("F", "F", "NL"), ppm = 10, dbs = dbs)
-#'
-#' sn1 <- chainFrags(coelfrags, chainfrags = c("lysopg_M-H"),
-#' candidates = candidates, ppm = 10, dbs = dbs)
-#' sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10,
-#' candidates = candidates, dbs = dbs)
-#' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 chainFrags <- function (coelfrags,
@@ -593,35 +471,6 @@ chainFrags <- function (coelfrags,
 #' \link{chainFrags}. If required.
 #'
 #' @return List of data frames with candidate chains structures.
-#'
-#' @examples
-#' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' dbs <- assignDB()
-#'
-#' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
-#' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
-#'
-#' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
-#' rt = c(0, 2000), adducts = c("M-H"), rttol = 10, dbs = dbs,
-#' rawData = rawData, coelCutoff = 0.8)
-#' coelfrags <- coelutingFrags(candidates, MSMS, rttol = 10, rawData = rawData,
-#' coelCutoff = 0.8)
-#' classConf <- checkClass(candidates, coelfrags,
-#' clfrags = c(227.0326, 209.022, 74.0359),
-#' clrequisites = c(FALSE, FALSE, FALSE, FALSE),
-#' ftype = c("F", "F", "NL"), ppm = 10, dbs = dbs)
-#' sn1 <- chainFrags(coelfrags, chainfrags = c("lysopg_M-H"),
-#' candidates = candidates, ppm = 10, dbs = dbs)
-#' sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10,
-#' candidates = candidates, dbs = dbs)
-#'
-#' chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
-#' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 combineChains <- function(candidates,
@@ -836,37 +685,6 @@ combineChains <- function(candidates,
 #'
 #' @return List of logical vectors  with the confirmation for each combination.
 #'
-#' @examples
-#' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' dbs <- assignDB()
-#'
-#' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
-#' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
-#'
-#' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
-#' rt = c(0, 2000), adducts = c("M-H"), rttol = 10, dbs = dbs,
-#' rawData = rawData, coelCutoff = 0.8)
-#' coelfrags <- coelutingFrags(candidates, MSMS, rttol = 10, rawData = rawData,
-#' coelCutoff = 0.8)
-#' classConf <- checkClass(candidates, coelfrags,
-#' clfrags = c(227.0326, 209.022, 74.0359),
-#' clrequisites = c(FALSE, FALSE, FALSE, FALSE),
-#' ftype = c("F", "F", "NL"), ppm = 10, dbs = dbs)
-#' sn1 <- chainFrags(coelfrags, chainfrags = c("lysopg_M-H"),
-#' candidates = candidates, ppm = 10, dbs = dbs)
-#' sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10,
-#' candidates = candidates, dbs = dbs)
-#' chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
-#'
-#' intConf <- checkIntensityRules(intrules = c("lysopg_sn1/lysopg_sn1"),
-#' rates = c("2/1"), intrequired = c(TRUE), nchains=2, chainsComb)
-#' }
-#'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 checkIntensityRules <- function(intrules,
                                 rates,
@@ -903,40 +721,6 @@ checkIntensityRules <- function(intrules,
 #' @details Coelution score for DIA data is calculated as the mean coelution 
 #' score of all fragments used for annotation, while for DDA data, it is 
 #' calculated as the sum relative intensity of those fragments in theie MS2 scan.
-#'
-#' @examples
-#' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' dbs <- assignDB()
-#'
-#' MS1 <- LipidMSdata2::msobjectDIAneg$peaklist$MS1
-#' MS1 <- MS1[MS1$isotope %in% c("[M+0]"), !colnames(MS1) %in% c("isotope", "isoGroup")]
-#' MS2 <- LipidMSdata2::msobjectDIAneg$peaklist$MS2[,c("mz", "RT", "int", "peakID")]
-#' rawData <- rbind(LipidMSdata2::msobjectDIAneg$MS1, LipidMSdata2::msobjectDIAneg$MS2)
-#'
-#' candidates <- findCandidates(MS1 = MS1, db = dbs$pgdb, ppm = 10,
-#' rt = c(0, 2000), adducts = c("M-H"), rttol = 10, dbs = dbs,
-#' rawData = rawData, coelCutoff = 0.8)
-#' coelfrags <- coelutingFrags(candidates, MSMS, rttol = 10, rawData = rawData,
-#' coelCutoff = 0.8)
-#' classConf <- checkClass(candidates, coelfrags,
-#' clfrags = c(227.0326, 209.022, 74.0359),
-#' clrequisites = c(FALSE, FALSE, FALSE, FALSE),
-#' ftype = c("F", "F", "NL"), ppm = 10, dbs = dbs)
-#' sn1 <- chainFrags(coelfrags, chainfrags = c("lysopg_M-H"),
-#' candidates = candidates, ppm = 10, dbs = dbs)
-#' sn2 <- chainFrags(coelfrags, chainfrags = c("fa_M-H"), ppm = 10,
-#' candidates = candidates, dbs = dbs)
-#' chainsComb <- combineChains(candidates, nchains=2, sn1, sn2)
-#' intConf <- checkIntensityRules(intrules = c("lysopg_sn1/lysopg_sn1"),
-#' rates = c("2/1"), intrequired = c(TRUE), nchains=2, chainsComb)
-#'
-#' res <- organizeResults(candidates, clfrags = c(227.0326, 209.022, 74.0359),
-#' classConf, chainsComb, intrules = c("lysopg_sn1/lysopg_sn1"), intConf,
-#' nchains = 2, class="PG", acquisitionmode = "DIA")
-#' }
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 organizeResults <- function(candidates,
@@ -1272,14 +1056,6 @@ organizeResults <- function(candidates,
 #' columns: mz, RT, int, LipidMSid, adduct and confidence level for the 
 #' annotation. When multiple IDs are proposed for the same feature, they are 
 #' sorted based on the annotation level and score.
-#'
-#' @examples
-#' \dontrun{
-#' devtools::install_github("maialba3/LipidMSdata2")
-#'
-#' library(LipidMS)
-#' msobject <- idPCneg(LipidMSdata2::msobjectDIAneg)
-#' msobject <- crossTables(msobject, ppm = 10, rttol = 10)}
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
 crossTables <- function(msobject,

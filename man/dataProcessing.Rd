@@ -68,6 +68,8 @@ extracted peaks.
 Process mzXML files individually: peakpicking and isotope anotation
 }
 \details{
+It is important that mzXML files are centroided. 
+
 This function executes 2 steps: 1) peak-picking based on enviPick
 package and 2) isotope annotation.
 
