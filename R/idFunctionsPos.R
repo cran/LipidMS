@@ -17,6 +17,7 @@
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -42,17 +43,18 @@ idPOS <- function(msobject,
                   lipidClasses = c("MG", "LPC", "LPE", "PC", "PCo", "PCp", "PE", 
                                    "PEo", "PEp", "PG", "Sph", "SphP", "Cer", "AcylCer",
                                    "CerP", "SM", "Carnitines", "CE", "DG", "TG"),
-                  dbs){
+                  dbs,
+                  verbose = TRUE){
 
   if (msobject$metaData$generalMetadata$polarity != "positive"){
     stop("Data wasn't acquired in positive mode")
   }
   if ("results" %in% names(msobject$annotation)){
-    cat("\n Removing previous results...")
+    if(verbose){cat("\n Removing previous results...")}
     msobject$annotation$results <- NULL
     msobject$annotation$detailsAnnotation <- NULL
     msobject$annotation$annotatedPeaklist <- NULL
-    cat("OK")
+    if(verbose){cat("OK")}
   }
   if (!all(lipidClasses %in% c("MG", "LPC", "LPE", "PC", "PCo", "PCp", "PE", 
                                "PEo", "PEp", "PG", "Sph", "SphP", "Cer", "AcylCer",
@@ -65,160 +67,155 @@ idPOS <- function(msobject,
     dbs <- assignDB()
   }
 
-  cat("\n Starting annotation...")
+  if(verbose){cat("\n Starting annotation...")}
   if ("MG" %in% lipidClasses){
-    cat("\n  Searching for MG...")
-    msobject <-  idMGpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for MG...")}
+    msobject <-  idMGpos(msobject = msobject, ppm_precursor = ppm_precursor,
                          ppm_products = ppm_products, rttol = rttol,
-                         coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("LPC" %in% lipidClasses){
-    cat("\n  Searching for LPC...")
-    msobject <-  idLPCpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for LPC...")}
+    msobject <-  idLPCpos(msobject = msobject, ppm_precursor = ppm_precursor,
                           ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("LPE" %in% lipidClasses){
-    cat("\n  Searching for LPE...")
-    msobject <-  idLPEpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for LPE...")}
+    msobject <-  idLPEpos(msobject = msobject, ppm_precursor = ppm_precursor,
                           ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
     
   }
   if ("PC" %in% lipidClasses){
-    cat("\n  Searching for PC...")
-    msobject <-  idPCpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for PC...")}
+    msobject <-  idPCpos(msobject = msobject, ppm_precursor = ppm_precursor,
                          ppm_products = ppm_products, rttol = rttol,
-                         coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("PCo" %in% lipidClasses){
-    cat("\n  Searching for PCo...")
-    msobject <-  idPCopos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for PCo...")}
+    msobject <-  idPCopos(msobject = msobject, ppm_precursor = ppm_precursor,
                           ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("PCp" %in% lipidClasses){
-    cat("\n  Searching for PCp...")
-    msobject <-  idPCppos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for PCp...")}
+    msobject <-  idPCppos(msobject = msobject, ppm_precursor = ppm_precursor,
                           ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("PE" %in% lipidClasses){
-    cat("\n  Searching for PE...")
-    msobject <-  idPEpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for PE...")}
+    msobject <-  idPEpos(msobject = msobject, ppm_precursor = ppm_precursor,
                          ppm_products = ppm_products, rttol = rttol,
-                         coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
     
   }
   if ("PEo" %in% lipidClasses){
-    cat("\n  Searching for PEo...")
-    msobject <-  idPEopos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for PEo...")}
+    msobject <-  idPEopos(msobject = msobject, ppm_precursor = ppm_precursor,
                           ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
-    
+                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("PEp" %in% lipidClasses){
-    cat("\n  Searching for PEp...")
-    msobject <-  idPEppos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for PEp...")}
+    msobject <-  idPEppos(msobject = msobject, ppm_precursor = ppm_precursor,
                           ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
-    
+                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("PG" %in% lipidClasses){
-    cat("\n  Searching for PG...")
-    msobject <-  idPGpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for PG...")}
+    msobject <-  idPGpos(msobject = msobject, ppm_precursor = ppm_precursor,
                          ppm_products = ppm_products, rttol = rttol,
-                         coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
-    
+                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("Sph" %in% lipidClasses){
-    cat("\n  Searching for Sph...")
-    msobject <-  idSphpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for Sph...")}
+    msobject <-  idSphpos(msobject = msobject, ppm_precursor = ppm_precursor,
                           ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("SphP" %in% lipidClasses){
-    cat("\n  Searching for SphP...")
-    msobject <-  idSphPpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for SphP...")}
+    msobject <-  idSphPpos(msobject = msobject, ppm_precursor = ppm_precursor,
                            ppm_products = ppm_products, rttol = rttol,
-                           coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
-    
+                           coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("Cer" %in% lipidClasses){
-    cat("\n  Searching for Cer...")
-    msobject <-  idCerpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for Cer...")}
+    msobject <-  idCerpos(msobject = msobject, ppm_precursor = ppm_precursor,
                           ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("CerP" %in% lipidClasses){
-    cat("\n  Searching for CerP...")
-    msobject <-  idCerPpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for CerP...")}
+    msobject <-  idCerPpos(msobject = msobject, ppm_precursor = ppm_precursor,
                            ppm_products = ppm_products, rttol = rttol,
-                           coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                           coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("AcylCer" %in% lipidClasses){
-    cat("\n  Searching for AcylCer...")
-    msobject <-  idAcylCerpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for AcylCer...")}
+    msobject <-  idAcylCerpos(msobject = msobject, ppm_precursor = ppm_precursor,
                               ppm_products = ppm_products, rttol = rttol,
-                              coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                              coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("SM" %in% lipidClasses){
-    cat("\n  Searching for SM...")
-    msobject <-  idSMpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for SM...")}
+    msobject <-  idSMpos(msobject = msobject, ppm_precursor = ppm_precursor,
                          ppm_products = ppm_products, rttol = rttol,
-                         coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
-    
+                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("Carnitines" %in% lipidClasses){
-    cat("\n  Searching for Carnitines...")
-    msobject <-  idCarpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for Carnitines...")}
+    msobject <-  idCarpos(msobject = msobject, ppm_precursor = ppm_precursor,
                           ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("CE" %in% lipidClasses){
-    cat("\n  Searching for CE...")
-    msobject <-  idCEpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for CE...")}
+    msobject <-  idCEpos(msobject = msobject, ppm_precursor = ppm_precursor,
                          ppm_products = ppm_products, rttol = rttol,
-                         coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("DG" %in% lipidClasses){
-    cat("\n  Searching for DG...")
-    msobject <-  idDGpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for DG...")}
+    msobject <-  idDGpos(msobject = msobject, ppm_precursor = ppm_precursor,
                          ppm_products = ppm_products, rttol = rttol,
-                         coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
   if ("TG" %in% lipidClasses){
-    cat("\n  Searching for TG...")
-    msobject <-  idTGpos(msobject = msobject, ppm_precursor= ppm_precursor,
+    if(verbose){cat("\n  Searching for TG...")}
+    msobject <-  idTGpos(msobject = msobject, ppm_precursor = ppm_precursor,
                          ppm_products = ppm_products, rttol = rttol,
-                         coelCutoff = coelCutoff, dbs = dbs)
-    cat("OK")
+                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+    if(verbose){cat("OK")}
   }
-  cat("\n Preparing output...")
+  if(verbose){cat("\n Preparing output...")}
   msobject <- crossTables(msobject,
                           ppm = ppm_precursor, 
                           rttol = rttol,
                           dbs = dbs)
-  cat("OK\n")
+  if(verbose){cat("OK\n")}
   return(msobject)
 }
 
@@ -251,6 +248,7 @@ idPOS <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -274,7 +272,7 @@ idPOS <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -294,7 +292,8 @@ idMGpos <- function(msobject,
                     clrequired = c(),
                     ftype = c(),
                     coelCutoff = 0.8,
-                    dbs){
+                    dbs,
+                    verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -363,7 +362,7 @@ idMGpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("MG" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious MG annotations removed")
+      if(verbose){cat("\nPrevious MG annotations removed")}
       msobject$annotation$detailsAnnotation$MG <- list()
     }
   }
@@ -451,6 +450,7 @@ idMGpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -476,7 +476,7 @@ idMGpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -497,7 +497,8 @@ idLPCpos <- function(msobject,
                      ftype = c("F", "F"),
                      chainfrags_sn1 = c("mg_M+H-H2O"),
                      coelCutoff = 0.8,
-                     dbs){
+                     dbs,
+                     verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -566,7 +567,7 @@ idLPCpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("LPC" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious LPC annotations removed")
+      if(verbose){cat("\nPrevious LPC annotations removed")}
       msobject$annotation$detailsAnnotation$LPC <- list()
     }
   }
@@ -674,6 +675,7 @@ idLPCpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -699,7 +701,7 @@ idLPCpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -720,7 +722,8 @@ idLPEpos <- function(msobject,
                      ftype = c("NL"),
                      chainfrags_sn1 = c("mg_M+H-H2O"),
                      coelCutoff = 0.8,
-                     dbs){
+                     dbs,
+                     verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -789,7 +792,7 @@ idLPEpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("LPE" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious LPE annotations removed")
+      if(verbose){cat("\nPrevious LPE annotations removed")}
       msobject$annotation$detailsAnnotation$LPE <- list()
     }
   }
@@ -907,6 +910,7 @@ idLPEpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -937,7 +941,7 @@ idLPEpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -962,7 +966,8 @@ idPCpos <- function(msobject,
                     rates = c("2/1"),
                     intrequired = c(T),
                     coelCutoff = 0.8,
-                    dbs){
+                    dbs,
+                    verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -1031,7 +1036,7 @@ idPCpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("PC" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious PC annotations removed")
+      if(verbose){cat("\nPrevious PC annotations removed")}
       msobject$annotation$detailsAnnotation$PC <- list()
     }
   }
@@ -1149,6 +1154,7 @@ idPCpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -1179,7 +1185,7 @@ idPCpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -1204,7 +1210,8 @@ idPCopos <- function(msobject,
                      rates = c("2/1"),
                      intrequired = c(T),
                      coelCutoff = 0.8,
-                     dbs){
+                     dbs,
+                     verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -1273,7 +1280,7 @@ idPCopos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("PCo" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious PCo annotations removed")
+      if(verbose){cat("\nPrevious PCo annotations removed")}
       msobject$annotation$detailsAnnotation$PCo <- list()
     }
   }
@@ -1391,6 +1398,7 @@ idPCopos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -1421,7 +1429,7 @@ idPCopos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -1446,7 +1454,8 @@ idPCppos <- function(msobject,
                      rates = c("1/2"),
                      intrequired = c(T),
                      coelCutoff = 0.8,
-                     dbs){
+                     dbs,
+                     verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -1515,7 +1524,7 @@ idPCppos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("PCp" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious PCp annotations removed")
+      if(verbose){cat("\nPrevious PCp annotations removed")}
       msobject$annotation$detailsAnnotation$PCp <- list()
     }
   }
@@ -1633,6 +1642,7 @@ idPCppos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See
 #' \link{createLipidDB} and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -1663,7 +1673,7 @@ idPCppos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -1688,7 +1698,8 @@ idPEpos <- function(msobject,
                     rates = c("3/1", "1/2"),
                     intrequired = c(F, F),
                     coelCutoff = 0.8,
-                    dbs){
+                    dbs,
+                    verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -1757,7 +1768,7 @@ idPEpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("PE" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious PE annotations removed")
+      if(verbose){cat("\nPrevious PE annotations removed")}
       msobject$annotation$detailsAnnotation$PE <- list()
     }
   }
@@ -1875,6 +1886,7 @@ idPEpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See
 #' \link{createLipidDB} and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -1904,7 +1916,7 @@ idPEpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -1929,7 +1941,8 @@ idPEopos <- function(msobject,
                      rates = c("2/1"),
                      intrequired = c(T),
                      coelCutoff = 0.8,
-                     dbs){
+                     dbs,
+                     verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -1998,7 +2011,7 @@ idPEopos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("PEo" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious PEo annotations removed")
+      if(verbose){cat("\nPrevious PEo annotations removed")}
       msobject$annotation$detailsAnnotation$PEo <- list()
     }
   }
@@ -2116,6 +2129,7 @@ idPEopos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See
 #' \link{createLipidDB} and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -2128,7 +2142,7 @@ idPEopos <- function(msobject,
 #'
 #' @details \code{idPEppos} function involves 5 steps. 1) FullMS-based
 #' identification of candidate PE as M+H and M+Na. 2) Search of PE class
-#' fragments: loss of head group (NL of 141.0193) coeluting with the precursor
+#' fragments: loss of head group (NL of 140.012) coeluting with the precursor
 #' ion. 3) Search of specific fragments that inform about chain composition at
 #' sn1 (LPEp as M+H or M+H-H2O resulting from the loss of the FA chain at sn2)
 #' and sn2 (MG as M+H-H2O from sn2 resulting from the loss of the FA chain at sn1). 
@@ -2145,7 +2159,7 @@ idPEopos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -2161,7 +2175,7 @@ idPEppos <- function(msobject,
                      rttol = 3,
                      rt,
                      adducts = c("M+H", "M+Na"),
-                     clfrags = c(141.0193),
+                     clfrags = c(140.012),
                      clrequired = c(F),
                      ftype = c("NL"),
                      chainfrags_sn1 = c("lysopep_M+H", "lysopep_M+H-H2O"),
@@ -2170,7 +2184,8 @@ idPEppos <- function(msobject,
                      rates = c("1/3"),
                      intrequired = c(T),
                      coelCutoff = 0.8,
-                     dbs){
+                     dbs, 
+                     verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -2239,7 +2254,7 @@ idPEppos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("PEp" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious PEp annotations removed")
+      if(verbose){cat("\nPrevious PEp annotations removed")}
       msobject$annotation$detailsAnnotation$PEp <- list()
     }
   }
@@ -2357,6 +2372,7 @@ idPEppos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See
 #' \link{createLipidDB} and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -2386,7 +2402,7 @@ idPEppos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -2411,7 +2427,8 @@ idPGpos <- function(msobject,
                     rates = c("1/2"),
                     intrequired = c(F, F),
                     coelCutoff = 0.8,
-                    dbs){
+                    dbs, 
+                    verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -2480,7 +2497,7 @@ idPGpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("PG" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious PG annotations removed")
+      if(verbose){cat("\nPrevious PG annotations removed")}
       msobject$annotation$detailsAnnotation$PG <- list()
     }
   }
@@ -2586,6 +2603,7 @@ idPGpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -2609,7 +2627,7 @@ idPGpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -2629,7 +2647,8 @@ idSphpos <- function(msobject,
                      clrequired = c(F, F),
                      ftype = c("BB", "BB"),
                      coelCutoff = 0.8,
-                     dbs){
+                     dbs,
+                     verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -2698,7 +2717,7 @@ idSphpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("Sph" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious Sph annotations removed")
+      if(verbose){cat("\nPrevious Sph annotations removed")}
       msobject$annotation$detailsAnnotation$Sph <- list()
     }
   }
@@ -2792,6 +2811,7 @@ idSphpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -2815,7 +2835,7 @@ idSphpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -2835,7 +2855,8 @@ idSphPpos <- function(msobject,
                       clrequired = c(F, F, F),
                       ftype = c("BB", "BB", "BB"),
                       coelCutoff = 0.7,
-                      dbs){
+                      dbs,
+                      verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -2904,7 +2925,7 @@ idSphPpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("SphP" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious SphP annotations removed")
+      if(verbose){cat("\nPrevious SphP annotations removed")}
       msobject$annotation$detailsAnnotation$SphP <- list()
     }
   }
@@ -3011,6 +3032,7 @@ idSphPpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -3040,7 +3062,7 @@ idSphPpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -3065,7 +3087,8 @@ idCerpos <- function(msobject,
                      rates = c(),
                      intrequired = c(),
                      coelCutoff = 0.8,
-                     dbs){
+                     dbs,
+                     verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -3134,7 +3157,7 @@ idCerpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("Cer" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious Ceramide annotations removed")
+      if(verbose){cat("\nPrevious Ceramide annotations removed")}
       msobject$annotation$detailsAnnotation$Cer <- list()
     }
   }
@@ -3253,6 +3276,7 @@ idCerpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -3283,7 +3307,7 @@ idCerpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -3308,7 +3332,8 @@ idCerPpos <- function(msobject,
                       rates = c(),
                       intrequired = c(),
                       coelCutoff = 0.8,
-                      dbs){
+                      dbs,
+                      verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -3377,7 +3402,7 @@ idCerPpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("CerP" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious CerP annotations removed")
+      if(verbose){cat("\nPrevious CerP annotations removed")}
       msobject$annotation$detailsAnnotation$CerP <- list()
     }
   }
@@ -3496,6 +3521,7 @@ idCerPpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -3526,7 +3552,7 @@ idCerPpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -3551,7 +3577,8 @@ idSMpos <- function(msobject,
                     rates = c(),
                     intrequired = c(),
                     coelCutoff = 0.8,
-                    dbs){
+                    dbs,
+                    verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -3620,7 +3647,7 @@ idSMpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("SM" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious SM annotations removed")
+      if(verbose){cat("\nPrevious SM annotations removed")}
       msobject$annotation$detailsAnnotation$SM <- list()
     }
   }
@@ -3728,6 +3755,7 @@ idSMpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -3753,7 +3781,7 @@ idSMpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -3774,7 +3802,8 @@ idCarpos <- function(msobject,
                      ftype = c("F", "F", "BB"),
                      chainfrags_sn1 = c("fa_M+H-H2O"),
                      coelCutoff = 0.8,
-                     dbs){
+                     dbs,
+                     verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -3843,7 +3872,7 @@ idCarpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("Carnitine" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious Carnitine annotations removed")
+      if(verbose){cat("\nPrevious Carnitine annotations removed")}
       msobject$annotation$detailsAnnotation$Carnitine <- list()
     }
   }
@@ -3951,6 +3980,7 @@ idCarpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -3976,7 +4006,7 @@ idCarpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -3997,7 +4027,8 @@ idCEpos <- function(msobject,
                     ftype = c("F", "BB"),
                     chainfrags_sn1 = c("fa_M+H-H2O"),
                     coelCutoff = 0.8,
-                    dbs){
+                    dbs,
+                    verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -4066,7 +4097,7 @@ idCEpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("CE" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious CE annotations removed")
+      if(verbose){cat("\nPrevious CE annotations removed")}
       msobject$annotation$detailsAnnotation$CE <- list()
     }
   }
@@ -4185,6 +4216,7 @@ idCEpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -4213,7 +4245,7 @@ idCEpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -4238,7 +4270,8 @@ idDGpos <- function(msobject,
                     rates = c("1"),
                     intrequired = c(T),
                     coelCutoff = 0.8,
-                    dbs){
+                    dbs,
+                    verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -4307,7 +4340,7 @@ idDGpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("DG" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious DG annotations removed")
+      if(verbose){cat("\nPrevious DG annotations removed")}
       msobject$annotation$detailsAnnotation$DG <- list()
     }
   }
@@ -4431,6 +4464,7 @@ idDGpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -4460,7 +4494,7 @@ idDGpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been written based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -4488,7 +4522,8 @@ idTGpos <- function(msobject,
                     rates = c("1", "1", "1"),
                     intrequired = c(T, T, T),
                     coelCutoff = 0.8,
-                    dbs){
+                    dbs,
+                    verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -4557,7 +4592,7 @@ idTGpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("TG" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious TG annotations removed")
+      if(verbose){cat("\nPrevious TG annotations removed")}
       msobject$annotation$detailsAnnotation$TG <- list()
     }
   }
@@ -4680,6 +4715,7 @@ idTGpos <- function(msobject,
 #' contains the required data frames based on the default fragmentation rules.
 #' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
 #' and \link{assignDB}.
+#' @param verbose print information messages.
 #'
 #' @return annotated msobject (list with several elements). The results element
 #' is a data frame that shows: ID, lipid class, CDB (total number of carbons
@@ -4711,7 +4747,7 @@ idTGpos <- function(msobject,
 #' sum intensity in DDA of all fragments used for the identification).
 #'
 #' @note This function has been writen based on fragmentation patterns
-#' observed for three different platforms (QTOF 6550 from Agilent, Sinapt G2-Si
+#' observed for three different platforms (QTOF 6550 from Agilent, Synapt G2-Si
 #' from Waters and Q-exactive from Thermo), but it may need to be customized for
 #' other platforms or acquisition settings.
 #'
@@ -4737,7 +4773,8 @@ idAcylCerpos <- function(msobject,
                          rates = c("2/1", "5/1"),
                          intrequired = c(T, T),
                          coelCutoff = 0.8,
-                         dbs){
+                         dbs,
+                         verbose = TRUE){
   ##############################################################################
   # check arguments
   if (msobject$metaData$generalMetadata$polarity != "positive"){
@@ -4806,7 +4843,7 @@ idAcylCerpos <- function(msobject,
   }
   if ("detailsAnnotation" %in% names(msobject$annotation)){
     if("AcylCer" %in% names(msobject$annotation$detailsAnnotation)){
-      cat("\nPrevious AcylCer annotations removed")
+      if(verbose){cat("\nPrevious AcylCer annotations removed")}
       msobject$annotation$detailsAnnotation$AcylCer <- list()
     }
   }

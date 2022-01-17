@@ -7,6 +7,7 @@
 #' @param msobject annotated msobject.
 #' @param span smoothing parameter. Numeric value between 0 and 1.
 #' @param ppm mz tolerance for EIC. If set to 0, the EIC will not be shown.
+#' @param verbose print information messages.
 #'
 #' @return msobject with a plots element which contains a list of plots.
 #' Plots on the left side represent raw values while plots on the left are
@@ -18,7 +19,7 @@
 #' Grey lines show the the extracted ion chromatograms for the peaks.
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
-plotLipids <- function(msobject, span = 0.4, ppm = 10){
+plotLipids <- function(msobject, span = 0.4, ppm = 10, verbose = TRUE){
 
   ##############################################################################
   # Check arguments and inputs
@@ -30,9 +31,9 @@ plotLipids <- function(msobject, span = 0.4, ppm = 10){
     warning("span parameter set to 0.4")
   }
   if ("plots" %in% names(msobject$annotation)){
-    cat("\n Removing previous plots...")
+    if(verbose){cat("\n Removing previous plots...")}
     msobject$annotation$plots <- NULL
-    cat("OK")
+    if(verbose){cat("OK")}
   }
   results <- msobject$annotation$results
   msobject$annotation$plots <- list()
@@ -190,6 +191,11 @@ plotLipids <- function(msobject, span = 0.4, ppm = 10){
 
     ############################################################################
     # Plot
+    
+    # save par parameters
+    oldpar <- graphics::par(no.readonly = TRUE)
+    on.exit(graphics::par(oldpar, new = FALSE))
+    
     colorsMS1 <- c("#42858C", "#FE9300", "#870E75", "#3E71A8", "#FE6900")
     colorsMS2 <- c("#7F8E39", "#5F3659", "#E5C616", "#16A08CFF", "#628395",
                    "#C5D86D", "#969696FF", "#358359FF", "#9F4D23FF", "#D86C4FFF",
@@ -463,7 +469,8 @@ plotLipids <- function(msobject, span = 0.4, ppm = 10){
 plotticmsbatch <- function(msbatch, rt, colorbygroup = TRUE){
   if (missing(rt)){
     maxs <- unlist(lapply(msbatch$msobjects, function(x) x$metaData$generalMetadata$endTime))
-    rt <- c(0, max(maxs))
+    mins <- unlist(lapply(msbatch$msobjects, function(x) x$metaData$generalMetadata$startTime))
+    rt <- c(min(mins), max(maxs))
   }
   maxint <- max(unlist(lapply(msbatch$msobjects, function(x) x$metaData$scansMetadata$totIonCurrent))) 
   
@@ -529,11 +536,17 @@ plotticmsbatch <- function(msbatch, rt, colorbygroup = TRUE){
 #' @param rt numeric vector with the RT range to be plotted
 #' @param colorbygroup logical. If TRUE, samples will be coloured based on their
 #' sample group (from metadata).
+#' @param verbose print information messages.
 #'
 #' @return plot
 #'
 #' @author M Isabel Alcoriza-Balaguer <maribel_alcoriza@iislafe.es>
-ploteicmsbatch <- function(msbatch, mz, ppm, rt, colorbygroup = TRUE){
+ploteicmsbatch <- function(msbatch, 
+                           mz, 
+                           ppm, 
+                           rt, 
+                           colorbygroup = TRUE, 
+                           verbose = TRUE){
   if (missing(rt)){
     maxs <- unlist(lapply(msbatch$msobjects, function(x) x$metaData$generalMetadata$endTime))
     rt <- c(0, max(maxs))
@@ -597,7 +610,7 @@ ploteicmsbatch <- function(msbatch, mz, ppm, rt, colorbygroup = TRUE){
     } else if (nrow(eic[[startat]]) == 0 & startat < length(msbatch$msobjects)) {
       startat <- startat + 1
     } else {
-      cat("No peaks found")
+      if(verbose){cat("No peaks found")}
       plot(0, xlim = rt, ylim = c(0, 100), type = "l", lwd = 2,
            col = scales::alpha(palette[samplescolor[1]], 0.7), 
            main = paste("EIC: ", mz, sep=""), 
@@ -1452,6 +1465,7 @@ searchIsotopes <- function(msobject,
         subsetMS1 <- MS1[ord[subset],]
         if (nrow(subsetMS1) > 0){
           subsetMS1 <- subsetMS1[order(subsetMS1$RT),]
+          subsetMS1$int <- subsetMS1$int - min(subsetMS1$int) # baseline substraction
           if (nrow(subsetPrev) > 0){
             merged <- merge(subsetPrev, subsetMS1, by = "Scan")
             if (nrow(merged) > 2){

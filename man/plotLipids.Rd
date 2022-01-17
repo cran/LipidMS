@@ -4,7 +4,7 @@
 \alias{plotLipids}
 \title{Plot informative peaks for lipid annotation}
 \usage{
-plotLipids(msobject, span = 0.4, ppm = 10)
+plotLipids(msobject, span = 0.4, ppm = 10, verbose = TRUE)
 }
 \arguments{
 \item{msobject}{annotated msobject.}
@@ -12,6 +12,8 @@ plotLipids(msobject, span = 0.4, ppm = 10)
 \item{span}{smoothing parameter. Numeric value between 0 and 1.}
 
 \item{ppm}{mz tolerance for EIC. If set to 0, the EIC will not be shown.}
+
+\item{verbose}{print information messages.}
 }
 \value{
 msobject with a plots element which contains a list of plots.

@@ -415,7 +415,9 @@ peakdetection <- function(msobject,
       # mz <- weighted.mean(msobject$rawData[[mslevel]][[cE]]$mz[start:end],
       #                     msobject$rawData[[mslevel]][[cE]]$int[start:end])
       maxint <- max(msobject$rawData[[mslevel]][[cE]]$int[start:end])
-      sumint <- sum(msobject$rawData[[mslevel]][[cE]]$int[start:end])
+      ints <- msobject$rawData[[mslevel]][[cE]]$int[start:end]
+      ints <- ints - min(ints)
+      sumint <- sum(ints)
       area <- areas[p]
       RT <- mean(msobject$rawData[[mslevel]][[cE]]$RT[start:end][msobject$rawData[[mslevel]][[cE]]$int[start:end] == maxint])
       minRT <- min(msobject$rawData[[mslevel]][[cE]]$RT[start:end])
@@ -647,7 +649,7 @@ indexrtpart <- function(peaks, part, minsamples){
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@iislafe.es>
 clustdist <- function(mins, maxs){
-  # calculamos la maxima diferencia entre dos clusters
+  # calculate max distance between 2 clusters
   cdiff <- matrix(nrow = length(mins), ncol = length(mins))
   for (x in 1:(length(mins)-1)){
     for(y in (x+1):length(maxs)){
@@ -677,27 +679,27 @@ clustdist <- function(mins, maxs){
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@iislafe.es>
 clust <- function(values, mins, maxs, samples, unique.samples, maxdist, ppm){
-  # values: vector de valores a clusterizar
-  # mins: vector de valores minimos
-  # maxs: vector de valores maximos
-  # samples: vector que nos indica a que sample pertenece cada valor de los vectores mins y maxs
-  # values, mins, maxs y samples tienen la misma longitud
-  # unique.samples puede ser TRUE o FALSE (si en cada cluster pueden haber varios valores de una misma muestra o no)
-  # maxdist: distancia maxima permitida
-  # ppm: TRUE o FALSE si maxdist esta en partes por millon o no
+  # values: vector of values to cluterize
+  # mins: vector of minimum values
+  # maxs: vector of maximum values
+  # samples: vector indicating to which sample/cluster belongs each value from mins and maxs
+  # values, mins, maxs andy samples have the same length
+  # unique.samples can be TRUE or FALSE (whether or not a cluster can contain different values from the same sample)
+  # maxdist: maximum distance allowed
+  # ppm: TRUE or FALSE if maxdist is in ppm
   
   if (missing(mins) | missing(maxs)){
     mins <- maxs <- values
   }
   if (length(mins) > 1){
-    clust <- rep(0, length(mins)) # cluster id asignado 
-    n <- rep(1, length(mins)) # medidas asignadas a cada cluster. Iniciamos el proceso con tantos clusters como valores en cada vector
+    clust <- rep(0, length(mins)) # cluster id assigned
+    n <- rep(1, length(mins)) # n peaks assigned to each cluster. Initialize the algortihm with as many clusters as points
     at <- list()
-    at <- lapply(1:length(samples), function(x) at[[x]] <- samples[x]) # samples representadas en cada cluster
+    at <- lapply(1:length(samples), function(x) at[[x]] <- samples[x]) # samples represented within each cluster
     atclust <- list()
-    atclust <- lapply(1:length(samples), function(x) atclust[[x]] <- x) # medidas asignadas a cada cluster
+    atclust <- lapply(1:length(samples), function(x) atclust[[x]] <- x) # values assigned to each cluster
     
-    distmatrix <- clustdist(mins, maxs) # vector de distancias calculada con clustdist
+    distmatrix <- clustdist(mins, maxs) # vector of distances calculated with clustdist
     distmatrix[distmatrix == -1] <- NA
     
     mindist <- which.min(distmatrix)
@@ -722,21 +724,21 @@ clust <- function(values, mins, maxs, samples, unique.samples, maxdist, ppm){
     }
     
     while(any(!is.na(distmatrix))){
-      # condicion 1 para unir dos clusters: dist n2_n1 es la minima distancia entre n2 y todos los demas clusters
+      # condition 1 to join two clusters: dist n2-n1 is the minimum distance between n2 and any other cluster
       cond1 <- order(distmatrix[(length(mins)*(n1-1)+1):(length(mins)*n1)])[1] == n2
       
-      # condicion 2 para unir dos clusters: que la distancia entre ellos sea menor que maxdist
-      if (ppm == TRUE){ # si max dist esta en ppm
+      # condition 2: dist n2-n1 is below maxdist 
+      if (ppm == TRUE){ # if maxdist is in ppm
         dist <- abs(values[n2] - values[n1]) * 1e6 / values[n1]
         cond2 <- dist  <= maxdist 
       } else {
         cond2 <- abs(values[n2] - values[n1])  <= maxdist 
       }
       
-      if(cond1 & cond2){ # si se cumplen las dos condiciones, uno los clusters y elimino el segundo
+      if(cond1 & cond2){ # if both conditions are true, join clusters y remove n2
         mins[n1] <- min(mins[n1], mins[n2])
         maxs[n1] <- max(maxs[n1], maxs[n2])
-        values[n1] <- (values[n1] * n[n1] + values[n2] * n[n2])/(n[n1] + n[n2])
+        values[n1] <- (values[n1] * n[n1] + values[n2] * n[n2])/(n[n1] + n[n2]) # mean value
         n[n1] <- n[n1] + n[n2]
         mins <- mins[-n2]
         maxs <- maxs[-n2]
@@ -747,8 +749,8 @@ clust <- function(values, mins, maxs, samples, unique.samples, maxdist, ppm){
         atclust[[n1]] <- append(atclust[[n1]], atclust[[n2]])
         atclust[[n2]] <- NULL
         
-        if (length(mins) > 1){ # recalculamos las distancias de los nuevos clusters
-          distmatrix <- clustdist(mins, maxs)  # vector de distancias calculada con clustdist
+        if (length(mins) > 1){ # update distances between clusters
+          distmatrix <- clustdist(mins, maxs)
           
           mindist <- which.min(distmatrix)
           n1 <- ceiling(mindist/length(mins))
