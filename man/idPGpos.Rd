@@ -18,7 +18,7 @@ idPGpos(
   chainfrags_sn2 = c("mg_M+H-H2O"),
   intrules = c("mg_sn1/mg_sn2"),
   rates = c("1/2"),
-  intrequired = c(F, F),
+  intrequired = c(F),
   coelCutoff = 0.8,
   dbs,
   verbose = TRUE
@@ -100,8 +100,8 @@ ion. 3) Search of specific fragments that inform about chain composition at
 sn1 (MG as M+H-H2O resulting from the loss of the FA chain at sn2)
 and sn2 (MG as M+H-H2O resulting from the loss of the FA chain at sn1).
 4) Look for possible chains structure based on the combination of chain
-fragments. 5) Check intensity rules to confirm chains position. MG from sn1
-is at least 2 times more intense than the ones from sn2.
+fragments. 5) Check intensity rules to confirm chains position. MG from sn2
+is at least twice more intense than the one from sn1.
 
 Results data frame shows: ID, lipid class, CDB (total number
 of carbons and double bounds), FA composition (specific chains composition if
