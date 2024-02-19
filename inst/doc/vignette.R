@@ -1,10 +1,10 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  # Install LipidMS
 #  install.packages("LipidMS", dependencies = c("Depends", "Imports"))
 #  
@@ -12,12 +12,12 @@ knitr::opts_chunk$set(
 #  library(LipidMS)
 #  
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  # load LipidMS library
 #  library(LipidMS)
 #  
 #  # Example data files can be downloaded from:
-#  # https://drive.google.com/drive/folders/1hSYrQBkh-rAA-oiaKqGkrNL7uWQraV75?usp=sharing
+#  # <https://drive.google.com/drive/folders/1hSYrQBkh-rAA-oiaKqGkrNL7uWQraV75?usp=sharing>
 #  
 #  # get mzXML files from your working directory
 #  files <- dir()[grepl(".mzXML", dir())]
@@ -66,7 +66,7 @@ knitr::opts_chunk$set(
 #                                     drtIso = drtIso)
 #  }
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  # set annotation parameters
 #  dmzprecursor <- 5
 #  dmzproducts <- 10
@@ -97,7 +97,7 @@ knitr::opts_chunk$set(
 #  }
 #  
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  # example code for idPEpos function
 #  pe <- idPEpos(msobject,
 #            ppm_precursor = ppm_precursor,
@@ -113,7 +113,7 @@ knitr::opts_chunk$set(
 #  # coelutingFrags, ddaFrags, combineChains and organizeResults. These functions
 #  # could be also empoyed to build customized identification functions.
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  msobject <- idPOS(msobject)
 #  msobject <- plotLipids(msobject)
 #  
@@ -128,12 +128,12 @@ knitr::opts_chunk$set(
 #    }
 #  dev.off()
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  # load LipidMS library
 #  library(LipidMS)
 #  
 #  # Example data files can be downloaded from:
-#  # https://drive.google.com/drive/folders/1hSYrQBkh-rAA-oiaKqGkrNL7uWQraV75?usp=sharing
+#  # <https://drive.google.com/drive/folders/1hSYrQBkh-rAA-oiaKqGkrNL7uWQraV75?usp=sharing>
 #  
 #  # csv file with 3 columns: sample (mzXML file names), acquisitionmode
 #  # (MS, DIA or DDA) and sampletype (QC, group1, group2, etc.)
@@ -188,7 +188,7 @@ knitr::opts_chunk$set(
 #  
 #  save(msbatch, file="msbatch.rda.gz", compress = TRUE)
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  #==============================================================================#
 #  # Set parameters
 #  #==============================================================================#
@@ -239,7 +239,7 @@ knitr::opts_chunk$set(
 #  # Now we have a data matrix with all samples and features.
 #  View(msbatch$features)
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  #==============================================================================#
 #  # Lipid annotation
 #  #==============================================================================#
@@ -259,7 +259,7 @@ knitr::opts_chunk$set(
 #  print(msbatch$msobjects[[1]]$annotation$plots[[1]])
 #  
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  ###################
 #  # features
 #  peaklist <- msbatch$features
@@ -322,11 +322,11 @@ knitr::opts_chunk$set(
 #    }
 #  }
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  # To run LipidMS shiny app execute:
 #  LipidMSapp()
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  fas <- c("8:0", "10:0", "12:0", "14:0", "14:1", "15:0", "16:0", "16:1",
 #  "17:0", "18:0", "18:1", "18:2", "18:3", "18:4", "20:0", "20:1", "20:2",
 #  "20:3", "20:4", "20:5", "22:0", "22:1", "22:2", "22:3", "22:4", "22:5",
@@ -338,7 +338,7 @@ knitr::opts_chunk$set(
 #  dbs$adductsTable <- LipidMS::adductsTable
 #  dbs$nlsphdb <- LipidMS::nlsphdb
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  fas <- c("8:0", "10:0", "12:0", "14:0", "14:1", "15:0", "16:0", "16:1",
 #           "17:0", "18:0", "18:1", "18:2", "18:3", "18:4", "19:0", "20:0", "20:1",
 #           "20:2", "20:3", "20:4", "20:5", "22:0", "22:1", "22:2", "22:3", "22:4",
@@ -347,7 +347,7 @@ knitr::opts_chunk$set(
 #  dbs <- assignDB() # This function loads all DBs required
 #  dbs$fadb <- newfadb$fadb # Then, you can modify some of these DBs
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  adductsTable <- LipidMS::adductsTable
 #  adductsTable <- data.frame(adduct = c(adductsTable$adduct, "M+X"),
 #                            mdiff = c(adductsTable$mdiff, 52.65),
@@ -355,7 +355,7 @@ knitr::opts_chunk$set(
 #                            n = c(adductsTable$n, 1),
 #                            stringsAsFactors = F)
 
-## ---- echo=T, eval=F----------------------------------------------------------
+## ----echo=T, eval=F-----------------------------------------------------------
 #  # The new adductsTable has to be also uploaded in the dbs list.
 #  dbs <- assignDB()
 #  dbs$adductsTable <- adductsTable

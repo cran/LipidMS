@@ -464,6 +464,12 @@ peakdetection <- function(msobject,
 #' @return peaklist with 6 columns (mz, RT, int, peakID, isotope and isoGroup).
 #'
 #' @keywords internal
+#' 
+#' @references Isotope annotation has been adapted from CAMERA algorithm: 
+#' Kuhl C, Tautenhahn R, Boettcher C, Larson TR, Neumann S (2012). “CAMERA: an 
+#' integrated strategy for compound spectra extraction and annotation of liquid 
+#' chromatography/mass spectrometry data sets.” Analytical Chemistry, 84, 283–289. 
+#' http://pubs.acs.org/doi/abs/10.1021/ac202450g.
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@iislafe.es>
 annotateIsotopes <- function(peaklist, rawScans, dmz, drt,
@@ -951,14 +957,16 @@ getfeaturestable <- function(msbatch){
   }
   
   # save results in msbatch
-  featureTable <- data.frame(mz, minmz, maxmz, RT, minRT, maxRT, iniRT, endRT,
-                             npeaks = n, group, isotopes, isogroup, featureMatrix)
+  rtminutes <- round(RT/60, 2)
+  featureTable <- data.frame(mz, minmz, maxmz, RT, minRT, maxRT, iniRT, endRT, 
+                             rtminutes, npeaks = n, group, isotopes, isogroup, 
+                             featureMatrix)
   rownames(featureTable) <- make.names(paste(round(mz, 3), round(RT, 0), sep="_"), 
                                        unique = TRUE)
   
-  colnames(featureTable)[1:12] <- c("mz", "minmz", "maxmz", "RT", "minRT", "maxRT",
-                                    "iniRT", "endRT", "npeaks", "group", "isotope",
-                                    "isoGroup")
+  colnames(featureTable)[1:13] <- c("mz", "minmz", "maxmz", "RT", "minRT", "maxRT",
+                                    "iniRT", "endRT", "RTminutes", "npeaks", 
+                                    "group", "isotope", "isoGroup")
   
   msbatch$features <- featureTable
   
