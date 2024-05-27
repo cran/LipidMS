@@ -15,7 +15,7 @@ export("assignDB", "chainFrags", "checkClass", "checkIntensityRules",
        "assignDB", "crossTables", "findCandidates", "getInclusionList", 
        "organizeResults")
 
-import("shiny", "utils", "parallel", "doParallel", "foreach")
+import("utils", "parallel", "doParallel", "foreach", "shiny")
 importFrom("iterators", "iter")
 importFrom("CHNOSZ", "makeup")
 importFrom("stats", "cor", "predict", "smooth.spline", "loess", "median", "smooth")

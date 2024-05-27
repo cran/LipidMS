@@ -1,7 +1,7 @@
-27972fdc93f72bc288e01ee11e983452 *DESCRIPTION
-3f49e447dc146c15f971ee81e8871802 *NAMESPACE
-113c036013ab2fbe592227af6e32ecae *R/LipidMS.R
-7fa9a594cec3e1dbfc8be7eba5167705 *R/LipidMSapp.R
+13e336ede9a45183b226be5cdb65430f *DESCRIPTION
+2f0185d05b897fc91a653aa2e2006579 *NAMESPACE
+041347dd4b24ec90e671a1121ab5173f *R/LipidMS.R
+32ed3fb0969210681514ffa919f12edc *R/LipidMSapp.R
 0fe2f0d60a9be3b1d49eb6b1259b98c7 *R/additionalFunctions.R
 9fb2b21a41cb536ec28d46c75d93cb17 *R/dataProcessing.R
 32c873dd9e54b56170df9e3304bc1b4b *R/idFunctionsNeg.R
@@ -12,7 +12,7 @@ d0de479a10f23d48734370f8988fde70 *R/internaldbs.R
 7e5d2fe418dd504da1f7211d2e8d1ad9 *R/msbatchAnnotationFunctions.R
 afc82c92d7d1a0443b254b5633e3b9b5 *R/subfunctionsIdentification.R
 87f9dff62159bfa946327979d459e00b *README.md
-b74f5f0400a04c235a8f90bcc81a7aab *build/vignette.rds
+41bf8e5c229b4d8ddbddc14f480866d1 *build/vignette.rds
 e23154e53433f94b0266d8162f67cac2 *data/CEdb.rda
 b07de3672dc7d87e17e5163dbaeb2f29 *data/acylcerdb.rda
 ede07584a3d0dead6de15c2b4b1cd9fc *data/adductsTable.rda
@@ -54,8 +54,8 @@ a64c1b1a917aa64504b88b4067269488 *data/pidb.rda
 2a1f1a52ec91a41f60a104fb79f65877 *data/sphPdb.rda
 67c9ba61966eac5987ceb1fcfda6e80d *data/sphdb.rda
 d5ceb31d544b968e7cf01b91717be156 *data/tgdb.rda
-c35407ce96e56ae83f84af98a7281b43 *inst/LipidMSapp/server.R
-0b52bb1859353692086626eaa37db98c *inst/LipidMSapp/ui.R
+e158f312335f41e49156dc9363635ddd *inst/LipidMSapp/server.R
+87718811587c908718819e1b509753b3 *inst/LipidMSapp/ui.R
 008e1aec892ada309b7b63baa94aa686 *inst/LipidMSapp/www/iconohorizontal.png
 c27f4936e8500005d23a50c5edec1146 *inst/doc/vignette.R
 1fa5b4a2811d97cb8ea1909f970d94b1 *inst/doc/vignette.Rmd
@@ -247,9 +247,9 @@ b20bf467771069b08153c6ce4724bc58 *man/searchIsotopes.Rd
 f9bfe6e21807552ef4f4562bf2e8d2a8 *man/sphdb.Rd
 adb5d5e32ea3a709c6cf11619808424e *man/sumChains.Rd
 d1aa2c343107df77f830169f8d1de6d8 *man/tgdb.Rd
-0e230cc69829f3c499e274680529c3a4 *src/Peakpicking.cpp
+f2fbe7cb72812f9d58df74f8483450b5 *src/Peakpicking.cpp
 b76426f5d0122c1ffd09fc4239d01a20 *src/auxPeakPicking.h
-c94a7b8ce560e916aada81b95e728889 *src/clustdist.cpp
+032d9a87bb9a989506e51907ae1b1b5b *src/clustdist.cpp
 11fc9d76c9c66acbaa3051a653c718b3 *src/init.c
 2d3b2b4e0b3ae1a25dcddd178d18433f *vignettes/abstract2.png
 1fa5b4a2811d97cb8ea1909f970d94b1 *vignettes/vignette.Rmd
