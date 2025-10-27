@@ -46,7 +46,7 @@ idPOS <- function(msobject,
                                    "DG", "TG"),
                   dbs,
                   verbose = TRUE){
-
+  
   if (msobject$metaData$generalMetadata$polarity != "positive"){
     stop("Data wasn't acquired in positive mode")
   }
@@ -68,7 +68,7 @@ idPOS <- function(msobject,
   if (missing(dbs)){
     dbs <- assignDB()
   }
-
+  
   if(verbose){cat("\n Starting annotation...")}
   if ("MG" %in% lipidClasses){
     if(verbose){cat("\n  Searching for MG...")}

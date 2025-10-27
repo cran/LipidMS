@@ -11,14 +11,15 @@ annotatemsbatch(
   rttol = 5,
   coelCutoff = 0.8,
   lipidClassesPos = c("MG", "LPC", "LPE", "PC", "PCo", "PCp", "PE", "PEo", "PEp", "PG",
-    "PI", "Sph", "SphP", "Cer", "CerP", "AcylCer", "SM", "Carnitines", "CE", "DG", "TG"),
+    "PI", "Sph", "SphP", "Cer", "CerP", "AcylCer", "SM", "Carnitine", "CE", "DG", "TG"),
   lipidClassesNeg = c("FA", "FAHFA", "LPC", "LPE", "LPG", "LPI", "LPS", "PC", "PCo",
     "PCp", "PE", "PEo", "PEp", "PG", "PI", "PS", "Sph", "SphP", "Cer", "CerP", "AcylCer",
     "SM", "CL", "BA"),
   dbs,
   simplifyAnnotations = FALSE,
   parallel = FALSE,
-  ncores
+  ncores,
+  global_gb = getOption("LipidMS.future.globals.maxSizeGB", 24)
 )
 }
 \arguments{
@@ -50,6 +51,9 @@ FALSE, all annotations will be shown.}
 \item{parallel}{logical.}
 
 \item{ncores}{number of cores to be used in case parallel is TRUE.}
+
+\item{global_gb}{numeric. Gigabytes to set as future.globals.maxSize **inside** the function.
+Defaults to `getOption("LipidMS.future.globals.maxSizeGB", 24)`.}
 }
 \value{
 msbatch

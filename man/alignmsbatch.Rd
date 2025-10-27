@@ -13,6 +13,7 @@ alignmsbatch(
   span = 0.4,
   parallel = FALSE,
   ncores,
+  global_gb = getOption("LipidMS.future.globals.maxSizeGB", 24),
   verbose = TRUE
 )
 }
@@ -34,6 +35,9 @@ used for the alignment. Used to calculate minsamples in case it is missing.}
 \item{parallel}{logical. If TRUE, parallel processing will be performed.}
 
 \item{ncores}{number of cores to be used in case parallel is TRUE.}
+
+\item{global_gb}{numeric. Gigabytes to set as future.globals.maxSize **inside** the function.
+Defaults to `getOption("LipidMS.future.globals.maxSizeGB", 24)`.}
 
 \item{verbose}{print information messages.}
 }

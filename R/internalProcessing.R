@@ -65,7 +65,7 @@ readMSfile <- function(file, polarity){
                       collisionEnergy = collisionEnergy,
                       part = 0, clust = 0, peak = 0, Scan = scannum)
   
-  if (polarity == "positive"){pol <- "+"}else{pol <- "-"}
+  if (polarity == "positive") {pol <- "+"} else {pol <- "-"}
   keepPolarity <- scansMetadata$Scan[which(scansMetadata$polarity == pol)]
   scansMetadata <- scansMetadata[scansMetadata$Scan %in% keepPolarity,]
   scans <- scans[scans$Scan %in% keepPolarity,]
@@ -581,7 +581,7 @@ annotateIsotopes <- function(peaklist, rawScans, dmz, drt,
 #' 
 #' Extract peaks from all MS1 peaklists of the msobjects in a msbatch.
 #'
-#' @param msbatch msbatch.
+#' @param msbatch msbatch object
 #'
 #' @return data.frame with 6 columns (mz, RT, int, peakID, isotope and isoGroup).
 #'
@@ -611,31 +611,35 @@ getallpeaks <- function(msbatch){
 #' @keywords internal
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@iislafe.es>
-indexrtpart <- function(peaks, part, minsamples){
-  maxit <- max(part)
+indexrtpart <- function(peaks, part, minsamples) {
+  r <- rle(part)
+  end <- cumsum(r$lengths)
+  start <- c(1, head(end, -1) + 1)
+  values <- r$values
+  lengths <- r$lengths
   
-  i <- rle(part)
-  end <- cumsum(i$lengths)
-  start <- c(1, end[-length(end)] + 1)
-  ind <- data.frame(start, end, length = i$lengths, value = i$values)
-  ind <- ind[ind$value != 0,]
-  keep <- c()
-  for (i in 1:nrow(ind)){
-    # keep only partitions which meet the alignment requirements
-    s <- peaks$sample[ind$start[i]:ind$end[i]]
-    if(length(unique(s)) >= minsamples){
-      keep <- append(keep, TRUE)
-    } else {
-      keep <- append(keep, FALSE)
-    }
-  }
-  ind$value[!keep] <- 0
-  ind <- ind[keep,]
-  ind$value <- as.numeric(as.factor(ind$value))
+  # keep only partitions which meet the alignment requirements
+  valid <- values != 0
+  start <- start[valid]
+  end <- end[valid]
+  values <- values[valid]
+  lengths <- lengths[valid]
   
-  pID <- rep(0, nrow(peaks))
-  for(x in 1:nrow(ind)){
-    pID[ind$start[x]:ind$end[x]] <- ind$value[x]
+  keep <- mapply(function(s, e) {
+    length(unique(peaks$sample[s:e])) >= minsamples
+  }, start, end)
+  
+  start <- start[keep]
+  end <- end[keep]
+  values <- values[keep]
+  lengths <- lengths[keep]
+  
+  new_values <- seq_along(values)
+  ind <- data.frame(start = start, end = end, length = lengths[keep], value = new_values)
+  
+  pID <- integer(nrow(peaks))
+  for (i in seq_along(new_values)) {
+    pID[start[i]:end[i]] <- new_values[i]
   }
   
   return(list(index = ind, idvector = pID))
@@ -654,14 +658,19 @@ indexrtpart <- function(peaks, part, minsamples){
 #' @keywords internal
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@iislafe.es>
-clustdist <- function(mins, maxs){
-  # calculate max distance between 2 clusters
-  cdiff <- matrix(nrow = length(mins), ncol = length(mins))
-  for (x in 1:(length(mins)-1)){
-    for(y in (x+1):length(maxs)){
-      cdiff[y, x] <- max(abs(mins[x] - maxs[y]), abs(mins[y] - maxs[x]))
-    }
-  }
+clustdist <- function(mins, maxs) {
+  n <- length(mins)
+  # Initialize with NA
+  cdiff <- matrix(NA_real_, nrow = n, ncol = n)
+  
+  idx <- which(lower.tri(cdiff))
+  row_idx <- row(cdiff)[idx]
+  col_idx <- col(cdiff)[idx]
+  
+  d1 <- abs(mins[row_idx] - maxs[col_idx])
+  d2 <- abs(mins[col_idx] - maxs[row_idx])
+  cdiff[idx] <- pmax(d1, d2)
+  
   return(cdiff)
 }
 
@@ -684,138 +693,87 @@ clustdist <- function(mins, maxs){
 #' @keywords internal
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@iislafe.es>
-clust <- function(values, mins, maxs, samples, unique.samples, maxdist, ppm){
-  # values: vector of values to cluterize
-  # mins: vector of minimum values
-  # maxs: vector of maximum values
-  # samples: vector indicating to which sample/cluster belongs each value from mins and maxs
-  # values, mins, maxs andy samples have the same length
-  # unique.samples can be TRUE or FALSE (whether or not a cluster can contain different values from the same sample)
-  # maxdist: maximum distance allowed
-  # ppm: TRUE or FALSE if maxdist is in ppm
-  
-  if (missing(mins) | missing(maxs)){
+clust <- function(values, mins, maxs, samples, unique.samples, maxdist, ppm) {
+  if (missing(mins) || missing(maxs)) {
     mins <- maxs <- values
   }
-  if (length(mins) > 1){
-    clust <- rep(0, length(mins)) # cluster id assigned
-    n <- rep(1, length(mins)) # n peaks assigned to each cluster. Initialize the algortihm with as many clusters as points
-    at <- list()
-    at <- lapply(1:length(samples), function(x) at[[x]] <- samples[x]) # samples represented within each cluster
-    atclust <- list()
-    atclust <- lapply(1:length(samples), function(x) atclust[[x]] <- x) # values assigned to each cluster
+  
+  n_points <- length(mins)
+  if (n_points <= 1) return(1)
+  
+  clust_ids <- seq_len(n_points)
+  cluster_sizes <- rep(1, n_points)
+  cluster_samples <- lapply(samples, function(x) x)
+  cluster_indices <- lapply(seq_len(n_points), function(i) i)
+  
+  distmat <- clustdist(mins, maxs)
+  distmat[distmat == -1] <- NA
+  
+  while (TRUE) {
+    mindist_idx <- which.min(distmat)
+    if (length(mindist_idx) == 0 || is.na(mindist_idx)) break
     
-    distmatrix <- clustdist(mins, maxs) # vector of distances calculated with clustdist
-    distmatrix[distmatrix == -1] <- NA
+    n1 <- ceiling(mindist_idx / n_points)
+    n2 <- mindist_idx - (n1 - 1) * n_points
     
-    mindist <- which.min(distmatrix)
-    n1 <- ceiling(mindist/length(mins))
-    n2 <- mindist-(length(mins)*(n1-1))
-    if (unique.samples){
-      do <- FALSE
-      while(!do){
-        if (any(at[[n1]] %in% at[[n2]])){
-          distmatrix[mindist] <- NA
-          if (any(!is.na(distmatrix))){
-            mindist <- which.min(distmatrix)
-            n1 <- ceiling(mindist/length(mins))
-            n2 <- mindist-(length(mins)*(n1-1))
-          } else {
-            do <- TRUE
-          }
-        } else {
-          do <- TRUE
-        }
-      }
+    if (n1 == n2 || n1 > length(mins) || n2 > length(mins)) {
+      distmat[mindist_idx] <- NA
+      next
     }
     
-    while(any(!is.na(distmatrix))){
-      # condition 1 to join two clusters: dist n2-n1 is the minimum distance between n2 and any other cluster
-      cond1 <- order(distmatrix[(length(mins)*(n1-1)+1):(length(mins)*n1)])[1] == n2
-      
-      # condition 2: dist n2-n1 is below maxdist 
-      if (ppm == TRUE){ # if maxdist is in ppm
-        dist <- abs(values[n2] - values[n1]) * 1e6 / values[n1]
-        cond2 <- dist  <= maxdist 
-      } else {
-        cond2 <- abs(values[n2] - values[n1])  <= maxdist 
-      }
-      
-      if(cond1 & cond2){ # if both conditions are true, join clusters y remove n2
-        mins[n1] <- min(mins[n1], mins[n2])
-        maxs[n1] <- max(maxs[n1], maxs[n2])
-        values[n1] <- (values[n1] * n[n1] + values[n2] * n[n2])/(n[n1] + n[n2]) # mean value
-        n[n1] <- n[n1] + n[n2]
-        mins <- mins[-n2]
-        maxs <- maxs[-n2]
-        values <- values[-n2]
-        samples <- samples[-n2]
-        at[[n1]] <- append(at[[n1]], at[[n2]])
-        at[[n2]] <- NULL
-        atclust[[n1]] <- append(atclust[[n1]], atclust[[n2]])
-        atclust[[n2]] <- NULL
-        
-        if (length(mins) > 1){ # update distances between clusters
-          distmatrix <- clustdist(mins, maxs)
-          
-          mindist <- which.min(distmatrix)
-          n1 <- ceiling(mindist/length(mins))
-          n2 <- mindist-(length(mins)*(n1-1))
-          any(at[[n1]] %in% at[[n2]])
-          if (unique.samples){
-            do <- FALSE
-            while(!do){
-              if (any(at[[n1]] %in% at[[n2]])){
-                distmatrix[mindist] <- NA
-                if (any(!is.na(distmatrix))){
-                  mindist <- which.min(distmatrix)
-                  n1 <- ceiling(mindist/length(mins))
-                  n2 <- mindist-(length(mins)*(n1-1))
-                } else {
-                  do <- TRUE
-                }
-              } else {
-                do <- TRUE
-              }
-            }
-          }
-        } else {
-          distmatrix[mindist] <- NA
-        }
-      } else {
-        distmatrix[mindist] <- NA
-        if(any(!is.na(distmatrix))){
-          mindist <- which.min(distmatrix)
-          n1 <- ceiling(mindist/length(mins))
-          n2 <- mindist-(length(mins)*(n1-1))
-          if (unique.samples){
-            do <- FALSE
-            while(!do){
-              if (any(at[[n1]] %in% at[[n2]])){
-                distmatrix[mindist] <- NA
-                if (any(!is.na(distmatrix))){
-                  mindist <- which.min(distmatrix)
-                  n1 <- ceiling(mindist/length(mins))
-                  n2 <- mindist-(length(mins)*(n1-1))
-                } else {
-                  do <- TRUE
-                }
-              } else {
-                do <- TRUE
-              }
-            }
-          }
-        }
-      }
+    # Ensure consistent ordering
+    if (n2 < n1) {
+      tmp <- n1; n1 <- n2; n2 <- tmp
     }
-    for (c in 1:length(atclust)){
-      pos <- atclust[[c]]
-      clust[pos] <- c
+    
+    # Sample uniqueness condition
+    if (unique.samples && any(cluster_samples[[n1]] %in% cluster_samples[[n2]])) {
+      distmat[mindist_idx] <- NA
+      next
     }
-  } else {
-    clust <- 1
+    
+    # Check distance condition
+    if (ppm) {
+      dist <- abs(values[n2] - values[n1]) * 1e6 / values[n1]
+    } else {
+      dist <- abs(values[n2] - values[n1])
+    }
+    if (dist > maxdist) {
+      distmat[mindist_idx] <- NA
+      next
+    }
+    
+    # Merge clusters
+    mins[n1] <- min(mins[n1], mins[n2])
+    maxs[n1] <- max(maxs[n1], maxs[n2])
+    values[n1] <- (values[n1] * cluster_sizes[n1] + values[n2] * cluster_sizes[n2]) / 
+      (cluster_sizes[n1] + cluster_sizes[n2])
+    cluster_sizes[n1] <- cluster_sizes[n1] + cluster_sizes[n2]
+    cluster_samples[[n1]] <- c(cluster_samples[[n1]], cluster_samples[[n2]])
+    cluster_indices[[n1]] <- c(cluster_indices[[n1]], cluster_indices[[n2]])
+    
+    # Remove n2
+    to_keep <- setdiff(seq_along(mins), n2)
+    mins <- mins[to_keep]
+    maxs <- maxs[to_keep]
+    values <- values[to_keep]
+    cluster_sizes <- cluster_sizes[to_keep]
+    cluster_samples <- cluster_samples[to_keep]
+    cluster_indices <- cluster_indices[to_keep]
+    
+    # Recompute distances
+    distmat <- clustdist(mins, maxs)
+    distmat[distmat == -1] <- NA
+    n_points <- length(mins)
   }
-  return(clust)
+  
+  # Assign final cluster IDs
+  result <- integer(length(values) + sum(sapply(cluster_indices, function(x) length(x)) - 1))
+  for (i in seq_along(cluster_indices)) {
+    result[cluster_indices[[i]]] <- i
+  }
+  
+  return(result)
 }
 
 # rtcorrection
@@ -832,10 +790,10 @@ clust <- function(values, mins, maxs, samples, unique.samples, maxdist, ppm){
 #'
 #' @author M Isabel Alcoriza-Balaguer <maialba@iislafe.es>
 rtcorrection <- function(rt, rtmodel){
-rtdevsmoothed <- predict(rtmodel, rt)
-rtdevsmoothed[is.na(rtdevsmoothed)] <- 0
-rt <- rt - rtdevsmoothed
-return(rt)
+  rtdevsmoothed <- predict(rtmodel, rt)
+  rtdevsmoothed[is.na(rtdevsmoothed)] <- 0
+  rt <- rt - rtdevsmoothed
+  return(rt)
 }
 
 # getfeaturestable
@@ -843,7 +801,7 @@ return(rt)
 #' 
 #' Write features table based on groups
 #'
-#' @param msbatch
+#' @param msbatch msbatch object
 #'
 #' @return data.frame
 #'
@@ -888,7 +846,7 @@ getfeaturestable <- function(msbatch){
   for (g in 1:nrow(msbatch$grouping$groupIndex)){
     gr <- msbatch$grouping$peaks[msbatch$grouping$peaks$groupID == g,]
     for (s in as.numeric(unique(gr$sample))){
-      featureMatrix[g, s] <- as.numeric(gr$int[gr$sample == s])
+      featureMatrix[g, s] <- sum(as.numeric(gr$int[gr$sample == s])) # sum() added
       n[g] <- n[g] + 1
     }
     mz[g] <- mean(gr$mz)
@@ -897,8 +855,8 @@ getfeaturestable <- function(msbatch){
     RT[g] <- mean(gr$RT)
     minRT[g] <- min(gr$RT, na.rm = TRUE)
     maxRT[g] <- max(gr$RT, na.rm = TRUE)
-    iniRT[g] <- median(gr$minRT, na.rm = TRUE)
-    endRT[g] <- median(gr$maxRT, na.rm = TRUE)
+    iniRT[g] <- min(gr$minRT, na.rm = TRUE)
+    endRT[g] <- max(gr$maxRT, na.rm = TRUE)
     # iso <- table(gr$isotope)
     # isotope[g] <- names(which.max(iso[!is.na(iso)]))
   }
@@ -913,7 +871,7 @@ getfeaturestable <- function(msbatch){
   for (g in 1:length(mz)){
     gr <- which(peaks$groupID == g)
     for (s in as.numeric(unique(peaks$sample[gr]))){
-      index[g, s] <- gr[which(peaks$sample[gr] == s)]
+      index[g, s] <- max(gr[which(peaks$sample[gr] == s)]) # max() added 
     }
   }
   
@@ -973,5 +931,142 @@ getfeaturestable <- function(msbatch){
   return(msbatch)
 }
 
-
-
+# removeduplicatedpeaks
+#' Remove duplicated features after grouping step
+#' 
+#' Remove duplicated features after grouping step
+#'
+#' @param msbatch msbatch object 
+#' @param ppm mz tolerance in ppm
+#'
+#' @return msbatch
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@iislafe.es>
+removeduplicatedpeaks <- function(msbatch, 
+                                  ppm, 
+                                  dmz = 5, 
+                                  drt = 30,
+                                  thr_overlap = 0.7){
+  
+  peaks <- msbatch$features
+  peaks[is.na(peaks)] <- 0
+  idpeaks <- 1:nrow(peaks)
+  
+  #============================================================================#
+  # Create mz partitions based on dmz and drt
+  #============================================================================#
+  part <- .Call("agglom", as.numeric(peaks$mz),
+                as.numeric(peaks$RT), as.integer(1),
+                as.numeric(dmz), as.numeric(drt),
+                PACKAGE = "LipidMS")
+  
+  #============================================================================#
+  # For partitions with more than one feature, check if there is RT overlapping
+  #============================================================================#
+  dup <- as.numeric(names(table(part))[which(table(part) > 1)])
+  
+  count <- 0
+  toremove <- c()
+  tokeep <- c()
+  for (d in dup){
+    ss <- peaks[part == d,]
+    ss <- ss[order(ss$iniRT, decreasing = FALSE),]
+    # check overlapping
+    end <- FALSE
+    last <- list()
+    while (nrow(ss) > 1 & !end){
+      tocompare <- sapply(2:nrow(ss), function(x){
+        ss$group[which(ss$iniRT[x] < ss$endRT[1:(x-1)])]
+      }, simplify = FALSE)
+      ncomp <- sum(sapply(tocompare, length) > 0)
+      icomp <- 0
+      if (length(last) == length(tocompare)){
+        if(all(unlist(last) == unlist(tocompare))){
+          keepgoing <- FALSE
+        } else {
+          keepgoing <- TRUE
+        }
+      } else {
+        keepgoing <- TRUE
+      }
+      if (any(sapply(tocompare, length) > 0) & !end & keepgoing){
+        f <- which(sapply(tocompare, length) > 0)
+        
+        # overlapping %
+        for (i in f){
+          ss2 <- ss[!is.na(ss$mz),]
+          g1 <- tocompare[[i]][1]
+          g2 <- ss$group[i+1]
+          
+          if(g1 %in% ss2$group & g2 %in% ss2$group & 
+             !(g1 %in% toremove) & !(g2 %in% toremove)){
+            p1 <- which(ss2$group == g1)
+            p2 <- which(ss2$group == g2)
+            width_p1 <- ss2$endRT[p1] - ss2$iniRT[p1]
+            width_p2 <- ss2$endRT[p2] - ss2$iniRT[p2]
+            time_overlap <- (min(ss2$endRT[p1], ss2$endRT[p2]) -
+                               max(ss2$iniRT[p1], ss2$iniRT[p2]))
+            perc_overlap <- time_overlap / c(width_p1, width_p2)
+            
+            if (any(perc_overlap > thr_overlap)){
+              rem <- c(g1, g2)[which.max(perc_overlap)]
+              keep <- c(g1, g2)[which.min(perc_overlap)]
+              
+              # reorder raw data
+              msbatch$grouping$peaks$groupID[msbatch$grouping$groupIndex$start[rem]:
+                                               msbatch$grouping$groupIndex$end[rem]] <- keep
+              
+              toremove <- c(toremove, rem)
+              tokeep <- c(tokeep, keep)
+              count <- count + 1
+              
+              ss[which(ss$group == rem), 1:11] <- NA
+              icomp <- icomp + 1
+              
+              if (rem == g1 & nrow(ss[(!is.na(ss$mz)) & (!ss$group %in% toremove),, 
+                                      drop=FALSE]) > 1){
+                ss <- ss[!is.na(ss$mz),,drop=FALSE]
+                ss <- ss[!ss$group %in% toremove,,drop=FALSE]
+                break
+              }
+              
+            } else {
+              icomp <- icomp + 1
+            }
+          } else {
+            icomp <- icomp + 1
+          }
+        }
+        last <- tocompare
+        if (icomp == ncomp){
+          end <- TRUE
+        }
+      } else {
+        end <- TRUE
+      }
+    }
+  }
+  
+  # reorder peaks
+  msbatch$grouping$peaks <- msbatch$grouping$peaks[order(msbatch$grouping$peaks$groupID),]
+  
+  # create new index and feature table
+  i <- rle(msbatch$grouping$peaks$groupID)
+  end <- cumsum(i$lengths)
+  start <- c(1, end[-length(end)] + 1)
+  ind <- data.frame(start, end, length = i$lengths, value = i$values)
+  ind <- ind[ind$value != 0,]
+  ind$value <- as.numeric(as.factor(ind$value))
+  pID <- rep(0, nrow(msbatch$grouping$peaks))
+  for(x in 1:nrow(ind)){
+    pID[ind$start[x]:ind$end[x]] <- ind$value[x]
+  }
+  msbatch$grouping$peaks$groupID <- pID
+  msbatch$grouping$groupIndex <- ind
+  
+  msbatch <- getfeaturestable(msbatch)
+  
+  return(msbatch)
+}

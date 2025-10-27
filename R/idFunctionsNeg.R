@@ -15,8 +15,6 @@
 #' @param lipidClasses classes of interest to run the identification functions.
 #' @param dbs list of data bases required for annotation. By default, dbs
 #' contains the required data frames based on the default fragmentation rules.
-#' If these rules are modified, dbs may need to be supplied. See \link{createLipidDB}
-#' and \link{assignDB}.
 #' @param verbose print information messages.
 #' 
 #'
@@ -47,7 +45,7 @@ idNEG <- function(msobject,
                                    "AcylCer", "SM", "CL", "BA"),
                   dbs,
                   verbose = TRUE){
-
+  
   if (msobject$metaData$generalMetadata$polarity != "negative"){
     stop("Data wasn't acquired in negative mode")
   }
@@ -80,8 +78,8 @@ idNEG <- function(msobject,
   if ("FAHFA" %in% lipidClasses){
     if(verbose){cat("\n  Searching for FAHFA...")}
     msobject <-  idFAHFAneg(msobject = msobject, ppm_precursor = ppm_precursor,
-                         ppm_products = ppm_products, rttol = rttol,
-                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+                            ppm_products = ppm_products, rttol = rttol,
+                            coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
     if(verbose){cat("OK")}
   }
   if ("LPC" %in% lipidClasses){
@@ -129,8 +127,8 @@ idNEG <- function(msobject,
   if ("PCo" %in% lipidClasses){
     if(verbose){cat("\n  Searching for PCo...")}
     msobject <-  idPConeg(msobject = msobject, ppm_precursor = ppm_precursor,
-                         ppm_products = ppm_products, rttol = rttol,
-                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+                          ppm_products = ppm_products, rttol = rttol,
+                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
     if(verbose){cat("OK")}
   }
   if ("PCp" %in% lipidClasses){
@@ -206,22 +204,22 @@ idNEG <- function(msobject,
   if ("CerP" %in% lipidClasses){
     if(verbose){cat("\n  Searching for CerP...")}
     msobject <-  idCerPneg(msobject = msobject, ppm_precursor = ppm_precursor,
-                          ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+                           ppm_products = ppm_products, rttol = rttol,
+                           coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
     if(verbose){cat("OK")}
   }
   if ("AcylCer" %in% lipidClasses){
     if(verbose){cat("\n  Searching for AcylCer...")}
     msobject <-  idAcylCerneg(msobject = msobject, ppm_precursor = ppm_precursor,
-                           ppm_products = ppm_products, rttol = rttol,
-                           coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+                              ppm_products = ppm_products, rttol = rttol,
+                              coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
     if(verbose){cat("OK")}
   }
   if ("SM" %in% lipidClasses){
     if(verbose){cat("\n  Searching for SM...")}
     msobject <-  idSMneg(msobject = msobject, ppm_precursor = ppm_precursor,
-                          ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+                         ppm_products = ppm_products, rttol = rttol,
+                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
     if(verbose){cat("OK")}
   }
   if ("CL" %in% lipidClasses){
@@ -234,11 +232,11 @@ idNEG <- function(msobject,
   if ("BA" %in% lipidClasses){
     if(verbose){cat("\n  Searching for Bile acids...")}
     msobject <-  idBAneg(msobject = msobject, ppm_precursor = ppm_precursor,
-                          ppm_products = ppm_products, rttol = rttol,
-                          coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
+                         ppm_products = ppm_products, rttol = rttol,
+                         coelCutoff = coelCutoff, dbs = dbs, verbose = verbose)
     if(verbose){cat("OK")}
   }
-
+  
   if(verbose){cat("\n Preparing output...")}
   msobject <- crossTables(msobject,
                           ppm = ppm_precursor, 

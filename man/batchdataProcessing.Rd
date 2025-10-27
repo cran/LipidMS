@@ -25,6 +25,7 @@ batchdataProcessing(
   drtIso = 5,
   parallel = FALSE,
   ncores,
+  global_gb = getOption("LipidMS.future.globals.maxSizeGB", 24),
   verbose = TRUE
 )
 }
@@ -70,6 +71,9 @@ within the drtminpeak window are required to define a peak.}
 \item{parallel}{logical.}
 
 \item{ncores}{number of cores to be used in case parallel is TRUE.}
+
+\item{global_gb}{numeric. Gigabytes to set as future.globals.maxSize **inside** the function.
+Defaults to `getOption("LipidMS.future.globals.maxSizeGB", 24)`.}
 
 \item{verbose}{print information messages.}
 }

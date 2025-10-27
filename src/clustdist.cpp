@@ -1,7 +1,6 @@
 #include <list>
 #include <math.h>
 #include <R.h>
-#include <Rinternals.h>
 #include <Rmath.h>
 #include <Rdefines.h>
 #include <vector>
@@ -12,6 +11,7 @@ using namespace std;
 
 extern "C"{
   
+  
   //****************************************************************************
   //** Max distance between clusters
   //****************************************************************************
@@ -19,8 +19,8 @@ extern "C"{
                  SEXP maxs
   ){
     
-    Rf_protect(mins = AS_NUMERIC(mins));
-    Rf_protect(maxs = AS_NUMERIC(maxs));
+    PROTECT(mins = AS_NUMERIC(mins));
+    PROTECT(maxs = AS_NUMERIC(maxs));
     double *minsv;
     minsv = NUMERIC_POINTER(mins);
     double *maxsv;
@@ -29,9 +29,8 @@ extern "C"{
     int lengMaxs = LENGTH(maxs);
     int leng = lengMins*lengMaxs;
     SEXP cdiff;
-    Rf_protect(cdiff = NEW_NUMERIC(leng));
-    // SETLENGTH(cdiff, leng);
-    cdiff = Rf_lengthgets(cdiff, leng);
+    PROTECT(cdiff = NEW_NUMERIC(leng));
+    Rf_lengthgets(cdiff, leng);
     double *cdiffv;
     cdiffv = NUMERIC_POINTER(cdiff);
     for(int n = 0; n < leng; n++){
@@ -44,8 +43,7 @@ extern "C"{
       }
     }
     
-    // SETLENGTH(cdiff, leng);
-    cdiff = Rf_lengthgets(cdiff, leng);
+    Rf_lengthgets(cdiff, leng);
     UNPROTECT(3);
     
     return cdiff;

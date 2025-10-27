@@ -1081,6 +1081,42 @@ dbTwoChains <- function(chains, lipid){
   return(db)
 }
 
+# dbPlasmalogens
+#' Creation of a database for PCo, PCp, PEo and PEp
+#'
+#' Creation of a database for PCo, PCp, PEo and PEp
+#'
+#' @param chains character vector indicating the FAs to be employed for sn1
+#' @param chains2 character vector indicating the FAs to be employed for sn2
+#' @param lipid character value indication the class of lipid.
+#'
+#' @return data frame containing formula, mass and total number of carbons and
+#' insaturations.
+#'
+#' @keywords internal
+#'
+#' @author M Isabel Alcoriza-Balaguer <maialba@alumni.uv.es>
+dbPlasmalogens <- function(chains, chains2, lipid){
+  comb <- vector()
+  for (i in chains2){
+    comb <- append(comb, sapply(chains, paste, i, collapse=" "))
+  }
+  comb <- unique(comb)
+  total  <- unique(unlist(lapply(comb, sumChains, n = 2)))
+  if (lipid == "PCo"){
+    fm <- lapply(total, MassPCo)
+  } else if (lipid == "PCp"){
+    fm <- lapply(total, MassPCp)
+  } else if (lipid == "PEo"){
+    fm <- lapply(total, MassPEo)
+  } else if (lipid == "PEp"){
+    fm <- lapply(total, MassPEp)
+  }
+  db <- data.frame(formula=unlist(lapply(fm, "[[", 1)), total=total,
+                   Mass=as.numeric(unlist(lapply(fm, "[[", 2))), stringsAsFactors = F)
+  return(db)
+}
+
 # dbThreeChains
 #' Creation of a database for TG.
 #'

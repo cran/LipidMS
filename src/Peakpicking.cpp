@@ -7,7 +7,6 @@ author: Martin Loos, Martin.Loos@eawag.ch
 #include <list>
 #include <math.h>
 #include <R.h>
-#include <Rinternals.h>
 #include <Rmath.h>
 #include <Rdefines.h>
 #include <vector>
@@ -28,11 +27,11 @@ extern "C"{
                       ){
 
 
-            Rf_protect(mz = AS_NUMERIC(mz));
-            Rf_protect(rt = AS_NUMERIC(rt));
-            Rf_protect(ppm = AS_INTEGER(ppm));
-            Rf_protect(dmz = AS_NUMERIC(dmz));
-            Rf_protect(drt = AS_NUMERIC(drt));
+            PROTECT(mz = AS_NUMERIC(mz));
+            PROTECT(rt = AS_NUMERIC(rt));
+            PROTECT(ppm = AS_INTEGER(ppm));
+            PROTECT(dmz = AS_NUMERIC(dmz));
+            PROTECT(drt = AS_NUMERIC(drt));
             double *mass;
             mass = NUMERIC_POINTER(mz);
             double *ret;
@@ -44,12 +43,11 @@ extern "C"{
             double lowmass, highmass, lowret, highret;
             int leng = LENGTH(rt);
             SEXP outit;
-            Rf_protect(outit = NEW_INTEGER(leng));
+            PROTECT(outit = NEW_INTEGER(leng));
             int *at;
             at = INTEGER_POINTER(outit);
             for(n = 0; n < leng; n++){*(at + n) = 0;}
-            // SETLENGTH(outit, leng);
-            outit = Rf_lengthgets(outit, leng);
+            Rf_lengthgets(outit, leng);
             int *these;
             these = new int[leng];
             int *those;
@@ -165,8 +163,7 @@ extern "C"{
 
             delete[] these;
             delete[] those;
-            // SETLENGTH(outit, leng);
-            outit = Rf_lengthgets(outit, leng);
+            Rf_lengthgets(outit, leng);
             UNPROTECT(6);
             return outit;
 
@@ -176,18 +173,18 @@ extern "C"{
       /************************************************************************/
       /* assemble indices for return value of agglom **************************/
       /************************************************************************/
-      SEXP indexed(      SEXP index, /* must be sorted */
-				         SEXP intensity,
-                         SEXP minpeak,
-                         SEXP maxint,
-                         SEXP maxindex
-                         ){
+      SEXP indexed(SEXP index, /* must be sorted */
+				           SEXP intensity,
+                   SEXP minpeak,
+                   SEXP maxint,
+                   SEXP maxindex
+                   ){
 
-            Rf_protect(index = AS_NUMERIC(index));
-            Rf_protect(intensity = AS_NUMERIC(intensity));
-            Rf_protect(minpeak = AS_INTEGER(minpeak));
-            Rf_protect(maxint = AS_NUMERIC(maxint));
-            Rf_protect(maxindex = AS_NUMERIC(maxindex));
+            PROTECT(index = AS_NUMERIC(index));
+            PROTECT(intensity = AS_NUMERIC(intensity));
+            PROTECT(minpeak = AS_INTEGER(minpeak));
+            PROTECT(maxint = AS_NUMERIC(maxint));
+            PROTECT(maxindex = AS_NUMERIC(maxindex));
             double *ind;
             ind = NUMERIC_POINTER(index);
             double *inte;
@@ -199,7 +196,7 @@ extern "C"{
 			int leng = LENGTH(index);
             int n, from, to, counted, atind;
             SEXP outit;
-            Rf_protect(outit = Rf_allocMatrix(INTSXP, maxind, 3));
+            PROTECT(outit = allocMatrix(INTSXP, maxind, 3));
             int *at;
             at = INTEGER_POINTER(outit);
             for(n=0; n<(maxind*3); n++){
@@ -238,8 +235,7 @@ extern "C"{
                 *(at + (maxind*2) + atind) = counted;
             }
 
-            // SETLENGTH(outit, maxind * 3);
-            outit = Rf_lengthgets(outit, maxind * 3);
+            Rf_lengthgets(outit, maxind * 3);
             UNPROTECT(6);
             return outit;
 
@@ -253,15 +249,15 @@ extern "C"{
                          SEXP leng
                          ){
 
-            Rf_protect(index = AS_INTEGER(index));
-            Rf_protect(leng = AS_INTEGER(leng));
+            PROTECT(index = AS_INTEGER(index));
+            PROTECT(leng = AS_INTEGER(leng));
             int lengit = LENGTH(index);
             lengit=lengit/3;
             int *indexed;
             indexed = INTEGER_POINTER(index);
             int leng2 = INTEGER_VALUE(leng);
             SEXP outit;
-            Rf_protect(outit = NEW_INTEGER(leng2));
+            PROTECT(outit = NEW_INTEGER(leng2));
             int *at;
             int n,m,id=1;
             at = INTEGER_POINTER(outit);
@@ -295,15 +291,15 @@ extern "C"{
                         SEXP merged2
                         ){
 
-			Rf_protect(mz = AS_NUMERIC(mz));
-			Rf_protect(RT = AS_NUMERIC(RT));
-			Rf_protect(intens = AS_NUMERIC(intens));
-			Rf_protect(orderedint = AS_INTEGER(orderedint));
-			Rf_protect(orderedret = AS_INTEGER(orderedret));
-			Rf_protect(dmzdens = AS_NUMERIC(dmzdens));
-			Rf_protect(ppm2 = AS_INTEGER(ppm2));
-			Rf_protect(drtdens = AS_NUMERIC(drtdens));
-			Rf_protect(merged2 = AS_INTEGER(merged2));
+			PROTECT(mz = AS_NUMERIC(mz));
+			PROTECT(RT = AS_NUMERIC(RT));
+			PROTECT(intens = AS_NUMERIC(intens));
+			PROTECT(orderedint = AS_INTEGER(orderedint));
+			PROTECT(orderedret = AS_INTEGER(orderedret));
+			PROTECT(dmzdens = AS_NUMERIC(dmzdens));
+			PROTECT(ppm2 = AS_INTEGER(ppm2));
+			PROTECT(drtdens = AS_NUMERIC(drtdens));
+			PROTECT(merged2 = AS_INTEGER(merged2));
 			double *ret, *mass, *intensity;
 			mass = NUMERIC_POINTER(mz);
 			ret = NUMERIC_POINTER(RT);
@@ -319,7 +315,7 @@ extern "C"{
 			int m, n, i, k = 0, clustnumb, maxat = 0, maxit = 0;
 			double delmz;
 			SEXP clusters;
-			Rf_protect(clusters = Rf_allocMatrix(REALSXP, leng, 13));
+			PROTECT(clusters = allocMatrix(REALSXP, leng, 13));
 			double *clus;
 			clus = REAL(clusters);
 			for(m = 0;m < 13;m++){
@@ -695,13 +691,13 @@ extern "C"{
 						SEXP drtsmall
 					){
 
-			Rf_protect(RT = AS_NUMERIC(RT));
-			Rf_protect(intens = AS_NUMERIC(intens));
-			Rf_protect(RTorder = AS_INTEGER(RTorder));
-			Rf_protect(mz = AS_NUMERIC(mz));
-			Rf_protect(index = AS_NUMERIC(index));
-			Rf_protect(scans = AS_NUMERIC(scans));
-			Rf_protect(drtsmall = AS_NUMERIC(drtsmall));
+			PROTECT(RT = AS_NUMERIC(RT));
+			PROTECT(intens = AS_NUMERIC(intens));
+			PROTECT(RTorder = AS_INTEGER(RTorder));
+			PROTECT(mz = AS_NUMERIC(mz));
+			PROTECT(index = AS_NUMERIC(index));
+			PROTECT(scans = AS_NUMERIC(scans));
+			PROTECT(drtsmall = AS_NUMERIC(drtsmall));
 
 			int leng2 = LENGTH(RT);
 			int leng3 = LENGTH(scans);
@@ -717,7 +713,7 @@ extern "C"{
 			ordret = INTEGER_POINTER(RTorder);
 
 			SEXP ans;
-			Rf_protect(ans = Rf_allocMatrix(REALSXP, leng3, 10));
+			PROTECT(ans = allocMatrix(REALSXP, leng3, 10));
 			double *rans;
 			rans = REAL(ans);
 			for(m = 0; m < leng3; m++){
@@ -805,18 +801,18 @@ extern "C"{
                         SEXP win
             ){
 
-           Rf_protect(out1 = AS_NUMERIC(out1));
-           Rf_protect(drtlarge = AS_NUMERIC(drtlarge));
-           Rf_protect(drttotal = AS_NUMERIC(drttotal));
-           Rf_protect(minpeak = AS_INTEGER(minpeak));
-           Rf_protect(recurs = AS_INTEGER(recurs));
-           Rf_protect(weight = AS_INTEGER(weight));
-           Rf_protect(SB = AS_NUMERIC(SB));
-           Rf_protect(SN = AS_NUMERIC(SN));
-           Rf_protect(minint = AS_NUMERIC(minint));
-           Rf_protect(upint = AS_NUMERIC(upint));
-           Rf_protect(ended = AS_INTEGER(ended));
-           Rf_protect(win = AS_INTEGER(win));
+           PROTECT(out1 = AS_NUMERIC(out1));
+           PROTECT(drtlarge = AS_NUMERIC(drtlarge));
+           PROTECT(drttotal = AS_NUMERIC(drttotal));
+           PROTECT(minpeak = AS_INTEGER(minpeak));
+           PROTECT(recurs = AS_INTEGER(recurs));
+           PROTECT(weight = AS_INTEGER(weight));
+           PROTECT(SB = AS_NUMERIC(SB));
+           PROTECT(SN = AS_NUMERIC(SN));
+           PROTECT(minint = AS_NUMERIC(minint));
+           PROTECT(upint = AS_NUMERIC(upint));
+           PROTECT(ended = AS_INTEGER(ended));
+           PROTECT(win = AS_INTEGER(win));
 
            double drt2 = NUMERIC_VALUE(drtlarge);
            double drt4 = NUMERIC_VALUE(drttotal);
