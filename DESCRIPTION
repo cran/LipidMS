@@ -1,7 +1,7 @@
 Package: LipidMS
 Type: Package
 Title: Lipid Annotation for LC-MS/MS DDA or DIA Data
-Version: 3.1.0
+Version: 3.1.1
 Authors@R: c(
   person(given = c("M Isabel"),
          family = "Alcoriza-Balaguer",
@@ -24,8 +24,8 @@ Encoding: UTF-8
 Suggests: knitr, rmarkdown, shiny, shinythemes, shinyjs, plotly
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2025-10-27 07:51:18 UTC; marib
+Packaged: 2025-11-03 12:37:12 UTC; marib
 Author: M Isabel Alcoriza-Balaguer [aut, cre],
   Celia Regal-Marques [aut]
 Repository: CRAN
-Date/Publication: 2025-10-27 09:50:37 UTC
+Date/Publication: 2025-11-03 13:00:03 UTC

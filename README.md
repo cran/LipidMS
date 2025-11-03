@@ -1,13 +1,7 @@
 # LipidMS v3.1
-Lipid Annotation for LC-MS/MS DIA and DDA data analysis. New features:
+Lipid Annotation for LC-MS/MS DIA and DDA data analysis.
 
-  - Batch processing: peak-picking, grouping and alignment wrapped in batchdataProcessing(). Lipid annotation for msbatch objects simplified with annotatemsbatch().
-  - New lipid classes: plasmanyl and plasmenyl PC and PE, acylceramides and ceramides phosphate.
-  - GUI through shiny app running LipidMSapp().
-  - Improved graphical outputs for lipid annotation.
-  - RT modelling to detect incorrect annotations and to propose new ones based on previous high confidence annotations identified by fragmentation rules.
-    - Interactive shiny app to check the proposed annotations based on RT criteria through manualfilterapp().
-    - Interactive shiny app to check new predicted annotations based on RT through manualpredictionapp(). 
+  - Improved GUI through shiny app running LipidMSapp().
 
 
 Citation:

@@ -1,6 +1,6 @@
-3ac4a1ff750288e8202685db814110d4 *DESCRIPTION
+e91adbc19802baab19b752f106c83fd5 *DESCRIPTION
 5fbc27ae5ccbb6372086e4f2e3c21a9a *NAMESPACE
-684e04e0540f4064a11fae31e39112c0 *R/LipidMS.R
+aa82965fd163b2be5052deeda317d925 *R/LipidMS.R
 e73684936c7cb897ae2527c5c342c1ee *R/LipidMSapp.R
 d9650cf839a5d006a57c3ad73e75078c *R/additionalFunctions.R
 266a75b0ccd97977d5743130712451a5 *R/dataProcessing.R
@@ -12,7 +12,7 @@ d9650cf839a5d006a57c3ad73e75078c *R/additionalFunctions.R
 a4bae17442c0d3901ddf9260a32595fa *R/msbatchAnnotationFunctions.R
 b09bc906eb9986b2dc8bd86edcd067f5 *R/subfunctionsIdentification.R
 9da39f89845dc39556014d173770843c *R/utils.R
-71dfb74e7cbc389782f4462937b7d961 *README.md
+a0d7875a2b93bbc790d359a04f47e685 *README.md
 5454d8727080a4e3c26e0fae8a1364ac *build/vignette.rds
 e23154e53433f94b0266d8162f67cac2 *data/CEdb.rda
 b07de3672dc7d87e17e5163dbaeb2f29 *data/acylcerdb.rda
